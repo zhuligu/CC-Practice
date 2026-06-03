@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>课程目录 · Claude Code 工程化实战</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fff; --fg: #222; --muted: #555; --link: #1a73e8;
+    --code-bg: #f4f4f4; --code-fg: inherit;
+    --pre-bg: #1e1e1e; --pre-fg: #eaeaea;
+    --border: #ddd; --th-bg: #f5f5f5; --zebra: #fafafa;
+    --hover-row: #e8f0fe; --hover-th: #eef2f7;
+    --blockquote-bg: #fafafa; --blockquote-border: #ddd;
+    --hr: #eee;
+    --toggle-bg: #f5f5f5; --toggle-fg: #333; --toggle-border: #ddd;
+    --tag-bg: #eef4ff; --tag-fg: #1a73e8;
+    --callout-bg: #fffbe6; --callout-border: #fadb14;
+    --warn-bg: #fff1f0; --warn-border: #ff4d4f;
+    --ok-bg: #f6ffed; --ok-border: #52c41a;
+    --code-block-bg: #f8f9fa;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1115; --fg: #e6e6e6; --muted: #9aa0a6; --link: #8ab4f8;
+    --code-bg: #1e1f24; --code-fg: #e6e6e6;
+    --pre-bg: #1a1d23; --pre-fg: #e6e6e6;
+    --border: #303136; --th-bg: #1c1f25; --zebra: #16181d;
+    --hover-row: #1f2733; --hover-th: #262c36;
+    --blockquote-bg: #181a20; --blockquote-border: #303136;
+    --hr: #2a2d33;
+    --toggle-bg: #1c1f25; --toggle-fg: #e6e6e6; --toggle-border: #303136;
+    --tag-bg: #1a2540; --tag-fg: #8ab4f8;
+    --callout-bg: #2a261a; --callout-border: #b89333;
+    --warn-bg: #2a1a1a; --warn-border: #a84545;
+    --ok-bg: #1a261a; --ok-border: #4a8a4a;
+    --code-block-bg: #16181d;
+  }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 "PingFang SC", "Microsoft YaHei", "Helvetica Neue",
+                 Arial, sans-serif;
+    font-size: 15px; line-height: 1.7;
+    transition: background-color .2s ease, color .2s ease;
+  }
+  main {
+    max-width: 1100px;
+    width: calc(100% - 32px);
+    margin: 0 auto;
+    padding: 24px 0 64px 0;
+    box-sizing: border-box;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    line-height: 1.3; margin: 1.5em 0 .6em;
+  }
+  h1 { font-size: 1.9em; border-bottom: 2px solid var(--hr); padding-bottom: .3em; }
+  h2 { font-size: 1.45em; border-bottom: 1px solid var(--hr); padding-bottom: .25em; margin-top: 2em; }
+  h3 { font-size: 1.18em; color: var(--link); margin-top: 1.5em; }
+  h4 { font-size: 1.05em; margin-top: 1.2em; color: var(--fg); font-weight: 600; }
+  p, ul, ol, blockquote, pre, table { margin: .7em 0; }
+  ul, ol { padding-left: 1.6em; }
+  li { margin: .3em 0; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  blockquote {
+    margin: .8em 0; padding: .6em 1em;
+    border-left: 4px solid var(--blockquote-border);
+    color: var(--muted); background: var(--blockquote-bg);
+  }
+  .callout {
+    background: var(--callout-bg);
+    border-left: 4px solid var(--callout-border);
+    padding: 12px 16px; margin: 1.2em 0; border-radius: 4px;
+  }
+  .callout.warn { background: var(--warn-bg); border-left-color: var(--warn-border); }
+  .callout.ok   { background: var(--ok-bg);   border-left-color: var(--ok-border); }
+  code {
+    font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: .9em; background: var(--code-bg); color: var(--code-fg);
+    padding: 1px 5px; border-radius: 3px;
+  }
+  pre {
+    background: var(--pre-bg); color: var(--pre-fg);
+    padding: 14px 16px; border-radius: 6px;
+    overflow-x: auto; font-size: 13px; line-height: 1.55;
+    margin: 1em 0;
+  }
+  pre code { background: transparent; padding: 0; color: inherit; }
+  pre.lang-flow {
+    background: var(--code-block-bg); color: var(--fg);
+    border: 1px solid var(--border);
+  }
+  :root[data-theme="dark"] pre.lang-flow {
+    background: #0a0b0d; color: #d4d4d4;
+  }
+  table {
+    width: 100% !important; border-collapse: collapse;
+    table-layout: auto; margin: 1em 0;
+    font-size: 14px; display: table;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left; vertical-align: top;
+    transition: background-color .15s ease;
+  }
+  th { background: var(--th-bg); font-weight: 600; }
+  tbody tr:nth-child(even) td { background: var(--zebra); }
+  tbody tr:hover td, tbody tr:hover th { background: var(--hover-row) !important; }
+  thead th:hover { background: var(--hover-th) !important; }
+  :root[data-theme="dark"] tbody tr:hover td,
+  :root[data-theme="dark"] tbody tr:hover th,
+  :root[data-theme="dark"] thead th:hover { color: #fff; }
+  hr { border: none; border-top: 1px solid var(--hr); margin: 2em 0; }
+  img { max-width: 100%; height: auto; }
+
+  .tag {
+    display: inline-block; padding: 2px 8px; margin-right: 6px;
+    background: var(--tag-bg); color: var(--tag-fg);
+    border-radius: 12px; font-size: 12px; font-weight: 500;
+  }
+  .breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 1em; }
+  .breadcrumb a { color: var(--muted); }
+  .breadcrumb a:hover { color: var(--link); }
+
+  .theme-toggle {
+    position: fixed; top: 12px; right: 12px; z-index: 9999;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: var(--toggle-bg); color: var(--toggle-fg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 6px; font-size: 13px; font-family: inherit;
+    cursor: pointer; user-select: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    transition: background-color .2s ease, transform .1s ease;
+  }
+  .theme-toggle:hover { background: var(--hover-row); }
+  .theme-toggle:active { transform: scale(.97); }
+  .theme-toggle .icon { font-size: 15px; line-height: 1; }
+
+  .lesson-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, #1a73e8, #6f42c1);
+    color: #fff; font-size: 24px; font-weight: 700;
+    margin-right: 14px; vertical-align: middle;
+  }
+
+  .section-anchor { scroll-margin-top: 60px; }
+</style>
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="切换暗色模式">
+  <span class="icon" id="themeIcon">&#127769;</span>
+  <span id="themeLabel">暗色</span>
+</button>
+<main>
+<div class="breadcrumb">你正在看:课程总目录 · <a href="lesson-01.html">第 1 讲</a></div>
+<h1><span class="lesson-badge">00</span>课程目录 · Claude Code 工程化实战</h1>
+<p>
+  <span class="tag">目录</span>
+  <span class="tag">第 0 / 33 讲</span>
+  <span class="tag">Claude Code 工程化实战</span>
+</p>
+<div class="callout ok">
+<strong>📌 网站介绍</strong>
+<p>本网站是黄佳老师在极客时间平台《Claude Code 工程化实战》课程的对应章节的笔记/速查。该课程目前是极客时间总榜 第1名。</p>
+<p>建议结合配套书《Claude Code 实战》(京东 item.jd.com/15374814.html)与官方仓库 <a href="https://github.com/huangjia2019/claude-code-engineering" target="_blank">huangjia2019/claude-code-engineering</a> ,同时参考 <a href="https://github.com/shanraisshan/claude-code-best-practice" target="_blank">shanraisshan/claude-code-best-practice</a> 的全功能地图视角一起学习。</p>
+</div>
+<h2 class="section-anchor">📚 全部 33 讲</h2>
+<table>
+<thead><tr><th>讲次</th><th>类型</th><th>标题与摘要</th></tr></thead>
+<tbody>
+<tr><td style="width:60px; text-align:center; font-weight:600;">01</td><td><span class="tag">开篇词</span></td><td><a href="lesson-01.html">共生而非替代:极客与 AI 的共舞</a><br><small style="color:var(--muted)">整门课的导言,核心论点:Claude Code 与传统 AI 编程工具(Copilot/Cursor/Windsurf)的本质差异——不是更强的补全,而是工程化协作范式。AI 不会取代工程师,会用 AI 的工程师会取代不会用的。</small></td></tr>
+<tr><td style="width:60px; text-align:center; font-weight:600;">02</td><td><span class="tag">正课</span></td><td><a href="lesson-02.html">登高望远 · Claude Code 全景导览</a><br><small style="color:var(--muted)">技术栈全貌导览,核心目的是建立 Claude Code 的"心理地图"。Claude Code 不是一个产品,而是一套可扩展的工程体系:Skills / SubAgent / Hooks / MCP / Headless / SDK / Plugins 七大机制。</small></td></tr>
+<tr><td style="width:60px; text-align:center; font-weight:600;">03</td><td><span class="tag">正课</span></td><td><a href="lesson-03.html">过目不忘 · CLAUDE.md 记忆系统</a><br><small style="color:var(--muted)">记忆层第一讲,核心目的是把"Claude Code 没记忆,所以每次都从零开始"这个根本问题讲透。记忆系统由四个层级组成:用户级 / 项目级 / 本地级 / 规则目录,CLAUDE.md 是项目记忆的核心载体。</small></td></tr>
+<tr><td style="width:60px; text-align:center; font-weight:600;">04</td><td><span class="tag">正课</span></td><td><a href="lesson-04.html">分而治之 · 子代理核心概念</a><br><small style="color:var(--muted)">SubAgent 系列开篇,把"子代理"这个最容易被误解的概念讲透。子代理 = 一个带着"独立 system prompt + 独立工具权限 + 独立上下文窗口"的专职小助手,主对话是协调者,子代理是执行者。</small></td></tr>
+<tr><td style="width:60px; text-align:center; font-weight:600;">05</td><td><span class="tag">正课</span></td><td><a href="lesson-05.html">明察秋毫 · 只读型子代理实战</a><br><small style="color:var(--muted)">SubAgent 第 1 实战,聚焦"只读型子代理"——Claude Code 工程化里出场率最高的一类角色。code-reviewer 是"明察秋毫"的代表:只能看,不能改,但要看得准、看得快、看得全。</small></td></tr>
+<tr><td style="width:60px; text-align:center; font-weight:600;">06</td><td><span class="tag">正课</span></td><td><a href="lesson-06.html">守土有责 · 可执行型子代理实战</a><br><small style="color:var(--muted)">SubAgent 第 2 实战,聚焦"可执行型子代理"——以 test-runner 为代表。和"只读"相比,test-runner 多了一个高危工具 Bash,核心命题:怎么给 Bash 工具配 permission 白名单,在"能跑"和"安全"之间找平衡。</small></td></tr>
+<tr><td style="width:60px; text-align:center; font-weight:600;">07</td><td><span class="tag">正课</span></td><td><a href="lesson-07.html">越俎代庖 · 可写型子代理实战<small style="color:var(--muted)">SubAgent 第 3 实战,聚焦"可写型子代理"——Claude Code 工程化里权限最高的子代理类型。前 3 讲都不改变状态,可写是第一个"会改变状态"的类别,一旦写错就回不去了,所以必须严控边界。</small></small></td></tr>
+<tr><td style="width:60px; text-align:center; font-weight:600;">08</td><td><span class="tag">正课</span></td><td><a href="lesson-08.html">并行不悖 ·<small style="color:var(--muted)">SubAgent 第 4 实战,聚焦"多子代理协同"——前 3 讲是单兵作战,本讲讲团队作战:并行 + 流水线两种协同模式,主对话是协调者,文件传递状态,流水线门控失败重试,4 类典型编排场景。看典型案例。</small>,流水线门控失败。</small></td></tr>
+<tr><td style="width:60px; text-align:center; font-weight:600;">09</td><td><span class="tag">正课</span><span class="tag">收官</span></td><td><a href="lesson-09.ht<small style="color:var(--muted)">SubAgent 系列收官篇,做 4 件事:8 个常用子代理角色速查 + 选型决策树 + 模板库沉淀 + 未来演进。目的:看完能用、用完能扩、扩完能传,把子代理做成团队级可复用资产。配套 8 个模板。</small>、用完能扩、扩完能传。</small></td></tr>
+<tr><td style="width:60px; text-align:center; font-weight:600;">10</td><td><span class="tag">正课</span></td><td><a href="lesson-10.html">触类旁通 · SKILL.md 结构与触发机制</a><br><small style="color:var(--muted)">Skills 系列开篇,把"Skills 是什么、怎么写、怎么触发"讲透。Skills 与 SubAgent 是 Claude Code 两种能力扩展机制,但触发方式截然不同:SubAgent 由主对话显式调起,Skills 由 LLM 推理自动发现。</small></td></tr>
+<tr><td style="width:60px; text-align:center; font-weight:600;">11</td><td><span class="tag">正课</span></td><td><a href="lesson-11.html">令行禁止 · 任务型 Skills 实战</a><br><small style="color:var(--muted)">讲"反向操作"——怎么让 Skill 禁止模型自动调用,只允许用户主动调。核心是 disable-model-invocation: true 这个 frontmatter 字段。3 类场景:团队 SOP / 危险操作 / 调试工具,共性是必须严格按步骤走。</small></td></tr>
+<tr><td style="width:60px; text-align:center; font-weight:600;">12</td><td><span class="tag">正课</span><span class="tag">架构</span></td><td><a href="lesson-12.html">循序渐进 · 渐进式披露架构设计</a><br><small style="color:var(--muted)">深入到"为什么是 3 层而不是 1 层或 5 层"——这是 Skills 的 token 经济性核心命题。用财务分析 Skill 贯穿:目录页 + 章节 + 附录 3 层架构,如何把 token 利用率从 12% 提升到 95%+。</small></td></tr>
+<tr><td style="width:60px; text-align:center; font-weight:600;">13</td><td><span class="tag">正课</span><span class="tag">组合</span></td><td><a href="lesson-13.html">浑然天成 · Skills 高级模式与 SubAgent 配合实战</a><br><small style="color:var(--muted)">进入"组合"——Skills + SubAgent + Commands 三件套不是孤立机制,而是可以联动的。3 种组合模式(注入 / 动态 / 流水线)+ 2 个实战(代码审查专家 / 部署专家)。</small></td></tr>
+<tr><td style="width:60px; text-align:center; font-weight:600;">14</td><td><span class="tag">正课</span><span class="tag">全局</span></td><td><a href="lesson-14.html">登高望远 · Skills 架构定位与设计模式</a><br><small style="color:var(--muted)">"登高望远",跳出 Claude Code 内部,看 Skills 在 AI Agent 生态中的位置。Claude Code Skills 的 3 大独特性:LLM 语义推理触发 / 渐进式披露 / Markdown 定义。</small></td></tr>
+<tr><td style="width:60px; text-align:center; font-weight:600;">15</td><td><span class="tag">正课</span><span class="tag">行业</span></td><td><a href="lesson-15.html">星火燎原 · Skills 出圈——从 Claude Code 到行业开放标准</a><br><small style="color:var(--muted)">"星火燎原",跳出单产品视角,看 Skills 作为"AI Agent 能力扩展"机制如何从 1 个产品特性演变为行业开放标准。Agent Skills 协议用 125 天被 5 个主流 AI Agent 工具相继采纳。</small></td></tr>
+<tr><td style="width:60px; text-align:center; font-weight:600;">16</td><td><span class="tag">加餐</span><span class="tag">收官</span></td><td><a href="lesson-16.html">Skills 专题总结</a><br><small style="color:var(--muted)">Skills 系列收官篇,做 4 件事:6 讲全景回顾 + 4 种设计模式提炼(自动发现 / 任务型 / 渐进披露 / 组合)+ Skills × Tools × SubAgents 关系 + 工程方法论沉淀。</small></td></tr>
+<tr><td style="width:60px; text-align:center; font-weight:600;">17</td><td><span class="tag">正课</span><span class="tag">Hooks</span></td><td><a href="lesson-17.html">防微杜渐 · Hooks 事件驱动自动化(上)</a><br><small style="color:var(--muted)">Hooks 系列开篇。核心是 4 类事件(PreToolUse / PostToolUse / Stop / SubAgentStop)+ 两类应用:安全三件套(拦截 / 保护 / 审计)+ 质量三件套(格式化 / Lint / 测试)。</small></td></tr>
+<tr><td style="width:60px; text-align:center; font-weight:600;">18</td><td><span class="tag">正课</span><span class="tag">Hooks</span></td><td><a href="lesson-18.html">步步为营 · Hooks 高级模式与工程实践(下)</a><br><small style="color:var(--muted)">Hooks 系列下篇,讲 4 个进阶主题:Stop Hook 门控 / SubAgent 事件验收 / frontmatter 精准配置(matcher / type / command)/ 三维决策框架(性能 × 必要性 × 用户体验)。从会用走向精通。</small></td></tr>
+<tr><td style="width:60px; text-align:center; font-weight:600;">19</td><td><span class="tag">正课</span><span class="tag">MCP</span></td><td><a href="lesson-19.html">海纳百川 · MCP 协议与外部工具连接</a><br><small style="color:var(--muted)">MCP 系列开篇。让 Claude Code 连接 GitHub / Notion / 数据库 / 实时文档等外部世界。MCP 是 Anthropic 2024-11 推出的开放标准,3 种传输方式(stdio / HTTP / SSE)。</small></td></tr>
+<tr><td style="width:60px; text-align:center; font-weight:600;">20</td><td><span class="tag">正课</span><span class="tag">Tools</span></td><td><a href="lesson-20.html">庖丁解牛 · Tools 工具系统深度剖析</a><br><small style="color:var(--muted)">Tools 系列开篇。把 Claude Code 的工具系统拆解到原子级:5 类原子操作(读 / 写 / 搜 / 执行 / 交互)+ 十几个原语工具 + 工具涌现(组合产生复杂能力)。少即是多,约束产生创造力。</small></td></tr>
+<tr><td style="width:60px; text-align:center; font-weight:600;">21</td><td><span class="tag">正课</span><span class="tag">CI/CD</span></td><td><a href="lesson-21.html">无人值守 · Headless 模式与 CI/CD 集成</a><br><small style="color:var(--muted)">把 Claude Code 从 IDE 工具变成 CI 工具。3 个核心主题:Headless 模式基础(`claude -p` 非交互 + 守护进程)/ GitHub Actions 集成 / 5 维权限收窄。</small></td></tr>
+<tr><td style="width:60px; text-align:center; font-weight:600;">22</td><td><span class="tag">正课</span><span class="tag">Rules</span></td><td><a href="lesson-22.html<small style="color:var(--muted)">Rules 系列开篇。两套规则系统协同构成行为约束:指令规则(告诉 Claude"该怎么做")+ 权限规则(告诉 Claude"能做什么")。软规范 + 硬约束,纵深防御,缺一不可,需配套使用。配套使用。</small>"能做什么")。软规范 + 硬约束,纵深防御。</small></td></tr>
+<tr><td style="width:60px; text-align:center; font-weight:600;">23</td><td><span class="tag">正课</span><span class="tag">SDK</span></td><td><a href="lesson-23.html">登堂入室 · Agent SDK 基础</a><br><small style="color:var(--muted)">Agent SDK 系列开篇。把 Claude Code 能力拆解为可编程接口:query() 函数 + ClaudeCodeOptions 11 个配置项 + 4 类消息流。从"配置式"升级到"编程式",集成到任何应用。</small></td></tr>
+<tr><td style="width:60px; text-align:center; font-weight:600;">24</td><td><span class="tag">正课</span><span class="tag">SDK</span></td><td><a href="lesson-24.html">得心应手 · Agent SDK 高级应用</a><br><small style="color:var(--muted)">Agent SDK 系列下篇。4 个高级主题:自定义工具(@tool + create_sdk_mcp_server)/ 多 Agent 编排 / 流式会话 / 错误处理。项目实战:自动化测试修复 Agent。</small></td></tr>
+<tr><td style="width:60px; text-align:center; font-weight:600;">25</td><td><span class="tag">正课</span><span class="tag">Plugins</span></td><td><a href="lesson-25.html">化零为整 · Plugins 插件打包与分发</a><br><small style="color:var(--muted)">把 6 种扩展机制打包成可安装、可分享、可复用的整体。plugin.json manifest 6 字段 + 完整目录结构 + 团队能力包 + marketplace 5 种分发(Anthropic 官方 / GitHub / 公司 registry 等)。</small></td></tr>
+<tr><td style="width:60px; text-align:center; font-weight:600;">26</td><td><span class="tag">直播回放</span><span class="tag">1 小时鸟瞰</span></td><td><a href="lesson-26.html">直播回放 · 不止 Skil<small style="color:var(--muted)">黄佳老师 1 小时直播回放,前 25 讲"鸟瞰式"总结。4 大块:Claude Code 本质(从工具到工程系统跃迁,5 特征:可扩展/可观测/可控/可分享/可版本)+ 6 机制一句话总结 + 四层架构模型 + 企业 Agent 化 3 阶段。</small> + 四层架构模型 + 企业 Agent 化 3 阶段。</small></td></tr>
+<tr><td style="width:60px; text-align:center; font-weight:600;">27</td><td><span class="tag">热点加餐</span><span class="tag">爆款 Agent 拆解</span></td><td><a href="lesson-27.html">从 OpenClaw 到 OpenCode:拆解爆款 Agent 的设计密码与工程范式</a><br><small style="color:var(--muted)">分析 OpenClaw + OpenCode 等爆款 Agent 产品的设计模式,提炼可复用的 Agent 架构范式。3 大核心:Harness Engineering + 单 Agent 深化 + Channel 协议。</small></td></tr>
+<tr><td style="width:60px; text-align:center; font-weight:600;">28</td><td><span class="tag">热点加餐</span><span class="tag">范式 1.0→2.0→3.0</span></td><td><a href="lesson-28.html">AI 工程范式 3.0:Harness Engineering 到底革新了什么?</a><br><small style="color:var(--muted)">把 Harness Engineering 定位为"AI 工程范式 3.0",系统讲清楚 3.0 革新了什么。范式演进史(1.0 Prompt → 2.0 Agent → 3.0 Harness)+ 三大革新 + 7 层架构 + 5 大设计原则。</small></td></tr>
+<tr><td style="width:60px; text-align:center; font-weight:600;">29</td><td><span class="tag">加餐</span><span class="tag">配套书精读</span></td><td><a href="lesson-29.html">配套书精读 ·《Claude Code 实战: Harness 工程之道》</a><br><small style="color:var(--muted)">黄佳老师纸质书 10 章 226 个代码片段的精读指南。10 章精读指南 + 226 片段按章/类型/难度 3 维度分类 + 3 种"书 + 课"配合策略 + 99-书籍代码目录 3 步使用流程 + 3 遍阅读法。</small></td></tr>
+<tr><td style="width:60px; text-align:center; font-weight:600;">30</td><td><span class="tag">实战加餐</span><span class="tag">4 阶段路线图</span></td><td><a href="lesson-30.html">团队落地路线图 · 把 Claude Code 用到你的项目里</a><br><small style="color:var(--muted)">把 Claude Code 从"个人玩具"变成"团队工具"再到"公司平台"的 4 阶段路线图。Week 1 单人探索 + Week 2-4 Skills 库 + Month 2-3 Plugins 共享 + Month 4-6 CI/CD 集成。</small></td></tr>
+<tr><td style="width:60px; text-align:center; font-weight:600;">31</td><td><span class="tag">实战加餐</span><span class="tag">性能</span><span class="tag">成本</span></td><td><a href="lesson-31.html">性能优化 · 让 Claude Code 跑得更快、花得更少</a><br><small style="color:var(--muted)">性能优化 6 维度:模型分级 / 上下文压缩 / Token 经济 / Checkpointing / MCP 连接复用 / 实战调优剧本。技能锁 model:haiku + 批处理 + 5 步调优剧本,典型降本 30-50%。</small></td></tr>
+<tr><td style="width:60px; text-align:center; font-weight:600;">32</td><td><span class="tag">实战加餐</span><span class="tag">安全</span><span class="tag">治理</span></td><td><a href="lesson-32.html">安全与治理 · 企业级 Claude Code 部署清单</a><br><small style="color:var(--muted)">安全治理 12 道关清单:凭据/工具/数据/应急 4 阶段。三层权限模型(allow/deny/ask + paths 匹配)+ settings.json 权限范本 + PII 脱敏 Hook + 审计日志结构化 + 5 级应急响应 Playbook。</small></td></tr>
+<tr><td style="width:60px; text-align:center; font-weight:600;">33</td><td><span class="tag">毕业项目</span><span class="tag">综合实战</span><span class="tag">收官</span></td><td><a href="lesson-33.html">毕业项目 · 用 Claude Code 构建你的第一个生产级 Agent</a><br><small style="color:var(--muted)">把前 32 讲 10 大机制串成"自动化 PR 审查 Agent":CLAUDE.md 装约定 + 5 个 Skills + 4 个 SubAgent 并行(opus 主代理 + haiku/sonnet 子代理)+ 三层 Hook 编排 + MCP 连 GitHub + Agent SDK 跑 CI。</small></td></tr>
+</tbody>
+</table>
+<h2 class="section-anchor">📊 学习指南</h2>
+<table>
+<thead><tr>
+<th>讲次范围</th>
+<th>内容</th>
+<th>推荐投入</th>
+</tr></thead><tbody>
+<tr>
+<td>第 01-08 讲</td>
+<td>开篇 + 记忆 + 子代理 5 讲</td>
+<td>★★★★★ 必读,核心思维转变</td>
+</tr>
+<tr>
+<td>第 09 讲</td>
+<td>子代理专题总结</td>
+<td>★★★ 复习时回看</td>
+</tr>
+<tr>
+<td>第 10-15 讲</td>
+<td>Skills 6 讲(从基础到出圈)</td>
+<td>★★★★★ 必读,性价比最高</td>
+</tr>
+<tr>
+<td>第 16 讲</td>
+<td>Skills 专题总结</td>
+<td>★★★ 复习时回看</td>
+</tr>
+<tr>
+<td>第 17-25 讲</td>
+<td>Hooks/MCP/Tools/Headless/Rules/SDK/Plugins</td>
+<td>★★★★ 进阶,工程化必备</td>
+</tr>
+<tr>
+<td>第 26-33 讲</td>
+<td>直播/热点/书/落地/性能/安全/毕业</td>
+<td>★★★ 视野拓展与查漏补缺</td>
+</tr>
+</tbody></table>
+<h2 class="section-anchor">💡 友情提示</h2>
+<div class="callout warn">
+<strong>⚠️ 不要跳读</strong>
+<p>本课程内容有强逻辑链(子代理→Skills→Hooks→MCP→Headless→SDK→Plugins),跳读会让你对前后依赖的概念产生理解断层。建议按编号顺序学。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 不要只看不练</strong>
+<p>33 讲里超过 20 讲带实战代码或工程项目。只看代码不跑起来,收获不到 10%。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 不要用默认配置上线</strong>
+<p>尤其 Hooks 与 Rules 章节提到的安全三件套,生产环境必须有;否则一旦 Claude 误删数据库就晚了。</p>
+</div>
+<h2 class="section-anchor">💡 一句话预告</h2>
+<blockquote>一讲一个主题,一讲一次跃迁。</blockquote>
+
+<hr>
+<p class="breadcrumb">← 回到 <a href="index.html">课程目录</a> 页首</p>
+</main>
+<script>
+  (function () {
+    var STORAGE_KEY = "***";
+    var root = document.documentElement;
+    var btn  = document.getElementById("themeToggle");
+    var icon = document.getElementById("themeIcon");
+    var lbl  = document.getElementById("themeLabel");
+    function apply(theme) {
+      root.setAttribute("data-theme", theme);
+      if (theme === "dark") {
+        icon.innerHTML = "&#9728;&#65039;";
+        lbl.textContent  = "亮色";
+      } else {
+        icon.innerHTML = "&#127769;";
+        lbl.textContent  = "暗色";
+      }
+    }
+    var saved = null;
+    try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    if (saved === "light" || saved === "dark") {
+      apply(saved);
+    } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      apply("dark");
+    } else {
+      apply("light");
+    }
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") || "light";
+      var next = cur === "dark" ? "light" : "dark";
+      apply(next);
+      try { localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>
