@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 1 讲 · 共生而非替代：极客与 AI 的共舞</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fff; --fg: #222; --muted: #555; --link: #1a73e8;
+    --code-bg: #f4f4f4; --code-fg: inherit;
+    --pre-bg: #1e1e1e; --pre-fg: #eaeaea;
+    --border: #ddd; --th-bg: #f5f5f5; --zebra: #fafafa;
+    --hover-row: #e8f0fe; --hover-th: #eef2f7;
+    --blockquote-bg: #fafafa; --blockquote-border: #ddd;
+    --hr: #eee;
+    --toggle-bg: #f5f5f5; --toggle-fg: #333; --toggle-border: #ddd;
+    --tag-bg: #eef4ff; --tag-fg: #1a73e8;
+    --callout-bg: #fffbe6; --callout-border: #fadb14;
+    --warn-bg: #fff1f0; --warn-border: #ff4d4f;
+    --ok-bg: #f6ffed; --ok-border: #52c41a;
+    --code-block-bg: #f8f9fa;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1115; --fg: #e6e6e6; --muted: #9aa0a6; --link: #8ab4f8;
+    --code-bg: #1e1f24; --code-fg: #e6e6e6;
+    --pre-bg: #1a1d23; --pre-fg: #e6e6e6;
+    --border: #303136; --th-bg: #1c1f25; --zebra: #16181d;
+    --hover-row: #1f2733; --hover-th: #262c36;
+    --blockquote-bg: #181a20; --blockquote-border: #303136;
+    --hr: #2a2d33;
+    --toggle-bg: #1c1f25; --toggle-fg: #e6e6e6; --toggle-border: #303136;
+    --tag-bg: #1a2540; --tag-fg: #8ab4f8;
+    --callout-bg: #2a261a; --callout-border: #b89333;
+    --warn-bg: #2a1a1a; --warn-border: #a84545;
+    --ok-bg: #1a261a; --ok-border: #4a8a4a;
+    --code-block-bg: #16181d;
+  }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 "PingFang SC", "Microsoft YaHei", "Helvetica Neue",
+                 Arial, sans-serif;
+    font-size: 15px; line-height: 1.7;
+    transition: background-color .2s ease, color .2s ease;
+  }
+  main {
+    max-width: 1100px;
+    width: calc(100% - 32px);
+    margin: 0 auto;
+    padding: 24px 0 64px 0;
+    box-sizing: border-box;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    line-height: 1.3; margin: 1.5em 0 .6em;
+  }
+  h1 { font-size: 1.9em; border-bottom: 2px solid var(--hr); padding-bottom: .3em; }
+  h2 { font-size: 1.45em; border-bottom: 1px solid var(--hr); padding-bottom: .25em; margin-top: 2em; }
+  h3 { font-size: 1.18em; color: var(--link); margin-top: 1.5em; }
+  h4 { font-size: 1.05em; margin-top: 1.2em; color: var(--fg); font-weight: 600; }
+  p, ul, ol, blockquote, pre, table { margin: .7em 0; }
+  ul, ol { padding-left: 1.6em; }
+  li { margin: .3em 0; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  blockquote {
+    margin: .8em 0; padding: .6em 1em;
+    border-left: 4px solid var(--blockquote-border);
+    color: var(--muted); background: var(--blockquote-bg);
+  }
+  .callout {
+    background: var(--callout-bg);
+    border-left: 4px solid var(--callout-border);
+    padding: 12px 16px; margin: 1.2em 0; border-radius: 4px;
+  }
+  .callout.warn { background: var(--warn-bg); border-left-color: var(--warn-border); }
+  .callout.ok   { background: var(--ok-bg);   border-left-color: var(--ok-border); }
+  code {
+    font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: .9em; background: var(--code-bg); color: var(--code-fg);
+    padding: 1px 5px; border-radius: 3px;
+  }
+  pre {
+    background: var(--pre-bg); color: var(--pre-fg);
+    padding: 14px 16px; border-radius: 6px;
+    overflow-x: auto; font-size: 13px; line-height: 1.55;
+    margin: 1em 0;
+  }
+  pre code { background: transparent; padding: 0; color: inherit; }
+  pre.lang-flow {
+    background: var(--code-block-bg); color: var(--fg);
+    border: 1px solid var(--border);
+  }
+  :root[data-theme="dark"] pre.lang-flow {
+    background: #0a0b0d; color: #d4d4d4;
+  }
+  table {
+    width: 100% !important; border-collapse: collapse;
+    table-layout: auto; margin: 1em 0;
+    font-size: 14px; display: table;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left; vertical-align: top;
+    transition: background-color .15s ease;
+  }
+  th { background: var(--th-bg); font-weight: 600; }
+  tbody tr:nth-child(even) td { background: var(--zebra); }
+  tbody tr:hover td, tbody tr:hover th { background: var(--hover-row) !important; }
+  thead th:hover { background: var(--hover-th) !important; }
+  :root[data-theme="dark"] tbody tr:hover td,
+  :root[data-theme="dark"] tbody tr:hover th,
+  :root[data-theme="dark"] thead th:hover { color: #fff; }
+  hr { border: none; border-top: 1px solid var(--hr); margin: 2em 0; }
+  img { max-width: 100%; height: auto; }
+
+  .tag {
+    display: inline-block; padding: 2px 8px; margin-right: 6px;
+    background: var(--tag-bg); color: var(--tag-fg);
+    border-radius: 12px; font-size: 12px; font-weight: 500;
+  }
+  .breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 1em; }
+  .breadcrumb a { color: var(--muted); }
+  .breadcrumb a:hover { color: var(--link); }
+
+  .theme-toggle {
+    position: fixed; top: 12px; right: 12px; z-index: 9999;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: var(--toggle-bg); color: var(--toggle-fg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 6px; font-size: 13px; font-family: inherit;
+    cursor: pointer; user-select: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    transition: background-color .2s ease, transform .1s ease;
+  }
+  .theme-toggle:hover { background: var(--hover-row); }
+  .theme-toggle:active { transform: scale(.97); }
+  .theme-toggle .icon { font-size: 15px; line-height: 1; }
+
+  .lesson-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, #1a73e8, #6f42c1);
+    color: #fff; font-size: 24px; font-weight: 700;
+    margin-right: 14px; vertical-align: middle;
+  }
+
+  .section-anchor { scroll-margin-top: 60px; }
+
+</style>
+<link rel="stylesheet" href="assets/flow.css">
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="切换暗色模式">
+  <span class="icon" id="themeIcon">&#127769;</span>
+  <span id="themeLabel">暗色</span>
+</button>
+<main>
+<div class="breadcrumb">课程导航： « （开篇）  ·  <a href="lesson-02.html">第 2 讲</a> »</div>
+<h1><span class="lesson-badge">01</span>第 1 讲 · 共生而非替代：极客与 AI 的共舞</h1>
+<p>
+  <span class="tag">开篇词</span>
+  <span class="tag">第 1 / 33 讲</span>
+  <span class="tag">Claude Code 工程化实战</span>
+</p>
+<div class="callout ok">
+<strong>📌 本讲摘要</strong>
+<p>本讲是整门课的导言、核心论点是：Claude Code 与传统 AI 编程工具（Copilot/Cursor/Windsurf）存在范式差异——它不是更聪明的代码补全、而是一套以「Sub-Agents / Skills / Hooks / MCP / Headless / SDK / Plugins」为骨架的 AI 工程治理系统。课程目标是把 Claude Code 从「对话式 AI 工具」升级为「可持续运转的 AI 工程团队」。</p><p>黄佳老师提出三个关键判断：第一、AI 不会取代程序员、但会取代「不会用 AI 的程序员」；第二、工程化才是 LLM 落地的瓶颈、不是模型本身；第三、极客（geek）与 AI 的关系是「共生而非替代」——极客负责设计架构、设置边界、定义意图、AI 负责执行具体任务、提供全量知识、不知疲倦。</p><p>课程适合所有想用 Claude Code 构建严肃产品的人：从初学者到资深工程师、从单兵作战到团队管理。配套仓库 huangjia2019/claude-code-engineering 提供 10 章 226 个代码片段、配套书《Claude Code 实战》提供纸质深度阅读。</p>
+</div>
+<h2 class="section-anchor">📖 详细内容</h2>
+<h3>为什么这门课是「工程化」而不是「基础课」?</h3>
+<p>市面上 90% 的 Claude Code 教程只讲「怎么用」：安装、登录、敲斜杠、看输出。但当你真的要把 Claude Code 用在生产项目——一个 5 万行代码的微服务、一个需要审计日志的金融系统、一个有 20 人协作的团队——单靠「基础用法」会立刻碰壁。</p><p>工程化解决的就是这些碰壁。它包含四个层面：架构层（怎么组织 SubAgent、Skill、Hook 的层次）、治理层（怎么约束权限、审计操作、回滚变更）、协作层（怎么让 Skills 库、Plugins 包在团队里复用）、进化层（怎么让 AI 系统随项目成长、而不是三个月后变成要重写的历史包袱）。</p><p>本课程不讲基础、基础默认你会；本课程讲的是：你手上的 Claude Code 怎么从「玩具」变成「基础设施」。</p>
+<h3>「共生」关系的三层含义</h3>
+<p>第一层含义：能力互补。LLM 的强项是「通识 + 模式匹配 + 长上下文保持」、弱项是「精确性、实时性、本地知识」。极客正好反过来——知道项目架构、业务规则、代码风格、但容易疲劳、容易遗漏、不会同时跟踪 100 个文件。Claude Code 解决了「知识无穷但不会自动用」的问题、极客解决了「知识有限但会判断」的问题。</p><p>第二层含义：角色分工。极客是「指挥者 + 验收者」、AI 是「执行者 + 备选项」。Claude Code 提的代码永远只是「草稿」、最终由人 review 后合入。这不是低效、而是责任分配——生产环境的代码不能由 AI 直接 commit。</p><p>第三层含义：长期演化。AI 模型会越来越强、但项目的领域知识、合规要求、团队习惯是 AI 学不到的。极客的价值在于「把项目 DNA 沉淀成机器可读的形式」——CLAUDE.md / Skills / Hooks / Rules——让 AI 永远按团队的规矩办事。这就是「共生」的真正含义。</p>
+<h3>课程地图：九大模块 + 八个加餐</h3>
+<p>九大模块按层次组织、从下到上是：</p><p>基础层——记忆（CLAUDE.md）、权限（Rules）、工具（Tools）。这是 Claude Code 的「宪法」、决定了它「知道什么、能做什么」。</p><p>执行层——子代理（SubAgents）、技能（Skills）、命令（Commands）。这是 Claude Code 的「四肢」、决定了它「怎么被组织成团队」。</p><p>治理层——Hooks、MCP。这是 Claude Code 的「神经系统」、决定了它「怎么被观察、怎么被扩展」。</p><p>运行层——Headless、Agent SDK、Plugins。这是 Claude Code 的「运行模式」、决定了它「怎么脱离 IDE、怎么被嵌入其他系统、怎么被分发」。</p><p>八个加餐覆盖五个维度：直播回放（全篇导览）、热点加餐（OpenClaw/Harness 等爆款产品分析）、配套书精读、实战落地（团队路线图、性能优化、安全治理）、毕业项目。</p>
+<h3>学习路径：从单兵到团队</h3>
+<p>课程推荐三条学习路径、对应三种角色：</p><p>路径 A（使用者视角、推荐新手）：开篇词 → 记忆 → 子代理 → Skills → 命令 → 毕业项目。预计 4-6 周。学完后能用 Claude Code 独立完成中等复杂度的开发任务。</p><p>路径 B（工程化视角、推荐资深工程师）：在路径 A 基础上加 Hooks → MCP → Headless → Agent SDK → Plugins → 性能优化 → 安全治理。预计 6-8 周。学完后能设计企业级 Claude Code 部署方案。</p><p>路径 C（架构师视角、推荐 tech lead)：在路径 B 基础上加直播回放、热点加餐（OpenClaw/Harness）、配套书精读、毕业项目。预计 8-12 周。学完后能主导团队 AI 化转型。</p><p>三条路径在第 1 讲汇合——所有学员都需要先建立「Claude Code 不只是聊天工具」的认知。</p>
+<h3>配套资源全景</h3>
+<p>本课程有四类配套资源、定位不同：</p><p>官方课程：极客时间 23 讲音频 + 文字、黄佳老师主理、讲概念、讲思路、讲取舍。本课程的「原声」。</p><p>课程仓库：github.com/huangjia2019/claude-code-engineering,12 个主题目录、226 个可运行代码片段。本课程的「代码」。</p><p>配套书：《Claude Code 实战》（京东 item.jd.com/15374814.html),10 章纸质书。本课程的「深度阅读」。</p><p>速查仓库：github.com/shanraisshan/claude-code-best-practice、本仓库以「最佳实践」视角整理 Claude Code 全功能地图、擅长横向对比与架构选型。本课程的「参考视角」。</p><p>四类资源互相补充：课讲概念、仓库跑代码、书深读、仓库看对比。建议至少用其中两类。</p>
+<h2 class="section-anchor">🛠️ 实战代码</h2>
+<p><strong>📄 第 1 讲配套：第一次安装 Claude Code + 验证环境</strong></p>
+<pre><code class="lang-bash"># 1. 安装 Claude Code(需要 Node 18+)
+npm install -g @anthropic-ai/claude-code
+
+# 2. 验证安装(应该看到版本号 &gt;= 2.1.x)
+claude --version
+
+# 3. 登录账号(浏览器会跳出 OAuth 页面)
+claude auth login
+
+# 4. 在你的项目根目录运行
+cd /path/to/your-project
+claude
+
+# 5. 第一次跑通:让 Claude 介绍一下自己
+# &gt; 你能用一句话告诉我,在这个项目里我应该最先配置哪 3 个文件?
+
+# 预期回答:CLAUDE.md / .claude/settings.json / .mcp.json
+# 这三个就是课程第 2 讲(记忆)和第 19 讲(MCP)的主题</code></pre>
+<p><strong>📄 第 1 讲配套：Windows 下的目录布局与配置</strong></p>
+<p>Windows 用户最常被卡的三件事：<strong>用户级</strong>配置在哪、<strong>项目级</strong>配置在哪、<strong>路径</strong>怎么写。下面三节是后续 30 讲会反复引用的速查参考。</p>
+<blockquote>说明：本节示例统一用 PowerShell 7+（自带的 5.1 不支持 <code>&amp;&amp;</code> / <code>||</code>，建议先 <code>winget install Microsoft.PowerShell</code> 升级）。</blockquote>
+<h4>1. 用户级目录（全局，跨项目共享）</h4>
+<p>家目录 <code>~</code> 在 Windows 上是 <code>C:\Users\&lt;你的用户名&gt;\</code>。Claude Code 把所有用户级数据写在 <code>C:\Users\&lt;you&gt;\.claude\</code>：</p>
+<pre><code class="lang-text">C:\Users\&lt;you&gt;\.claude\
+├── CLAUDE.md            ← 用户级"全局入职文档"，所有项目都加载
+├── settings.json        ← 用户级设置（主题、模型、键位、Hook 注册）
+├── .mcp.json            ← 用户级 MCP server 注册
+├── memories\            ← Auto Memory（跨会话记忆）
+│   └── *.md             ← 每条记忆一个 .md
+├── agents\              ← 用户级 SubAgent（少见）
+├── skills\              ← 用户级 Skills
+├── commands\            ← 用户级 Commands
+├── plugins\             ← 已安装的 Plugin
+│   └── &lt;plugin-name&gt;\
+├── projects\            ← 每个项目的会话历史（按路径哈希分目录）
+├── todos\               ← 任务列表持久化
+├── statsig\             ← 内部遥测缓存
+└── shell-snapshots\     ← shell 状态快照</code></pre>
+<div class="callout warn">
+<strong>⚠️ 用户级 vs 项目级</strong>
+<p>90% 的「为什么换个项目设置又得重配？」答案是：你只配了<strong>项目级</strong>没配<strong>用户级</strong>，或反过来。先建立这两个概念。</p>
+</div>
+<p>PowerShell 一键查看：</p>
+<pre><code class="lang-powershell">Get-ChildItem -Force $env:USERPROFILE\.claude | Format-Table Mode, LastWriteTime, Name</code></pre>
+<h4>2. 项目级目录（只对当前项目生效，随 git 走）</h4>
+<pre><code class="lang-text">D:\projects\&lt;your-project&gt;\           ← 项目根
+├── CLAUDE.md                          ← 项目入职文档
+├── .mcp.json                          ← 项目级 MCP 配置
+├── .claudeignore                      ← 不让 Claude 读的文件清单
+└── .claude\
+    ├── settings.json                  ← 项目级设置
+    ├── settings.local.json            ← 本地个人覆盖
+    ├── agents\&lt;name&gt;.md               ← SubAgent 定义
+    ├── skills\&lt;name&gt;\SKILL.md         ← Skill（每个一个子目录）
+    ├── commands\&lt;name&gt;.md             ← Command
+    ├── rules\&lt;name&gt;.md                ← Rule
+    ├── hooks\&lt;name&gt;.ps1               ← Hook 脚本（PowerShell）
+    ├── audit\                         ← Hook 审计日志
+    └── state\                         ← Skill / SubAgent 状态文件</code></pre>
+<p>PowerShell 一键查看：</p>
+<pre><code class="lang-powershell">Get-ChildItem -Force .\.claude | Format-Table Mode, LastWriteTime, Name</code></pre>
+<h4>3. 路径写法速查（写 CLAUDE.md / <code>.mcp.json</code> / <code>settings.json</code> 时常错）</h4>
+<table>
+<thead><tr>
+<th>场景</th>
+<th>推荐写法</th>
+<th>也可用</th>
+<th>备注</th>
+</tr></thead><tbody>
+<tr>
+<td>家目录</td>
+<td><code>~</code>（Claude Code 自动展开）</td>
+<td><code>$env:USERPROFILE</code></td>
+<td>PowerShell 命令行同样认 <code>~</code></td>
+</tr>
+<tr>
+<td>项目相对路径</td>
+<td><code>./src/api/</code></td>
+<td><code>.\src\api\</code></td>
+<td>配置文件统一用正斜杠</td>
+</tr>
+<tr>
+<td>绝对路径</td>
+<td><code>D:/projects/my-app</code></td>
+<td><code>D:\\projects\\my-app</code></td>
+<td>JSON 里反斜杠必须双写</td>
+</tr>
+<tr>
+<td>MCP server 命令</td>
+<td><code>node server.js</code>（靠 PATH）</td>
+<td><code>"C:\\Program Files\\nodejs\\node.exe"</code></td>
+<td>JSON 中可执行文件路径同上</td>
+</tr>
+<tr>
+<td>JSON 内路径分隔</td>
+<td><code>/</code></td>
+<td><code>\\</code></td>
+<td>Node.js 在 Windows 上对 <code>/</code> 全兼容</td>
+</tr>
+</tbody></table>
+<div class="callout ok">
+<strong>核心建议</strong>
+<p>所有 Claude Code 配置文件（<code>CLAUDE.md</code> / <code>.mcp.json</code> / <code>settings.json</code> / <code>.claude/agents/*.md</code> 等）<strong>统一用正斜杠 <code>/</code></strong>——能跨平台、避开 JSON 反斜杠转义、避开 PowerShell 字符串里 <code>\</code> 当转义符的坑。</p>
+<p>记住一句话：<strong>在 Claude Code 的配置文件里，把 Windows 当成 Linux 写路径。</strong></p>
+</div>
+<p><strong>📄 第 1 讲配套：项目根目录最小可运行 CLAUDE.md</strong></p>
+<pre><code class="lang-markdown"># CLAUDE.md —— 项目的「入职文档」
+
+## 项目目标
+本项目是一个 XX 工具,服务于 YY 用户群体。
+
+## 关键技术栈
+- Python 3.12 + FastAPI
+- PostgreSQL 15 + SQLAlchemy 2.0
+- 前端 React 18 + TypeScript
+
+## 代码风格
+- 遵循 PEP 8,行宽 100
+- 优先使用类型注解
+- 函数必须有 docstring
+
+## 禁区
+- 不要直接改 migration 文件
+- 不要碰 src/billing/ 目录(交给财务团队)
+- 涉及 user_pii 字段时,先停下来问
+
+## 常用命令
+- 测试: pytest -x
+- 启动 dev: docker compose up
+- 跑 lint: ruff check .
+
+把这个文件放在项目根目录,Claude Code 每次启动会自动加载。</code></pre>
+<h2 class="section-anchor">📊 流程图</h2>
+<div class="flow-diagram">
+
+  <div class="flow-actor">
+    <div class="flow-actor-label">极客 · 指挥者</div>
+    <div class="flow-actor-desc">设计架构 · 定义意图 · 设置边界</div>
+  </div>
+
+  <div class="flow-arrow"></div>
+
+  <div class="flow-container">
+    <div class="flow-container-title">Claude Code 工程治理系统</div>
+
+    <div class="flow-layer">
+      <div class="flow-layer-label">① 基础层</div>
+      <div class="flow-row flow-row-2">
+        <div class="flow-box">
+          <div class="flow-box-title">记忆层</div>
+          <div class="flow-box-sub">CLAUDE.md</div>
+        </div>
+        <div class="flow-box">
+          <div class="flow-box-title">权限层</div>
+          <div class="flow-box-sub">Rules</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flow-arrow flow-arrow-internal"></div>
+
+    <div class="flow-layer">
+      <div class="flow-layer-label">② 执行层 · 四肢</div>
+      <div class="flow-row flow-row-4">
+        <div class="flow-box"><div class="flow-box-title">SubAgents</div></div>
+        <div class="flow-box"><div class="flow-box-title">Skills</div></div>
+        <div class="flow-box"><div class="flow-box-title">Commands</div></div>
+        <div class="flow-box"><div class="flow-box-title">Hooks</div></div>
+      </div>
+    </div>
+
+    <div class="flow-arrow flow-arrow-internal"></div>
+
+    <div class="flow-layer">
+      <div class="flow-layer-label">③ 扩展 / 运行层</div>
+      <div class="flow-row flow-row-2">
+        <div class="flow-box">
+          <div class="flow-box-title">扩展层</div>
+          <div class="flow-box-sub">MCP · Plugins</div>
+        </div>
+        <div class="flow-box">
+          <div class="flow-box-title">运行层</div>
+          <div class="flow-box-sub">Headless · SDK</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flow-arrow">
+    <span class="flow-arrow-label">草稿代码（待 review）</span>
+  </div>
+
+  <div class="flow-actor">
+    <div class="flow-actor-label">极客 · 验收者</div>
+  </div>
+
+  <div class="flow-arrow">
+    <span class="flow-arrow-label">责任分配</span>
+  </div>
+
+  <div class="flow-actor flow-actor-final">
+    <div class="flow-actor-label">生产代码</div>
+  </div>
+
+</div>
+<h2 class="section-anchor">🆚 对比表</h2>
+<table>
+<thead><tr>
+<th>维度</th>
+<th>传统 AI 编程工具</th>
+<th>Claude Code（本课程）</th>
+</tr></thead><tbody>
+<tr>
+<td>定位</td>
+<td>更聪明的代码补全</td>
+<td>AI 工程治理系统</td>
+</tr>
+<tr>
+<td>架构核心</td>
+<td>IDE 插件 + LLM</td>
+<td>CLI + SubAgents + Skills + Hooks</td>
+</tr>
+<tr>
+<td>扩展机制</td>
+<td>API/插件市场</td>
+<td>MCP + Plugins + 自定义 Skill</td>
+</tr>
+<tr>
+<td>自动化能力</td>
+<td>单次对话</td>
+<td>Headless 模式 + Agent SDK</td>
+</tr>
+<tr>
+<td>团队协作</td>
+<td>各自为战</td>
+<td>Plugins 共享 + 团队 Skills 库</td>
+</tr>
+<tr>
+<td>生产可用</td>
+<td>需要大量后期处理</td>
+<td>Hook 审计 + Rules 权限 + 自动测试</td>
+</tr>
+</tbody></table>
+<h2 class="section-anchor">⚠️ 常见坑</h2>
+<div class="callout warn">
+<strong>⚠️ 把 Claude Code 当 Copilot 用</strong>
+<p>如果你只把它当「代码补全工具」、那你只用了 5% 的能力。Claude Code 的核心价值在于 SubAgent 编排、Skill 沉淀、Hook 审计——这些是 Copilot 没有的。一旦你开始用 Skills 沉淀团队 SOP、用 Hooks 自动跑测试、LTV 立刻上去。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 只读课程不跑代码</strong>
+<p>本课程 33 讲里有 25+ 讲带实战代码或工程项目。代码不跑起来、概念永远停在「听懂了」。建议：每讲结束后用 30-60 分钟亲自跑一遍配套仓库里对应的项目。哪怕只跑通 1/3、也比纯读收获大 10 倍。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 跳过前 8 讲直接学 SDK</strong>
+<p>Agent SDK 是高级主题、但它依赖前 8 讲讲的子代理、Skills、命令等基础。跳读会看不懂 SDK 示例代码的「为什么」。如果时间紧、至少把第 4 讲（分而治之）、第 10 讲（Skills 基础）、第 17 讲（Hooks）看完再碰 SDK。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 在生产环境用默认配置</strong>
+<p>本课程第 17-18 讲（Hooks）和第 22 讲（Rules）是生产必备。第 32 讲（安全治理）给出了完整的企业级部署清单。在没配置 Hook 审计、权限收窄、API Key 隔离前、不要让 Claude Code 直接碰生产数据库。</p>
+</div>
+<h2 class="section-anchor">💡 一句话预告</h2>
+<blockquote>这门课的目标不是教你用 Claude Code、而是让你从「AI 工具使用者」蜕变为「AI 工程团队指挥者」——这是 2025-2026 年程序员最稀缺的转型。</blockquote>
+<hr>
+<p class="breadcrumb">← <a href="#top">回到 本讲网页顶部</a></p>
+</main>
+<script>
+  (function () {
+    var STORAGE_KEY = "***";
+    var root = document.documentElement;
+    var btn  = document.getElementById("themeToggle");
+    var icon = document.getElementById("themeIcon");
+    var lbl  = document.getElementById("themeLabel");
+    function apply(theme) {
+      root.setAttribute("data-theme", theme);
+      if (theme === "dark") {
+        icon.innerHTML = "&#9728;&#65039;";
+        lbl.textContent  = "亮色";
+      } else {
+        icon.innerHTML = "&#127769;";
+        lbl.textContent  = "暗色";
+      }
+    }
+    var saved = null;
+    try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    if (saved === "light" || saved === "dark") {
+      apply(saved);
+    } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      apply("dark");
+    } else {
+      apply("light");
+    }
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") || "light";
+      var next = cur === "dark" ? "light" : "dark";
+      apply(next);
+      try { localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>
