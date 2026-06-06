@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 2 讲 · 登高望远 · Claude Code 全景导览</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fff; --fg: #222; --muted: #555; --link: #1a73e8;
+    --code-bg: #f4f4f4; --code-fg: inherit;
+    --pre-bg: #1e1e1e; --pre-fg: #eaeaea;
+    --border: #ddd; --th-bg: #f5f5f5; --zebra: #fafafa;
+    --hover-row: #e8f0fe; --hover-th: #eef2f7;
+    --blockquote-bg: #fafafa; --blockquote-border: #ddd;
+    --hr: #eee;
+    --toggle-bg: #f5f5f5; --toggle-fg: #333; --toggle-border: #ddd;
+    --tag-bg: #eef4ff; --tag-fg: #1a73e8;
+    --callout-bg: #fffbe6; --callout-border: #fadb14;
+    --warn-bg: #fff1f0; --warn-border: #ff4d4f;
+    --ok-bg: #f6ffed; --ok-border: #52c41a;
+    --code-block-bg: #f8f9fa;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1115; --fg: #e6e6e6; --muted: #9aa0a6; --link: #8ab4f8;
+    --code-bg: #1e1f24; --code-fg: #e6e6e6;
+    --pre-bg: #1a1d23; --pre-fg: #e6e6e6;
+    --border: #303136; --th-bg: #1c1f25; --zebra: #16181d;
+    --hover-row: #1f2733; --hover-th: #262c36;
+    --blockquote-bg: #181a20; --blockquote-border: #303136;
+    --hr: #2a2d33;
+    --toggle-bg: #1c1f25; --toggle-fg: #e6e6e6; --toggle-border: #303136;
+    --tag-bg: #1a2540; --tag-fg: #8ab4f8;
+    --callout-bg: #2a261a; --callout-border: #b89333;
+    --warn-bg: #2a1a1a; --warn-border: #a84545;
+    --ok-bg: #1a261a; --ok-border: #4a8a4a;
+    --code-block-bg: #16181d;
+  }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 "PingFang SC", "Microsoft YaHei", "Helvetica Neue",
+                 Arial, sans-serif;
+    font-size: 15px; line-height: 1.7;
+    transition: background-color .2s ease, color .2s ease;
+  }
+  main {
+    max-width: 1100px;
+    width: calc(100% - 32px);
+    margin: 0 auto;
+    padding: 24px 0 64px 0;
+    box-sizing: border-box;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    line-height: 1.3; margin: 1.5em 0 .6em;
+  }
+  h1 { font-size: 1.9em; border-bottom: 2px solid var(--hr); padding-bottom: .3em; }
+  h2 { font-size: 1.45em; border-bottom: 1px solid var(--hr); padding-bottom: .25em; margin-top: 2em; }
+  h3 { font-size: 1.18em; color: var(--link); margin-top: 1.5em; }
+  h4 { font-size: 1.05em; margin-top: 1.2em; color: var(--fg); font-weight: 600; }
+  p, ul, ol, blockquote, pre, table { margin: .7em 0; }
+  ul, ol { padding-left: 1.6em; }
+  li { margin: .3em 0; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  blockquote {
+    margin: .8em 0; padding: .6em 1em;
+    border-left: 4px solid var(--blockquote-border);
+    color: var(--muted); background: var(--blockquote-bg);
+  }
+  .callout {
+    background: var(--callout-bg);
+    border-left: 4px solid var(--callout-border);
+    padding: 12px 16px; margin: 1.2em 0; border-radius: 4px;
+  }
+  .callout.warn { background: var(--warn-bg); border-left-color: var(--warn-border); }
+  .callout.ok   { background: var(--ok-bg);   border-left-color: var(--ok-border); }
+  code {
+    font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: .9em; background: var(--code-bg); color: var(--code-fg);
+    padding: 1px 5px; border-radius: 3px;
+  }
+  pre {
+    background: var(--pre-bg); color: var(--pre-fg);
+    padding: 14px 16px; border-radius: 6px;
+    overflow-x: auto; font-size: 13px; line-height: 1.55;
+    margin: 1em 0;
+  }
+  pre code { background: transparent; padding: 0; color: inherit; }
+  pre.lang-flow {
+    background: var(--code-block-bg); color: var(--fg);
+    border: 1px solid var(--border);
+  }
+  :root[data-theme="dark"] pre.lang-flow {
+    background: #0a0b0d; color: #d4d4d4;
+  }
+  table {
+    width: 100% !important; border-collapse: collapse;
+    table-layout: auto; margin: 1em 0;
+    font-size: 14px; display: table;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left; vertical-align: top;
+    transition: background-color .15s ease;
+  }
+  th { background: var(--th-bg); font-weight: 600; }
+  tbody tr:nth-child(even) td { background: var(--zebra); }
+  tbody tr:hover td, tbody tr:hover th { background: var(--hover-row) !important; }
+  thead th:hover { background: var(--hover-th) !important; }
+  :root[data-theme="dark"] tbody tr:hover td,
+  :root[data-theme="dark"] tbody tr:hover th,
+  :root[data-theme="dark"] thead th:hover { color: #fff; }
+  hr { border: none; border-top: 1px solid var(--hr); margin: 2em 0; }
+  img { max-width: 100%; height: auto; }
+
+  .tag {
+    display: inline-block; padding: 2px 8px; margin-right: 6px;
+    background: var(--tag-bg); color: var(--tag-fg);
+    border-radius: 12px; font-size: 12px; font-weight: 500;
+  }
+  .breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 1em; }
+  .breadcrumb a { color: var(--muted); }
+  .breadcrumb a:hover { color: var(--link); }
+
+  .theme-toggle {
+    position: fixed; top: 12px; right: 12px; z-index: 9999;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: var(--toggle-bg); color: var(--toggle-fg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 6px; font-size: 13px; font-family: inherit;
+    cursor: pointer; user-select: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    transition: background-color .2s ease, transform .1s ease;
+  }
+  .theme-toggle:hover { background: var(--hover-row); }
+  .theme-toggle:active { transform: scale(.97); }
+  .theme-toggle .icon { font-size: 15px; line-height: 1; }
+
+  .lesson-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, #1a73e8, #6f42c1);
+    color: #fff; font-size: 24px; font-weight: 700;
+    margin-right: 14px; vertical-align: middle;
+  }
+
+  .section-anchor { scroll-margin-top: 60px; }
+</style>
+<link rel="stylesheet" href="assets/flow.css">
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="切换暗色模式">
+  <span class="icon" id="themeIcon">&#127769;</span>
+  <span id="themeLabel">暗色</span>
+</button>
+<main>
+<div class="breadcrumb">课程导航： « <a href="lesson-01.html">第 1 讲</a>  ·  <a href="lesson-03.html">第 3 讲</a> »</div>
+<h1><span class="lesson-badge">02</span>第 2 讲 · 登高望远 · Claude Code 全景导览</h1>
+<p>
+  <span class="tag">正课</span>
+  <span class="tag">第 2 / 33 讲</span>
+  <span class="tag">Claude Code 工程化实战</span>
+</p>
+<div class="callout ok">
+<strong>📌 本讲摘要</strong>
+<p>本讲是技术栈全貌的导览、核心目的是建立 Claude Code 的「心理地图」。Claude Code 不是一个产品、而是一套以 CLI 为入口的 AI Agent 框架、由九大模块组成：记忆（CLAUDE.md）、子代理（SubAgents）、技能（Skills）、命令（Commands）、Hooks、MCP、Headless、Agent SDK、Plugins。每个模块有清晰的职责边界、组合后形成「可扩展的 AI 团队」。</p><p>本讲的三条主线：第一、「为什么这九个模块要这样切分?」——它们共同满足 AI Agent 的四个核心需求：记忆、行动、协作、扩展。第二、「学习路径怎么选?」——本讲给出从基础到高级的 5 个学习阶段。第三、「怎么把全貌图变成自己项目的 checklist?」——用一个 3 步骤的「能力扫描」方法、把 Claude Code 的九大模块映射到自己的项目。</p><p>学完本讲、你应该能在白板上画出 Claude Code 的完整架构图、能跟同事讲清楚「我的项目用到了哪几个模块、为什么这么选」。</p>
+</div>
+<h2 class="section-anchor">📖 详细内容</h2>
+<h3>九大模块的职责切分：从 AI Agent 的核心需求倒推</h3>
+<p>AI Agent 系统的设计本质上要回答四个问题：它记得什么（记忆）?它能做什么（行动）?它怎么被组织（协作）?它怎么扩展（集成）?Claude Code 的九大模块正好对应这四个需求、加上一个运行时的「模式层」：</p><p>记忆层——回答「记得什么」。CLAUDE.md（项目入职文档）、Auto Memory（自动跨会话记忆）、Rules（规则约束）。这三个文件/目录构成 Claude Code 的「长程记忆」、缺哪个都会让它每次都从零开始。</p><p>行动层——回答「能做什么」。Tools（读/写/搜/执行/交互 5 类原子工具）、SubAgents（隔离上下文的子代理）、Skills（可复用的能力包）、Commands（用户显式调用的快捷命令）。这是 Claude Code 的「四肢」、决定它能干哪些活。</p><p>协作层——回答「怎么被组织」。Hooks（事件驱动的副作用）、MCP(Model Context Protocol 外部数据）。Hooks 让 Claude 在工具调用前后插入自定义逻辑、MCP 让 Claude 访问本地以外的世界（数据库、API、文档）。</p><p>运行层——回答「怎么被嵌入其他系统」。Headless（无终端模式、跑 CI/CD）、Agent SDK（编程式调用）、Plugins（打包分发）。</p><p>理解了「四个需求 + 一层运行时」、你再看任何 Claude Code 新功能、都能立刻分类：它在解决「记忆/行动/协作/集成/嵌入」中的哪一环?</p>
+<h3>模块关系图：数据流与控制流</h3>
+<p>九大模块不是平级的、而是有清晰的依赖关系。我把它们画成一张「数据流 + 控制流」图：</p>
+<h2></h2>
+<div class="flow-diagram">
+  <div class="flow-actor">
+    <div class="flow-actor-label">用户(极客)</div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">Claude Code CLI · 启动加载</div>
+    <ul>
+      <li><code>CLAUDE.md</code> - 项目记忆</li>
+      <li><code>Rules</code> - 行为约束</li>
+      <li><code>Auto Memory</code> - 跨会话记忆</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"><span class="flow-arrow-label">推断意图</span></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">主对话 / Claude · 选择行动</div>
+    <ul>
+      <li><code>Command</code> - 用户显式触发</li>
+      <li><code>Skill</code> - LLM 推理触发</li>
+      <li><code>SubAgent</code> - 委派隔离任务</li>
+      <li><code>Tool</code> - 原子操作(读 / 写 / 搜 / 执行 / 交互)</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"><span class="flow-arrow-label">每个动作</span></div>
+  <div class="flow-box">
+    <div class="flow-box-title">Hooks</div>
+    <div class="flow-box-sub">Pre / Post / Stop / SubAgentStop</div>
+  </div>
+  <div class="flow-arrow"><span class="flow-arrow-label">外部数据</span></div>
+  <div class="flow-box">
+    <div class="flow-box-title">MCP Servers</div>
+    <div class="flow-box-sub">stdio / HTTP / SSE</div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-actor flow-actor-final">
+    <div class="flow-actor-label">完成 → 回到主对话</div>
+  </div>
+  <div class="flow-note" style="margin-top:14px">可选运行模式:交互式 <code>claude</code> · Headless <code>claude --headless</code> · Agent SDK <code>query()</code> API</div>
+</div>
+<p>主对话（用户 ↔ Claude)→ 加载 CLAUDE.md + Rules + Auto Memory → 推断用户意图 → 选择 Tool / Skill / SubAgent / Command → 执行过程中触发 Hook(Pre/Post/Stop)→ 需要外部数据时调 MCP 服务器 → 完成后回到主对话。</p><p>子代理链：主对话 → 委派给 SubAgent A → SubAgent A 加载自己的 CLAUDE.md + 自己的 Skills → A 完成时触发 SubAgentStop Hook → 结果回主对话。</p><p>运行模式：同一套模块、三种运行模式。交互式（claude 命令）适合开发；Headless 模式适合 CI/CD;Agent SDK 适合嵌入产品。</p><p>这种「模块正交、运行模式可选」的设计、让 Claude Code 既能在 IDE 里陪你敲代码、也能在服务器上无人值守。</p>
+<h3>学习路径：从基础到高级的 5 个阶段</h3>
+<p>本课程把 33 讲拆成 5 个阶段、对应不同熟练度：</p><p>阶段 1（使用者、第 1-3 讲）：理解 Claude Code 是什么、CLAUDE.md 怎么写、CLAUDE.md 加载机制。预计 1-2 周。</p><p>阶段 2（协作者、第 4-9 讲）：掌握子代理（SubAgents）与 Skills 两大「团队构建」模块。能用 SubAgent 拆解复杂任务、能用 Skills 沉淀团队 SOP。预计 2-3 周。</p><p>阶段 3（治理者、第 10-16 讲）：深入 Skills 高级模式、Hooks 事件驱动、MCP 外部数据接入。能把团队的合规要求、代码风格、安全审计全部自动化。预计 3-4 周。</p><p>阶段 4（架构师、第 17-25 讲）：掌握 Headless 无人值守、Agent SDK 编程、Plugins 打包分发。能把 Claude Code 嵌入 CI/CD、嵌入产品、嵌入团队工作流。预计 4-6 周。</p><p>阶段 5（加餐与毕业、第 26-33 讲）：直播回放、热点（OpenClaw/Harness）、配套书、团队落地、性能优化、安全治理、毕业项目。预计 2-3 周。</p><p>每阶段都建议做一个小项目、例如：阶段 1 写一份完整 CLAUDE.md；阶段 2 构建一个并行 SubAgent 任务；阶段 3 配置一套 Hooks 审计链。</p>
+<h3>能力扫描：把九大模块映射到你的项目</h3>
+<p>学完本讲后、做一次「能力扫描」：打开你的项目、逐项打勾这 9 项是否用到。这能帮你定位当前缺口：</p><p>1. 记忆：有 CLAUDE.md 吗?写过 Rules 吗?(√)</p>
+<p>2. 行动：用 SubAgent 隔离上下文吗?(√)沉淀过 Skills 吗?定义过常用 Commands 吗?(√)</p>
+<p>3. 协作：配置过 PreToolUse Hook 拦截危险操作吗?(√)接入了至少一个 MCP 服务器吗?(√)</p>
+<p>4. 运行：在 CI/CD 跑过 Headless 模式吗?(√)写过 Agent SDK 脚本吗?(√)打包过 Plugin 吗?(√)</p><p>如果一项没做、先做优先级最高的：大多数团队第 1 步先做记忆（CLAUDE.md + Rules)、第 2 步做协作（Hooks 审计）、第 3 步做行动（SubAgent 拆分）、最后才到运行层。</p><p>这个顺序是有原因的：记忆错了会污染所有后续模块、协作错了会让所有 SubAgent 不安全、行动错了是效率问题、运行错了是分发问题——严重性从高到低。</p>
+<h3>怎么把本讲用到自己的笔记里?</h3>
+<p>本讲是「地图」、不是「路径」。地图告诉你「有哪些地方可以去」、路径告诉你「先走哪条」。课程后续每一讲都是路径上的一个站点、而第 2 讲的目标是确保你抬头能看见整张地图。</p><p>建议笔记时：把九大模块画成自己的思维导图（我画的是「记忆-行动-协作-运行」四象限、你也按自己理解切）；把学习路径表打印贴墙上、每完成一讲打勾；把能力扫描 9 项做成项目的 ROADMAP.md、作为接下来 1-2 个月的开发计划。</p><p>如果只能用一句话记住本讲、记住这句：「Claude Code 是一套由 9 个正交模块组成的 AI Agent 框架、先记忆、再行动、再协作、最后运行。」</p>
+<h2 class="section-anchor">🛠️ 实战代码</h2>
+<p><strong>📄 第 2 讲配套：一次扫清当前环境的 Claude Code 配置现状</strong></p>
+<pre><code class="lang-bash"># 1. 查 Claude Code 版本(应该 >= 2.1.x)
+claude --version
+
+# 2. 看全局配置(用户级 ~/.claude/)
+ls -la ~/.claude/ 2>/dev/null || echo "未配置用户级"
+
+# 3. 查已加载的 MCP 服务器
+claude mcp list
+
+# 4. 查已安装的 Plugins
+claude plugin list
+
+# 下面是项目级操作,先进入项目目录后再操作。
+
+# 5. 看项目配置(项目级 .claude/)
+ls -la .claude/ 2>/dev/null || echo "未配置项目级"
+
+# 6. 查项目 CLAUDE.md
+test -f CLAUDE.md && wc -l CLAUDE.md || echo "无项目 CLAUDE.md"
+
+# 7. 查项目 Rules(项目级)
+ls .claude/rules/ 2>/dev/null || echo "无项目 Rules"
+
+# 8. 查 SubAgents
+ls .claude/agents/ 2>/dev/null || echo "无项目 SubAgents"
+
+# 9. 查 Skills
+ls .claude/skills/ 2>/dev/null || echo "无项目 Skills"
+
+# 10. 查 Commands
+ls .claude/commands/ 2>/dev/null || echo "无项目 Commands"
+
+# 11. 查 Hooks(在 settings.json 中)
+test -f .claude/settings.json && cat .claude/settings.json | python -m json.tool || echo "无项目 settings.json"</code></pre>
+<p><strong>📄 第 2 讲配套：把九大模块做成 ROADMAP.md 模板</strong></p>
+<pre><code class="lang-text"># ROADMAP.md —— Claude Code 在我项目里的路线图
+
+## 阶段 1:记忆(预计 1 周)
+- [ ] 写一份完整 CLAUDE.md
+- [ ] 配置 3 条 Rules(代码风格 / 禁区 / 常用命令)
+- [ ] 开启 Auto Memory(记录跨会话的项目知识)
+
+## 阶段 2:行动(预计 2 周)
+- [ ] 定义 2 个 SubAgent(代码审查员 + 测试运行器)
+- [ ] 沉淀 5 个 Skills(团队 SOP)
+- [ ] 配置 10 个常用 Commands(/review /test /commit ...)
+
+## 阶段 3:协作(预计 2 周)
+- [ ] 配 5 个 Hook(Pre/Post 工具拦截 + Stop 质量门控)
+- [ ] 接 1 个 MCP 服务器(Notion / GitHub / 数据库)
+
+## 阶段 4:运行(预计 3 周)
+- [ ] Headless 模式接入 CI/CD
+- [ ] 用 Agent SDK 写 1 个产品功能
+- [ ] 打包团队 Plugin
+
+## 当前进度
+- 阶段 1: 0/3
+- 阶段 2: 0/3
+- 阶段 3: 0/2
+- 阶段 4: 0/3
+- 总计: 0/11</code></pre>
+<h2 class="section-anchor">🆚 对比表</h2>
+<table>
+<thead><tr>
+<th>模块</th>
+<th>解决的需求</th>
+<th>最常踩的坑</th>
+<th>何时优先做</th>
+</tr></thead><tbody>
+<tr>
+<td>CLAUDE.md</td>
+<td>项目记忆</td>
+<td>写得太大、被上下文挤掉</td>
+<td>项目第一天</td>
+</tr>
+<tr>
+<td>SubAgents</td>
+<td>隔离上下文</td>
+<td>权限给太大、变成万能代理</td>
+<td>任务有 2+ 并行分支</td>
+</tr>
+<tr>
+<td>Skills</td>
+<td>复用能力</td>
+<td>description 写得不像触发器</td>
+<td>团队 SOP 重复 3+ 次</td>
+</tr>
+<tr>
+<td>Commands</td>
+<td>快捷操作</td>
+<td>当成 Skills 写、失去显式性</td>
+<td>个人高频操作</td>
+</tr>
+<tr>
+<td>Hooks</td>
+<td>事件治理</td>
+<td>PostToolUse 跑重活、慢到爆</td>
+<td>生产/团队使用</td>
+</tr>
+<tr>
+<td>MCP</td>
+<td>外部数据</td>
+<td>stdio 协议不熟、权限错配</td>
+<td>需要读 Notion/GitHub/DB</td>
+</tr>
+<tr>
+<td>Headless</td>
+<td>无人值守</td>
+<td>API key 暴露、日志被截断</td>
+<td>CI/CD 集成</td>
+</tr>
+<tr>
+<td>Agent SDK</td>
+<td>嵌入产品</td>
+<td>会话状态没管理、容易丢上下文</td>
+<td>产品级集成</td>
+</tr>
+<tr>
+<td>Plugins</td>
+<td>打包分发</td>
+<td>manifest 字段不全、装不上</td>
+<td>团队 5+ 人共享</td>
+</tr>
+</tbody></table>
+<h2 class="section-anchor">⚠️ 常见坑</h2>
+<div class="callout warn">
+<strong>⚠️ 把「全貌」当「入门」学</strong>
+<p>本讲是地图、不是路径。如果你刚装上 Claude Code、不要试图「一次性把九大模块全用上」——那会让你疲惫且不得要领。建议：先做能力扫描、只挑当前项目最痛的 1-2 个模块深入（大多数情况下是 CLAUDE.md + Rules + SubAgent）。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 混淆「模块」与「运行模式」</strong>
+<p>九大模块是「能力切片」、Headless / SDK / 交互式是「运行模式」。同一个 SubAgent 可以在交互式跑、也可以在 Headless 跑、也可以被 SDK 调起来。新手常见错误：把 Headless 当成「另一个 Claude Code」、其实是「同一套 Claude Code 的另一种启动方式」。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 忽视模块间的依赖关系</strong>
+<p>九大模块不是平级的。比如：写 Skills 不懂 SubAgents 加载机制、会写错 description；配 Hooks 不懂 SubAgentStop 事件、会漏掉子代理的输出审计；用 SDK 不懂 Headless 行为、会写出"无效 prompt"。建议按"记忆 -&gt; 行动 -&gt; 协作 -&gt; 运行"的顺序学、跳读会让你看后面时"为什么这么写"一头雾水。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 把路线图当 ToDo 列表</strong>
+<p>第 2 讲配的 ROADMAP.md 是「我项目该往哪走」的地图、不是「我下周要把这 11 项全做完」的 ToDo。错误做法：列了 11 项 → 周会汇报"完成 0/11" → 被 push 强行做 → 浅尝辄止。正确做法：每个阶段选 1-2 项做透、做完再进下一阶段；质量 &gt; 数量。</p>
+</div>
+<h2 class="section-anchor">💡 一句话备忘</h2>
+<blockquote>看清全貌是为了选择、不是为了焦虑——九大模块里、你的项目真正需要的大概只有 3-5 个。</blockquote>
+<hr>
+<p class="breadcrumb">← 回到 <a href="#top">本讲网页顶部</a></p>
+</main>
+<script>
+  (function () {
+    var STORAGE_KEY = "***";
+    var root = document.documentElement;
+    var btn  = document.getElementById("themeToggle");
+    var icon = document.getElementById("themeIcon");
+    var lbl  = document.getElementById("themeLabel");
+    function apply(theme) {
+      root.setAttribute("data-theme", theme);
+      if (theme === "dark") {
+        icon.innerHTML = "&#9728;&#65039;";
+        lbl.textContent  = "亮色";
+      } else {
+        icon.innerHTML = "&#127769;";
+        lbl.textContent  = "暗色";
+      }
+    }
+    var saved = null;
+    try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    if (saved === "light" || saved === "dark") {
+      apply(saved);
+    } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      apply("dark");
+    } else {
+      apply("light");
+    }
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") || "light";
+      var next = cur === "dark" ? "light" : "dark";
+      apply(next);
+      try { localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>
