@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 5 讲 · 明察秋毫 · 只读型子代理实战</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fff; --fg: #222; --muted: #555; --link: #1a73e8;
+    --code-bg: #f4f4f4; --code-fg: inherit;
+    --pre-bg: #1e1e1e; --pre-fg: #eaeaea;
+    --border: #ddd; --th-bg: #f5f5f5; --zebra: #fafafa;
+    --hover-row: #e8f0fe; --hover-th: #eef2f7;
+    --blockquote-bg: #fafafa; --blockquote-border: #ddd;
+    --hr: #eee;
+    --toggle-bg: #f5f5f5; --toggle-fg: #333; --toggle-border: #ddd;
+    --tag-bg: #eef4ff; --tag-fg: #1a73e8;
+    --callout-bg: #fffbe6; --callout-border: #fadb14;
+    --warn-bg: #fff1f0; --warn-border: #ff4d4f;
+    --ok-bg: #f6ffed; --ok-border: #52c41a;
+    --code-block-bg: #f8f9fa;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1115; --fg: #e6e6e6; --muted: #9aa0a6; --link: #8ab4f8;
+    --code-bg: #1e1f24; --code-fg: #e6e6e6;
+    --pre-bg: #1a1d23; --pre-fg: #e6e6e6;
+    --border: #303136; --th-bg: #1c1f25; --zebra: #16181d;
+    --hover-row: #1f2733; --hover-th: #262c36;
+    --blockquote-bg: #181a20; --blockquote-border: #303136;
+    --hr: #2a2d33;
+    --toggle-bg: #1c1f25; --toggle-fg: #e6e6e6; --toggle-border: #303136;
+    --tag-bg: #1a2540; --tag-fg: #8ab4f8;
+    --callout-bg: #2a261a; --callout-border: #b89333;
+    --warn-bg: #2a1a1a; --warn-border: #a84545;
+    --ok-bg: #1a261a; --ok-border: #4a8a4a;
+    --code-block-bg: #16181d;
+  }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 "PingFang SC", "Microsoft YaHei", "Helvetica Neue",
+                 Arial, sans-serif;
+    font-size: 15px; line-height: 1.7;
+    transition: background-color .2s ease, color .2s ease;
+  }
+  main {
+    max-width: 1100px;
+    width: calc(100% - 32px);
+    margin: 0 auto;
+    padding: 24px 0 64px 0;
+    box-sizing: border-box;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    line-height: 1.3; margin: 1.5em 0 .6em;
+  }
+  h1 { font-size: 1.9em; border-bottom: 2px solid var(--hr); padding-bottom: .3em; }
+  h2 { font-size: 1.45em; border-bottom: 1px solid var(--hr); padding-bottom: .25em; margin-top: 2em; }
+  h3 { font-size: 1.18em; color: var(--link); margin-top: 1.5em; }
+  h4 { font-size: 1.05em; margin-top: 1.2em; color: var(--fg); font-weight: 600; }
+  p, ul, ol, blockquote, pre, table { margin: .7em 0; }
+  ul, ol { padding-left: 1.6em; }
+  li { margin: .3em 0; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  blockquote {
+    margin: .8em 0; padding: .6em 1em;
+    border-left: 4px solid var(--blockquote-border);
+    color: var(--muted); background: var(--blockquote-bg);
+  }
+  .callout {
+    background: var(--callout-bg);
+    border-left: 4px solid var(--callout-border);
+    padding: 12px 16px; margin: 1.2em 0; border-radius: 4px;
+  }
+  .callout.warn { background: var(--warn-bg); border-left-color: var(--warn-border); }
+  .callout.ok   { background: var(--ok-bg);   border-left-color: var(--ok-border); }
+  code {
+    font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: .9em; background: var(--code-bg); color: var(--code-fg);
+    padding: 1px 5px; border-radius: 3px;
+  }
+  pre {
+    background: var(--pre-bg); color: var(--pre-fg);
+    padding: 14px 16px; border-radius: 6px;
+    overflow-x: auto; font-size: 13px; line-height: 1.55;
+    margin: 1em 0;
+  }
+  pre code { background: transparent; padding: 0; color: inherit; }
+  pre.lang-flow {
+    background: var(--code-block-bg); color: var(--fg);
+    border: 1px solid var(--border);
+  }
+  :root[data-theme="dark"] pre.lang-flow {
+    background: #0a0b0d; color: #d4d4d4;
+  }
+  table {
+    width: 100% !important; border-collapse: collapse;
+    table-layout: auto; margin: 1em 0;
+    font-size: 14px; display: table;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left; vertical-align: top;
+    transition: background-color .15s ease;
+  }
+  th { background: var(--th-bg); font-weight: 600; }
+  tbody tr:nth-child(even) td { background: var(--zebra); }
+  tbody tr:hover td, tbody tr:hover th { background: var(--hover-row) !important; }
+  thead th:hover { background: var(--hover-th) !important; }
+  :root[data-theme="dark"] tbody tr:hover td,
+  :root[data-theme="dark"] tbody tr:hover th,
+  :root[data-theme="dark"] thead th:hover { color: #fff; }
+  hr { border: none; border-top: 1px solid var(--hr); margin: 2em 0; }
+  img { max-width: 100%; height: auto; }
+
+  .tag {
+    display: inline-block; padding: 2px 8px; margin-right: 6px;
+    background: var(--tag-bg); color: var(--tag-fg);
+    border-radius: 12px; font-size: 12px; font-weight: 500;
+  }
+  .breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 1em; }
+  .breadcrumb a { color: var(--muted); }
+  .breadcrumb a:hover { color: var(--link); }
+
+  .theme-toggle {
+    position: fixed; top: 12px; right: 12px; z-index: 9999;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: var(--toggle-bg); color: var(--toggle-fg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 6px; font-size: 13px; font-family: inherit;
+    cursor: pointer; user-select: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    transition: background-color .2s ease, transform .1s ease;
+  }
+  .theme-toggle:hover { background: var(--hover-row); }
+  .theme-toggle:active { transform: scale(.97); }
+  .theme-toggle .icon { font-size: 15px; line-height: 1; }
+
+  .lesson-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, #1a73e8, #6f42c1);
+    color: #fff; font-size: 24px; font-weight: 700;
+    margin-right: 14px; vertical-align: middle;
+  }
+
+  .section-anchor { scroll-margin-top: 60px; }
+</style>
+<link rel="stylesheet" href="assets/flow.css">
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="切换暗色模式">
+  <span class="icon" id="themeIcon">&#127769;</span>
+  <span id="themeLabel">暗色</span>
+</button>
+<main>
+<div class="breadcrumb">课程导航： « <a href="lesson-04.html">第 4 讲</a>  ·  <a href="lesson-06.html">第 6 讲</a> »</div>
+<h1><span class="lesson-badge">05</span>第 5 讲 · 明察秋毫 · 只读型子代理实战</h1>
+<p>
+  <span class="tag">正课</span>
+  <span class="tag">第 5 / 33 讲</span>
+  <span class="tag">Claude Code 工程化实战</span>
+</p>
+<div class="callout ok">
+<strong>📌 本讲摘要</strong>
+<p>本讲是 SubAgent 系列的第 1 个实战、聚焦只读型子代理——Claude Code 工程化里出场率最高的一类角色。code-reviewer 是"明察秋毫"的代表：它只能看（Read/Grep/Glob 三件套）、不能改（没有 Edit/Write)、但要看得出问题（安全漏洞 / 性能陷阱 / 风格违规 / 测试盲区）。</p>
+<p>本讲的三条主线：第一、只读子代理为什么是最安全的起点?——三件套（Read/Grep/Glob）足够覆盖 80% 的"看"类场景、且"不能改"是工程意义上的硬约束（适合生产/团队/审计场景）。第二、怎么把它写好?——frontmatter 4 字段全解析（name / description / tools / model)、尤其 description 必须写成"何时触发"而不是"做什么";system prompt 的"角色-约束-输出"三段式结构。第三、怎么把它用活?——4 个真实审查场景（安全/性能/风格/测试覆盖）的 prompt 差异、以及怎么挂进 Git Hook 实现"提交前自动审查"。</p>
+<p>学完本讲、你应该能写出 2 个版本（极简版 + 瑞士军刀版）的 code-reviewer 子代理、能判断每个项目的"只读"边界该给什么工具、能用 PreToolUse Hook 把审查嵌进 git commit 流程、并能用 4 种方法验证"只读"约束真的生效。</p>
+</div>
+<h2 class="section-anchor">📖 详细内容</h2>
+<h3>为什么从"只读"开始?</h3>
+<p>SubAgent 一共 4 个本质特性（隔离/约束/复用/并行）、其中"约束性"是工程化落地最关键的一个。而"只读"是约束性的最纯粹形态——三件套 Read/Grep/Glob 覆盖了 80% 的"看"类任务、完全杜绝"误改"风险。</p>
+<p>只读子代理有三大工程价值：</p>
+<p><strong>价值 1：风险归零</strong></p>
+<p>在生产/团队/审计场景下、"AI 改了什么" 是首要风险点。只读子代理工具白名单里压根没有 Edit/Write、从原理上排除了"AI 改坏代码"的可能。这让只读子代理可以被放心地"自动触发"——比如每次 git commit 前自动审查、不会担心"审查顺便改了文件"。</p>
+<p><strong>价值 2：角色纯粹</strong></p>
+<p>只读子代理的任务空间被工具白名单"收窄"到只能"看"。这反而让它在"看"这件事上更深入——它会花更多心思在如何系统化审查、如何分类问题、如何给出可执行建议、而不是被"改"的诱惑分心。</p>
+<p><strong>价值 3：可审计</strong></p>
+<p>只读子代理的所有行为都是"读"——读文件、读 git diff、读配置。这天然适合审计：你可以记录它读了哪些文件、关注了哪些行、输出了什么建议、完整可回溯。写子代理干了什么、改了什么、审计起来麻烦得多。</p>
+<p>所以本讲聚焦"只读"——它是最容易讲清楚、最容易验证、最容易出工程价值的一类子代理。掌握了只读、后面讲"可执行但不能改"(test-runner）、"可写但要审批"(PR-drafter）时、只是工具白名单的差异、思维模型是一样的。</p>
+<h3>frontmatter 字段全解析</h3>
+<p>子代理的 .md 文件由两部分组成：frontmatter(YAML、声明元数据）+ 正文（自由文本、作为 system prompt）。frontmatter 共有 4 个字段、每个都有讲究：</p>
+<p><strong>字段 1:name</strong></p>
+<p>子代理的"身份证"、在主对话里用 @name 引用。命名规则：小写字母 + 连字符、不超 30 字符、反映角色而非技术。推荐：code-reviewer / test-runner / security-auditor / doc-writer。反例：reviewer1 / myagent / subagent-python（技术而非角色）。</p>
+<p><strong>字段 2:description（关键中的关键）</strong></p>
+<p>这是"自动触发器"——Claude 看到主对话里用户的话匹配 description、就自动用这个子代理。所以 description 必须写成"何时触发"的形式、不是"做什么"。</p>
+<p>反例 1:description="A senior code reviewer"。❌ 这描述了角色、Claude 看完不知道"用户什么时候需要"我。</p>
+<p>反例 2:description="Reviews code"。❌ 太短、太模糊、任何场景都"匹配"也任何场景都"不匹配"。</p>
+<p>正例：description="Proactively review code changes for quality and security after I modify code, before commit"。✅ 三个要素齐全：触发时机（after I modify code, before commit）、动作（review）、关注点（quality and security）。</p>
+<p>再举几个正例感受一下：</p>
+<p>• "Find files and code locations when I ask 'where is X' / 'find all Y'"(explorer 子代理）</p>
+<p>• "Run tests when I say 'test it' / '跑测试' / 'verify' / 'ci' / '跑一下测试'"(test-runner、中英文触发词都列）</p>
+<p>• "Audit code for security vulnerabilities (SQLi, XSS, SSRF, secrets) before merging to main"(security-auditor、明确审计对象和触发时机）</p>
+<p><strong>字段 3:tools（白名单）</strong></p>
+<p>只读子代理的"三件套":Read / Grep / Glob。如果需要"扫 git diff"则加 Bash 但要明确限制（下文实战里会讲）。其他工具一概不授权——尤其是 Edit / Write / NotebookEdit、绝对不能出现在只读子代理里。</p>
+<p>tools 字段的写法是"逗号分隔的工具名列表"。可以写完整列表、也可以不写（不写 = 继承主对话的工具全集、这等于"无约束"——别这么干）。</p>
+<p><strong>字段 4:model（模型）</strong></p>
+<p>选 haiku / sonnet / opus / inherit（继承主对话）。建议：只读审查类用 sonnet（质量与成本平衡）；高频低价的探索类用 haiku（快且便宜）；关键审计（安全/合规）用 opus（质量优先）。</p>
+<p>model 不写 = 默认 sonnet。</p>
+<h3>system prompt 三段式结构</h3>
+<p>frontmatter 下面是子代理的"system prompt"（自由文本）。一个好的 system prompt 由三段组成、缺一段子代理就会"漂":</p>
+<p><strong>第 1 段：角色定义（who you are)</strong></p>
+<p>用 1-3 句话讲清楚"你是谁"。要包含：身份（角色）、专业领域（关注什么）、经验背景（资历）。</p>
+<p>反例："You are a code reviewer."（太单薄、AI 不知道是"学生级"还是"专家级")</p>
+<p>正例："You are a senior Python code reviewer with 10+ years of production experience, focused on backend systems handling financial transactions."（身份 + 专业 + 领域、信息密度高）</p>
+<p><strong>第 2 段：硬约束（what you must NOT do)</strong></p>
+<p>用 bullet 列出"绝对不能做"的事。这是约束性的"语言层"——工具白名单是"物理层"、这里说的是"道德层"。两者互补。</p>
+<p>反例：不写这一段（默认子代理"想干啥干啥"、角色会漂）。</p>
+<p>正例：列出 3-5 条硬约束、如："You may only READ files. Never use Edit or Write tools." / "Do not run tests or builds." / "Do not make assumptions about code you have not read."</p>
+<p><strong>第 3 段：输出格式（how to report)</strong></p>
+<p>用代码块模板硬性规定输出结构。这是子代理和主对话"对话效率"的关键——主对话看到固定格式就能直接用、不用再整理。</p>
+<p>反例：不写格式（输出变成"自然语言散文"、主对话理解成本高）。</p>
+<p>正例：用代码块给出模板、例如：</p>
+<p>```
+Critical: N (must fix before merge)
+Warning:  N (should fix)
+Suggestion: N (nice to have)
+Format: file:line — issue — suggested fix
+```</p>
+<p>三段缺一段的后果：缺第 1 段 = 子代理"不知道自己是谁"、行为随机；缺第 2 段 = 子代理"想干啥干啥"、约束性失效；缺第 3 段 = 子代理"输出无结构"、主对话处理成本高。三段齐全 = 子代理"角色稳定、行为可控、产出可用"。</p>
+<table>
+<thead><tr>
+<th>frontmatter 字段</th>
+<th>正例</th>
+<th>反例</th>
+<th>反例后果</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>name</td>
+<td>code-reviewer / security-auditor</td>
+<td>reviewer1 / myagent</td>
+<td>无法体现角色、@ 引用时记不清</td>
+</tr>
+<tr>
+<td>description</td>
+<td>Proactively review code changes ... after I modify code, before commit</td>
+<td>A senior code reviewer / Reviews code</td>
+<td>触发率 = 0、描述了"做什么"而非"何时触发"</td>
+</tr>
+<tr>
+<td>tools</td>
+<td>Read, Grep, Glob（纯只读）</td>
+<td>留空 / Read, Grep, Glob, Edit, Write</td>
+<td>留空 = 继承全集；带 Edit/Write = 失去只读约束</td>
+</tr>
+<tr>
+<td>model</td>
+<td>sonnet（默认） / opus（关键审计）</td>
+<td>留空 + 关键审计场景</td>
+<td>质量不足导致漏报严重问题</td>
+</tr>
+</tbody></table>
+<h3>4 个真实审查场景的 prompt 差异</h3>
+<p>code-reviewer 不止一个版本。不同场景的关注点、严重等级、报告字段都不一样。下面是 4 个高频场景的 prompt 差异：</p>
+<p><strong>场景 1：通用质量审查（默认版）</strong></p>
+<p>关注点：代码风格、命名、可读性、明显 bug、重复代码。报告字段：Critical / Warning / Suggestion 三档分级。</p>
+<p>适用阶段：每次 PR / commit 前。</p>
+<p>工具：Read / Grep / Glob（纯只读）。</p>
+<p><strong>场景 2：安全审查（security-auditor)</strong></p>
+<p>关注点：SQL 注入、XSS、SSRF、硬编码密钥、权限校验、敏感信息泄露、依赖漏洞。报告字段：每条带 CVE 编号或 OWASP 分类。工具：Read / Grep / Glob（纯只读）。</p>
+<p>适用阶段：合并到 main 前、依赖升级后、上线前。</p>
+<p>模型建议：opus（关键审计、质量优先）。</p>
+<p><strong>场景 3：性能审查（performance-reviewer)</strong></p>
+<p>关注点：N+1 查询、不必要的循环、内存泄漏、缓存未命中、同步阻塞异步、I/O 密集型调用。报告字段：每条带"预期影响"("这条会让单次请求慢 50ms / 1000 行内 N+1"）。</p>
+<p>适用阶段：性能敏感模块（订单/支付/搜索）。</p>
+<p>工具：Read / Grep / Glob（纯只读）。</p>
+<p><strong>场景 4：测试覆盖审查（test-coverage-reviewer)</strong></p>
+<p>关注点：新代码缺测试、边界 case 没覆盖、mock 滥用、断言弱、慢测试。报告字段：每条带"缺什么测试 + 怎么补"。</p>
+<p>适用阶段：每次 PR、特别强调"覆盖率不达标不放行"。</p>
+<p>工具：Read / Grep / Glob + Bash（允许跑 `pytest --co` 看测试列表）。</p>
+<p>4 个场景的子代理可以共存——分别叫 code-reviewer / security-auditor / performance-reviewer / test-coverage-reviewer。主对话按需调起、或者在 Git Hook 里"四个都跑一遍"。</p>
+<table>
+<thead><tr>
+<th>审查场景</th>
+<th>关注点</th>
+<th>报告字段</th>
+<th>适用阶段</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>通用质量</td>
+<td>风格 / 命名 / 可读性 / 明显 bug</td>
+<td>Critical / Warning / Suggestion</td>
+<td>每次 PR / commit</td>
+</tr>
+<tr>
+<td>安全审计</td>
+<td>SQLi / XSS / SSRF / 硬编码密钥</td>
+<td>CVE 编号 / OWASP 分类</td>
+<td>合并 main 前 / 依赖升级后</td>
+</tr>
+<tr>
+<td>性能审查</td>
+<td>N+1 / 不必要循环 / 内存泄漏</td>
+<td>预期影响（慢 N ms / N+1 等）</td>
+<td>性能敏感模块（订单/支付/搜索）</td>
+</tr>
+<tr>
+<td>测试覆盖</td>
+<td>缺测试 / 边界未覆盖 / 断言弱</td>
+<td>缺什么测试 + 怎么补</td>
+<td>每次 PR、覆盖率不达标不放行</td>
+</tr>
+</tbody></table>
+<h3>挂进 Git Hook：提交前自动审查</h3>
+<p>子代理单独跑意义有限、真正的工程价值是"嵌入工作流"。最常见嵌入点是 git commit 前自动审查——用 Claude Code 的 PreToolUse Hook 实现。</p>
+<p>原理：在 .claude/settings.json 里配置 PreToolUse Hook、匹配 Bash 工具 + `git commit` 命令、自动调起 code-reviewer 子代理审查当前 diff。子代理返回"Caveat：放行"或"Critical：阻止",Hook 决定 exit code(0 放行 / 非 0 阻止）。</p>
+<p>这一嵌入让"AI 审查"从"偶尔想起来了才跑"变成"每次提交都跑"、从 0 到 1 的工程化跃迁。</p>
+<p>具体的 settings.json 配置和 hook 脚本在实战代码里展示、这里先讲设计：Hook 的逻辑要尽量简单（"Bash 工具 + 命令匹配 + 调子代理 + 翻译 exit code")、复杂逻辑放子代理里、这样后续改审查策略不用动 Hook。</p>
+<h3>验证"只读"约束真的生效</h3>
+<p>写完只读子代理后、必须验证"它真的不能改"。这事关生产安全、不能靠"我相信它不会"。下面 4 种验证方法、从轻到重：</p>
+<p><strong>方法 1:--debug 日志（最轻）</strong></p>
+<p>用 claude --debug 启动、调起子代理、看启动日志里 tools 字段是不是真的只有 Read/Grep/Glob、有没有偷偷继承 Edit/Write。</p>
+<p><strong>方法 2：对话直接测（轻）</strong></p>
+<p>主对话里说："用 code-reviewer 把 src/orders/timeout.py 改一下、加一行注释"。预期：code-reviewer 拒绝、说"我没有 Edit 工具"。如果它居然改了——白名单配置错了、立即停用。</p>
+<p><strong>方法 3:Bash 工具边界测试（中）</strong></p>
+<p>如果 tools 里给了 Bash（比如允许跑 `git diff`)、试着说"用 code-reviewer 跑一下 `rm -rf /`"。预期：Claude 拒绝执行危险命令（它本身的训练里有这个对齐）或者子代理内部拒绝。如果它真执行了——Bash 工具的"白名单"没生效、要查 settings.json 里的 permission 字段。</p>
+<p><strong>方法 4：自动化测试（重）</strong></p>
+<p>为只读子代理写一组单元测试、模拟各种"试图改"的请求、断言子代理的响应包含"我没有权限"或"我只能读"。这部分可以脚本化、跑一遍就知道约束是否生效。</p>
+<p>4 种方法建议至少用前 2 种、生产/团队场景用后 2 种。只读约束是"零信任"前提——必须验证、不能假设。</p>
+<h2 class="section-anchor">🛠️ 实战代码</h2>
+<p><strong>📄 第 5 讲配套：极简版 code-reviewer(20 行、适合入门）</strong></p>
+<pre><code class="lang-markdown">---
+name: code-reviewer
+description: Proactively review code changes for quality and security after I modify code, before commit.
+tools: Read, Grep, Glob
+model: sonnet
+---
+You are a code reviewer. When invoked, run `git diff` to see recent changes,
+then report issues by priority: Critical / Warning / Suggestion.
+You may only read files. Never modify anything.</code></pre>
+<p><strong>📄 第 5 讲配套：瑞士军刀版 code-reviewer（覆盖 4 场景、适合工程化团队）</strong></p>
+<pre><code class="lang-markdown">---
+# .claude/agents/code-reviewer.md
+# 角色:代码审查员(默认通用质量 + 安全 + 性能 + 测试覆盖 4 维)
+name: code-reviewer
+description: Proactively review code changes for quality, security, performance, and test coverage after I modify code, before commit.
+tools: Read, Grep, Glob, Bash
+model: sonnet
+---
+You are a senior Python code reviewer with 10+ years of production experience
+in backend systems handling financial transactions.
+
+# 角色
+- Default focus: code quality (readability, naming, duplication, obvious bugs)
+- Always-on: security (SQLi, XSS, SSRF, hardcoded secrets, auth checks)
+- If file path matches `src/orders/`, `src/payments/`, `src/billing/`: also check performance
+- If file path matches `tests/`: also check test coverage gaps
+
+# 硬约束
+- You may only READ files. Never use Edit or Write tools.
+- Bash is allowed only for: `git diff`, `git log`, `git show`, `pytest --co`, `ruff check`.
+- Do NOT run: `pytest` (full), `rm`, `mv`, `cp`, or any state-changing command.
+- If you need something outside your scope, report it; do not improvise.
+
+# 报告格式(必须用这个结构)
+```
+## Code Review: &lt;branch 或 file&gt;
+
+### Critical (must fix before merge)
+- file:line — issue — suggested fix
+
+### Warning (should fix)
+- file:line — issue — suggested fix
+
+### Suggestion (nice to have)
+- file:line — issue — suggested fix
+
+### Summary
+- Total issues: N (Critical N, Warning N, Suggestion N)
+- Verdict: APPROVE / REQUEST_CHANGES / COMMENT
+```</code></pre>
+<p><strong>📄 第 5 讲配套：把 code-reviewer 挂进 Git Hook（提交前自动审查）</strong></p>
+<pre><code class="lang-json">// .claude/settings.json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/pre-commit-review.sh"
+          }
+        ]
+      }
+    ]
+  }
+}</code></pre>
+<pre><code class="lang-bash"># .claude/hooks/pre-commit-review.sh
+#!/usr/bin/env bash
+# 拦截 git commit,自动调起 code-reviewer 子代理审查 diff
+
+# 1. 只在 git commit 时触发
+COMMAND="$1"
+if [[ "$COMMAND" != *"git commit"* ]]; then
+  exit 0  # 不是 commit,放行
+fi
+
+# 2. 看当前 diff
+DIFF=$(git diff --cached)
+if [ -z "$DIFF" ]; then
+  exit 0  # 没 staged 改动,放行
+fi
+
+# 3. 调起 code-reviewer 子代理(用 claude --headless 跑非交互模式)
+RESULT=$(claude --headless --agent code-reviewer --task "审查以下 git diff,按 APPROVE/REQUEST_CHANGES 给结论: $DIFF" 2&gt;&amp;1)
+
+# 4. 翻译结果为 exit code
+if echo "$RESULT" | grep -q "REQUEST_CHANGES"; then
+  echo "❌ code-reviewer 拒绝本次 commit:"
+  echo "$RESULT"
+  exit 2  # 非 0 阻止 commit
+fi
+
+if echo "$RESULT" | grep -q "Critical"; then
+  echo "⚠️ code-reviewer 发现 Critical 问题:"
+  echo "$RESULT"
+  exit 2
+fi
+
+echo "✅ code-reviewer 审查通过"
+exit 0  # 放行</code></pre>
+<p><strong>📄 第 5 讲配套：4 种方法验证"只读"约束生效</strong></p>
+<pre><code class="lang-bash"># 方法 1:--debug 日志看 tools 字段
+claude --debug
+# &gt; 用 code-reviewer 审查 src/orders/timeout.py
+# 检查日志中:
+#   [SubAgent] tools: [Read, Grep, Glob, Bash]  ← 只这些
+#   (没有 Edit / Write / NotebookEdit)
+
+# 方法 2:对话直接测"试图改"
+# &gt; 用 code-reviewer 在 src/orders/timeout.py 第 42 行加一行 print("debug")
+# 预期:code-reviewer 拒绝,说"我没有 Edit 工具"
+
+# 方法 3:Bash 工具边界测试
+# &gt; 用 code-reviewer 跑一下 `rm -rf /tmp/test`
+# 预期:code-reviewer 拒绝,因为 pre-commit-review.sh 里限制了 Bash 工具可执行的命令
+
+# 方法 4:自动化单元测试(写到 tests/test_subagent_constraints.py)
+python -m pytest tests/test_subagent_constraints.py -v
+
+# 跑完后,所有试图"改"的操作都应该被阻止,测试全部 PASS
+# 如果有 FAIL,说明白名单配置有漏洞,立即修复</code></pre>
+<h2 class="section-anchor">📊 流程图</h2>
+<div class="flow-diagram">
+  <div class="flow-actor">
+    <div class="flow-actor-label">用户执行</div>
+    <div class="flow-actor-desc"><code style="background:transparent;color:#fff">git commit -m "fix: ..."</code></div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">PreToolUse Hook 触发</div>
+    <ul>
+      <li>匹配工具：<code>Bash</code></li>
+      <li>匹配命令：<code>git commit</code></li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">执行 pre-commit-review.sh</div>
+    <ul>
+      <li><code>git diff --cached</code> — 拿到待提交的 diff</li>
+      <li><code>claude --headless --agent code-reviewer</code> — 调起只读子代理审查</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">SubAgent: code-reviewer</div>
+    <ul>
+      <li>工具：<code>[Read / Grep / Glob / Bash]</code></li>
+      <li>只读：无 Edit / Write</li>
+      <li>system prompt：三段式</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"><span class="flow-arrow-label">返回报告 Critical / Warning / Verdict</span></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">Hook 翻译 exit code</div>
+    <ul>
+      <li><code>REQUEST_CHANGES</code> → exit 2（阻止 commit）</li>
+      <li>有 <code>Critical</code> → exit 2（阻止 commit）</li>
+      <li>只有 <code>Warning</code> → exit 0（放行，提示）</li>
+      <li>全 <code>APPROVE</code> → exit 0（放行）</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-actor flow-actor-final">
+    <div class="flow-actor-label">git commit 继续 / 中止</div>
+  </div>
+</div>
+<h2 class="section-anchor">⚠️ 常见坑</h2>
+<div class="callout warn">
+<strong>⚠️ description 写"做什么"而不是"何时触发"</strong>
+<p>最常见也最隐蔽的错误：子代理的 description 字段写成 "A senior code reviewer"（描述角色）而不是 "Proactively review code changes after I modify code, before commit"（描述触发时机）。前者让 Claude 不知道"用户什么时候需要"我、触发率基本为 0；后者让 Claude 一看到"用户刚改完代码"就自动用我、触发率 80%+。判断标准：把 description 拿给一个新来的 AI 工程师、问"你在什么情况下会用这个子代理?"——如果他答不上来、就是写错了。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ tools 给了 Bash 但没限制危险命令</strong>
+<p>"只读"子代理的工具白名单里如果给了 Bash（比如为了跑 `git diff`)、就开了一个后门——子代理现在可以跑 `rm`、`mv`、`curl` 下载并执行任意脚本、"git push" 推代码等等。正确做法：Bash 工具必须配 "permission" 字段、白名单列出允许的命令前缀、其他全部拒绝（具体配置在第 17 讲 Hooks 里展开）。判断标准：子代理有 Bash 工具但没有 permission 白名单 = 等于没设防。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ system prompt 只写"你是审查员"、不写"硬约束"</strong>
+<p>新人最常踩的坑：子代理 system prompt 写得很"哲学"——"你是一个严谨的代码审查员、关注代码质量、安全、可维护性……"——但没写"硬约束"（你能用什么、不能做什么、必须遵守什么规则）。结果子代理"漂"了：看到 1 万行 diff 不报错、看到明显 SQL 注入不拦、想顺手"优化"一下——因为它不知道"硬约束"是什么。判断标准：system prompt 里有没有"Never ..." / "You may only ..." / "Do NOT ..." 这些明确的禁止/允许词。如果全是"应该" "最好"、就是软约束、会漂。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 子代理 review 完直接 commit、绕过人工 review</strong>
+<p>危险的反模式：Git Hook 里 code-reviewer 审查通过后、直接 `git commit` 把改动合入、跳过了人工 review 步骤。这等于让 AI 单独决定"代码能不能进 main"、责任分配完全错位。正确做法：Hook 只做"审查"、不做"决策"；决策权永远在人——AI 给意见（APPROVE/REQUEST_CHANGES)、人看意见后自己点 commit。流程应该是：AI 审查 → 人看 AI 报告 → 人自己决定 commit / 改 / 拒绝。AI 永远只是"建议者"、不是"决策者"。</p>
+</div>
+<h2 class="section-anchor">💡 一句话备忘</h2>
+<blockquote>只读子代理是工程化的"零号工程"：三件套定义角色、三段式稳定行为、四场景覆盖 80% 审查、Git Hook 让审查从"偶尔跑"变成"每次提交都跑"。</blockquote>
+<hr>
+<p class="breadcrumb">← 回到 <a href="#top">本讲网页顶部</a></p>
+</main>
+<script>
+  (function () {
+    var STORAGE_KEY = "***";
+    var root = document.documentElement;
+    var btn  = document.getElementById("themeToggle");
+    var icon = document.getElementById("themeIcon");
+    var lbl  = document.getElementById("themeLabel");
+    function apply(theme) {
+      root.setAttribute("data-theme", theme);
+      if (theme === "dark") {
+        icon.innerHTML = "&#9728;&#65039;";
+        lbl.textContent  = "亮色";
+      } else {
+        icon.innerHTML = "&#127769;";
+        lbl.textContent  = "暗色";
+      }
+    }
+    var saved = null;
+    try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    if (saved === "light" || saved === "dark") {
+      apply(saved);
+    } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      apply("dark");
+    } else {
+      apply("light");
+    }
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") || "light";
+      var next = cur === "dark" ? "light" : "dark";
+      apply(next);
+      try { localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>

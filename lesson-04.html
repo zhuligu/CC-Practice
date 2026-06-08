@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 4 讲 · 分而治之 · 子代理核心概念</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fff; --fg: #222; --muted: #555; --link: #1a73e8;
+    --code-bg: #f4f4f4; --code-fg: inherit;
+    --pre-bg: #1e1e1e; --pre-fg: #eaeaea;
+    --border: #ddd; --th-bg: #f5f5f5; --zebra: #fafafa;
+    --hover-row: #e8f0fe; --hover-th: #eef2f7;
+    --blockquote-bg: #fafafa; --blockquote-border: #ddd;
+    --hr: #eee;
+    --toggle-bg: #f5f5f5; --toggle-fg: #333; --toggle-border: #ddd;
+    --tag-bg: #eef4ff; --tag-fg: #1a73e8;
+    --callout-bg: #fffbe6; --callout-border: #fadb14;
+    --warn-bg: #fff1f0; --warn-border: #ff4d4f;
+    --ok-bg: #f6ffed; --ok-border: #52c41a;
+    --code-block-bg: #f8f9fa;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1115; --fg: #e6e6e6; --muted: #9aa0a6; --link: #8ab4f8;
+    --code-bg: #1e1f24; --code-fg: #e6e6e6;
+    --pre-bg: #1a1d23; --pre-fg: #e6e6e6;
+    --border: #303136; --th-bg: #1c1f25; --zebra: #16181d;
+    --hover-row: #1f2733; --hover-th: #262c36;
+    --blockquote-bg: #181a20; --blockquote-border: #303136;
+    --hr: #2a2d33;
+    --toggle-bg: #1c1f25; --toggle-fg: #e6e6e6; --toggle-border: #303136;
+    --tag-bg: #1a2540; --tag-fg: #8ab4f8;
+    --callout-bg: #2a261a; --callout-border: #b89333;
+    --warn-bg: #2a1a1a; --warn-border: #a84545;
+    --ok-bg: #1a261a; --ok-border: #4a8a4a;
+    --code-block-bg: #16181d;
+  }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 "PingFang SC", "Microsoft YaHei", "Helvetica Neue",
+                 Arial, sans-serif;
+    font-size: 15px; line-height: 1.7;
+    transition: background-color .2s ease, color .2s ease;
+  }
+  main {
+    max-width: 1100px;
+    width: calc(100% - 32px);
+    margin: 0 auto;
+    padding: 24px 0 64px 0;
+    box-sizing: border-box;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    line-height: 1.3; margin: 1.5em 0 .6em;
+  }
+  h1 { font-size: 1.9em; border-bottom: 2px solid var(--hr); padding-bottom: .3em; }
+  h2 { font-size: 1.45em; border-bottom: 1px solid var(--hr); padding-bottom: .25em; margin-top: 2em; }
+  h3 { font-size: 1.18em; color: var(--link); margin-top: 1.5em; }
+  h4 { font-size: 1.05em; margin-top: 1.2em; color: var(--fg); font-weight: 600; }
+  p, ul, ol, blockquote, pre, table { margin: .7em 0; }
+  ul, ol { padding-left: 1.6em; }
+  li { margin: .3em 0; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  blockquote {
+    margin: .8em 0; padding: .6em 1em;
+    border-left: 4px solid var(--blockquote-border);
+    color: var(--muted); background: var(--blockquote-bg);
+  }
+  .callout {
+    background: var(--callout-bg);
+    border-left: 4px solid var(--callout-border);
+    padding: 12px 16px; margin: 1.2em 0; border-radius: 4px;
+  }
+  .callout.warn { background: var(--warn-bg); border-left-color: var(--warn-border); }
+  .callout.ok   { background: var(--ok-bg);   border-left-color: var(--ok-border); }
+  code {
+    font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: .9em; background: var(--code-bg); color: var(--code-fg);
+    padding: 1px 5px; border-radius: 3px;
+  }
+  pre {
+    background: var(--pre-bg); color: var(--pre-fg);
+    padding: 14px 16px; border-radius: 6px;
+    overflow-x: auto; font-size: 13px; line-height: 1.55;
+    margin: 1em 0;
+  }
+  pre code { background: transparent; padding: 0; color: inherit; }
+  pre.lang-flow {
+    background: var(--code-block-bg); color: var(--fg);
+    border: 1px solid var(--border);
+  }
+  :root[data-theme="dark"] pre.lang-flow {
+    background: #0a0b0d; color: #d4d4d4;
+  }
+  table {
+    width: 100% !important; border-collapse: collapse;
+    table-layout: auto; margin: 1em 0;
+    font-size: 14px; display: table;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left; vertical-align: top;
+    transition: background-color .15s ease;
+  }
+  th { background: var(--th-bg); font-weight: 600; }
+  tbody tr:nth-child(even) td { background: var(--zebra); }
+  tbody tr:hover td, tbody tr:hover th { background: var(--hover-row) !important; }
+  thead th:hover { background: var(--hover-th) !important; }
+  :root[data-theme="dark"] tbody tr:hover td,
+  :root[data-theme="dark"] tbody tr:hover th,
+  :root[data-theme="dark"] thead th:hover { color: #fff; }
+  hr { border: none; border-top: 1px solid var(--hr); margin: 2em 0; }
+  img { max-width: 100%; height: auto; }
+
+  .tag {
+    display: inline-block; padding: 2px 8px; margin-right: 6px;
+    background: var(--tag-bg); color: var(--tag-fg);
+    border-radius: 12px; font-size: 12px; font-weight: 500;
+  }
+  .breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 1em; }
+  .breadcrumb a { color: var(--muted); }
+  .breadcrumb a:hover { color: var(--link); }
+
+  .theme-toggle {
+    position: fixed; top: 12px; right: 12px; z-index: 9999;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: var(--toggle-bg); color: var(--toggle-fg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 6px; font-size: 13px; font-family: inherit;
+    cursor: pointer; user-select: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    transition: background-color .2s ease, transform .1s ease;
+  }
+  .theme-toggle:hover { background: var(--hover-row); }
+  .theme-toggle:active { transform: scale(.97); }
+  .theme-toggle .icon { font-size: 15px; line-height: 1; }
+
+  .lesson-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, #1a73e8, #6f42c1);
+    color: #fff; font-size: 24px; font-weight: 700;
+    margin-right: 14px; vertical-align: middle;
+  }
+
+  .section-anchor { scroll-margin-top: 60px; }
+</style>
+<link rel="stylesheet" href="assets/flow.css">
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="切换暗色模式">
+  <span class="icon" id="themeIcon">&#127769;</span>
+  <span id="themeLabel">暗色</span>
+</button>
+<main>
+<div class="breadcrumb">课程导航： « <a href="lesson-03.html">第 3 讲</a>  ·  <a href="lesson-05.html">第 5 讲</a> »</div>
+<h1><span class="lesson-badge">04</span>第 4 讲 · 分而治之 · 子代理核心概念</h1>
+<p>
+  <span class="tag">正课</span>
+  <span class="tag">第 4 / 33 讲</span>
+  <span class="tag">Claude Code 工程化实战</span>
+</p>
+<div class="callout ok">
+<strong>📌 本讲摘要</strong>
+<p>本讲是 SubAgent 系列的开篇、核心目的是把"子代理"这个最容易被误解的概念讲透。子代理 = 一个带着独立 system prompt + 独立工具权限 + 独立上下文窗口的专职小助手、去完成某一类任务、然后把结果摘要回传给主对话。它和"开新对话"在工程语义上完全不是一回事。</p>
+<p>本讲的三条主线：第一、为什么需要子代理?——主对话有三个根本痛点：上下文污染（测试/日志把主对话挤爆）、权限失控（AI 能干所有事 = 风险无限大）、复用困难（每次都得重新解释任务）。子代理是这三个问题的工程化答案。第二、子代理的本质是什么?——三件套：独立 system prompt / 独立工具白名单 / 独立上下文窗口；以及 4 个本质特性：隔离、约束、复用、可并行。第三、什么任务该用、什么千万别用?——四类"最该用"（高噪声输出、明确角色边界、并行研究、流水线分段）+ 三类"千万别用"（需要频繁来回追问、多阶段强耦合共享上下文、一两行小改）。</p>
+<p>学完本讲、你应该能在白板上画出主对话 → 委派 → 子代理独立工作 → 回传摘要的数据流图、能判断自己手头的任务该用还是不该用子代理、能用 <code>/agents</code> 命令创建出第一个可用的子代理。</p>
+</div>
+<h2 class="section-anchor">📖 详细内容</h2>
+<h3>为什么需要"分而治之"?主对话的三个根本痛点</h3>
+<p>在第 3 讲里我们讲了 CLAUDE.md 怎么让 Claude "记住"项目。但即使 Claude 记住了所有事、主对话本身还藏着三个结构性问题。这些问题不是"用得不好"造成的、而是单线程对话这种范式与生俱来的：</p>
+<p><strong>痛点 1：上下文污染</strong></p>
+<p>你让 Claude 跑测试、pytest 输出 200 行。你让 Claude 扫日志、grep 结果 5000 行。这些内容会全部进入主对话的上下文窗口、把"我们正在聊的产品需求"挤到边缘。等你想回头讨论产品方向时、Claude 已经"忘了"——不是真的忘、是相关信息被淹没在噪声里、模型注意力被稀释了。</p>
+<p>更糟的是、这些输出还会污染后续的对话——模型会把噪声当作"重要信息"继续推理、可能产生幻觉（"既然测试有这么多 warning、说明项目整体质量堪忧……"）。</p>
+<p><strong>痛点 2：权限失控</strong></p>
+<p>主对话里的 Claude 能干所有事：读文件、写文件、跑命令、改数据库、推送代码。在一个 5 万行代码的项目里、这等于把核按钮交给一个"可能犯错的助手"。你想让它"看看 src/orders/ 里的逻辑"、它顺手"帮你优化了一下"——结果动了你不想动的文件。</p>
+<p>这不是假设。我见过太多生产事故、根因都是"AI 工具权限太大、审计缺失、回滚困难"。</p>
+<p><strong>痛点 3：复用困难</strong></p>
+<p>今天你让 Claude 干了一件事："审查我刚改的代码、按团队规范给意见"。明天你又想做同样的事、你得把规范重写一遍、把指令重写一遍。Claude 没有"角色"概念、每次都是"白纸"开始。</p>
+<p>这三个痛点的共同根因是：一个对话、一个上下文、一套权限的设计无法匹配"复杂任务需要不同能力切片"的现实。子代理就是 Claude Code 对这个根因的工程化回答。</p>
+<h2 class="section-anchor"></h2>
+<div class="flow-diagram">
+  <div class="flow-actor">
+    <div class="flow-actor-label">用户（主对话）</div>
+    <div class="flow-actor-desc">"用 code-reviewer 审查我刚改的代码"</div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">主对话 / Claude</div>
+    <ul>
+      <li>加载 CLAUDE.md</li>
+      <li>推断用户意图</li>
+      <li>匹配到 <code>code-reviewer</code></li>
+    </ul>
+  </div>
+  <div class="flow-arrow"><span class="flow-arrow-label">委派（只传任务 + 必要上下文）</span></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">SubAgent: code-reviewer</div>
+    <ul>
+      <li>独立 system prompt</li>
+      <li>工具白名单 <code>[Read / Grep / Glob / Bash]</code></li>
+      <li>独立上下文窗口</li>
+      <li>独立权限边界</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"><span class="flow-arrow-label">内部工作 ① git diff ② 读变更文件 ③ 输出问题清单</span></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">SubAgentStop Hook（可选）</div>
+    <ul>
+      <li>记录审计日志</li>
+      <li>触发 Slack 通知</li>
+      <li>检查输出质量</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"><span class="flow-arrow-label">回传：只回 200 字摘要</span></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">主对话</div>
+    <div style="font-family:'SFMono-Regular',Menlo,Consolas,monospace;font-size:12px;color:var(--fg);background:var(--code-bg);padding:8px 10px;border-radius:4px;margin-top:6px">
+"code-reviewer 报告：<br>
+Critical: 1<br>
+Warning: 3<br>
+Suggestion: 5<br>
+详见子代理完整报告"
+    </div>
+  </div>
+</div>
+<h3>子代理的本质定义：三件套</h3>
+<p>一个 Claude Code 子代理（SubAgent）由三件套定义、缺一不可：</p>
+<p><strong>件套 1：独立的 system prompt</strong></p>
+<p>子代理有自己的"人设"。它不是主对话的延伸、而是一个"全新的角色"。比如 code-reviewer 子代理的 system prompt 是："你是一个资深 Python 代码审查员、关注代码质量、安全、可维护性";test-runner 子代理的 system prompt 是："你专门负责运行测试并报告结果、不做代码修改"。</p>
+<p>这意味着：子代理不会"继承"主对话的角色——它只看自己的 system prompt + 用户给的任务。这是个"角色隔离"的硬边界。</p>
+<p><strong>件套 2：独立的工具白名单</strong></p>
+<p>子代理只能用它被授权的工具。比如 reviewer 子代理只给 Read/Grep/Glob（只读）,test-runner 子代理给 Bash 但不给 Edit/Write（可执行但不能改代码）。这是"权限隔离"的硬边界——比 system prompt 里的"请你不要修改文件"更可靠、因为它是工具层的强制限制。</p>
+<p><strong>件套 3：独立的上下文窗口</strong></p>
+<p>子代理启动时、主对话的"当前上下文"不会被传递过去（除非显式传入）。子代理从自己的 system prompt + 任务描述开始、自己读文件、自己推理、自己产出。最终回传给主对话的只有一段"摘要"、而不是全部中间过程。</p>
+<p>这就是"上下文隔离"的硬边界——主对话再多的噪声都不会污染子代理、子代理再多的中间步骤也不会污染主对话。</p>
+<p><strong>和"开新对话"的本质区别</strong></p>
+<p>新人最常问的问题："子代理不就是让我开一个新对话吗?我 <code>/clear</code> 然后重新来、效果差不多吧?"——错。两者在四个维度有本质区别：</p>
+<p>1. <strong>自动化触发</strong>：子代理可以"自动被主对话调用"、你不用手动切换窗口；新对话必须你手动开。</p>
+<p>2. <strong>权限约束</strong>：子代理的工具有白名单；新对话里 Claude 啥都能干。</p>
+<p>3. <strong>上下文隔离</strong>：子代理的输出是"摘要回主对话"、主对话不会被噪声污染；新对话则完全独立、你得自己复制粘贴。</p>
+<p>4. <strong>可复用性</strong>：子代理写成文件后是"工程资产"、下次直接用；新对话每次都得重新解释。</p>
+<p>所以子代理是"工程化组件"、新对话只是"另一种交互方式"——它们不在一个抽象层级。</p>
+<h3>子代理 vs 主对话：4 个本质特性</h3>
+<p>理解了"三件套"、子代理的 4 个本质特性就水到渠成：</p>
+<p><strong>特性 1：隔离性</strong></p>
+<p>子代理的 system prompt / 工具 / 上下文都和主对话隔离。这意味着：子代理干活的探索过程、冗长输出不污染主对话。跑测试 200 行 pytest 输出、主对话只看到"3 passed, 2 failed、详见 X"一行摘要。</p>
+<p>隔离性是子代理的"第一性原理"——没有隔离、其他特性都无从谈起。</p>
+<p><strong>特性 2：约束性</strong></p>
+<p>你可以给子代理"只能读不能写"、"只能跑 SELECT 不能改数据库"、"只能改 src/frontend/"。约束在工具层强制、比 system prompt 里的"请不要"更可靠。</p>
+<p>约束性让 Claude Code 能用在生产环境——给 reviewer 子代理只读权限、你可以放心地让它"审查"任何代码、不用担心它手抖改了一行。</p>
+<p><strong>特性 3：可复用性</strong></p>
+<p>子代理写成 .md 文件后、就是工程资产。下次项目需要同样的"角色"、直接引用文件即可。今天你写了 code-reviewer 子代理、明天新项目 clone 过去就能用——这就是 CLAUDE.md 之外的"第二层组织化资产"。</p>
+<p>可复用性让子代理从"一次性技巧"变成"可积累的工程能力"。</p>
+<p><strong>特性 4：可并行性</strong></p>
+<p>主对话是单线程的——你一次只能问一个事。但子代理可以并行启动：主对话说"用三个子代理同时探索 auth/db/api 三个模块"、三个子代理同时跑、各自隔离、各自回传摘要。这就是"团队协作"的雏形。</p>
+<p>可并行性是子代理"把一个大脑拆成多个岗位"的真正含义——多线并发。</p>
+<table>
+<thead><tr>
+<th>维度</th>
+<th>主对话</th>
+<th>子代理</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>上下文</td>
+<td>累积式（越聊越多）</td>
+<td>独立窗口（每次从零开始）</td>
+</tr>
+<tr>
+<td>工具权限</td>
+<td>全集（读/写/搜/执行/交互）</td>
+<td>白名单（显式授予）</td>
+</tr>
+<tr>
+<td>系统提示</td>
+<td>加载 CLAUDE.md + Rules + Auto Memory</td>
+<td>独立 system prompt（可继承主对话部分）</td>
+</tr>
+<tr>
+<td>输出方式</td>
+<td>直接显示在对话</td>
+<td>摘要回主对话（中间过程隔离）</td>
+</tr>
+<tr>
+<td>可复用性</td>
+<td>无（每次重新解释）</td>
+<td>强（.md 文件即工程资产）</td>
+</tr>
+</tbody></table>
+<h3>四类"最该用子代理"的任务</h3>
+<p>判断一个任务该不该用子代理、有个简单心法：这件事是否"高噪声、强约束、可并行"中的任意一条?是的话、基本就该用。下面是四类高频刚需场景：</p>
+<p><strong>类型 1：高噪声输出任务</strong></p>
+<p>任务特征：输出巨多、但你只关心结论。典型：跑测试、扫日志、全项目 grep、生成大型报告。</p>
+<p>为什么该用：这些任务的"过程输出"会污染主对话。子代理的隔离上下文让主对话只看到摘要。</p>
+<p>典型子代理：test-runner（跑测试报结果）、log-triager（扫日志分类告警）、codebase-searcher（全项目搜索并定位）。</p>
+<p><strong>类型 2：明确角色边界任务</strong></p>
+<p>任务特征：这个角色"只能做 X、不能做 Y"。典型：code reviewer（只能读不能写）、DB reader（只能 SELECT 不能改）、frontend-only dev（只能改 src/frontend/）。</p>
+<p>为什么该用：工具白名单提供硬边界、比 system prompt 约束更可靠。</p>
+<p>典型子代理：code-reviewer（工具：Read/Grep/Glob）、db-reader（工具：Bash 但 hook 拦截写操作）、frontend-dev（工具：Read/Edit 但 hook 限制路径）。</p>
+<p><strong>类型 3：可并行研究任务</strong></p>
+<p>任务特征：多路探索、互不依赖。典型：同时摸清 auth/db/api 三块、同时比较三个候选方案、同时给三套实现路径打优缺点。</p>
+<p>为什么该用：并行能省 2-3 倍时间、且每个子代理独立思考反而更专注。</p>
+<p>典型子代理：explore（专门扫代码定位）、compare（专门做方案对比）、feasibility-check（专门评估可行性）。</p>
+<p><strong>类型 4：可流水线分段任务</strong></p>
+<p>任务特征：可以拆成"先 A、再 B、再 C"的链式。典型：Explore（找位置）→ Reviewer（指问题）→ Debugger（修）→ Test-runner（验）。</p>
+<p>为什么该用：每段用最合适的子代理、角色单一 = 输出可控。</p>
+<p>典型子代理组合：explore → code-reviewer → debugger → test-runner、主对话里"串起来"。</p>
+<h3>三类"千万别用子代理"的任务</h3>
+<p>反过来说、有些任务用子代理反而是负优化。判断标准：启动子代理的固定成本（切换/序列化/回传）是否大于它省下的时间?如果是、就别用。</p>
+<p><strong>类型 1：需要频繁来回追问</strong></p>
+<p>任务特征：需求不明确、得反复"先这样?好、再那样?嗯、改一下……"。</p>
+<p>为什么不该用：子代理是"单次任务"、你每次追问都得新开一个、上下文无法连续。</p>
+<p>正确做法：在主对话里先问清楚、需求明确后再委派子代理。</p>
+<p><strong>类型 2：多阶段共享同一上下文</strong></p>
+<p>任务特征：从需求到设计到实现到评估、每一阶段都强依赖上一阶段的中间结果。</p>
+<p>为什么不该用：子代理之间不共享上下文、你会陷入"序列化传递摘要 → 摘要丢失关键细节 → 反复重传"的死循环。</p>
+<p>正确做法：这种任务就在主对话里做、或拆成多个子代理（每段用文件持久化中间状态、而不是用对话历史）。</p>
+<p><strong>类型 3：一两行小改</strong></p>
+<p>任务特征：改个 typo、修个 import、加一行 log。</p>
+<p>为什么不该用：启动子代理的"模型推理 + 工具调用 + 回传"成本是 5-15 秒、改这一行只要 2 秒。</p>
+<p>正确做法：在主对话里直接改、或者用 command（第 6 讲主题）而不是 subagent。</p>
+<table>
+<thead><tr>
+<th>该用子代理</th>
+<th>千万别用子代理</th>
+<th>原因</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>跑测试（200 行输出）</td>
+<td>改一个 typo(2 秒能搞定）</td>
+<td>成本：启动 5-15 秒 vs 改 1 行 2 秒</td>
+</tr>
+<tr>
+<td>全项目搜索（5 千行结果）</td>
+<td>需求反复变化（得来回追问）</td>
+<td>子代理是单次任务、追问成本高</td>
+</tr>
+<tr>
+<td>并行探索 3 个模块</td>
+<td>需求-设计-实现-评估强耦合</td>
+<td>子代理间不共享上下文、会摘要丢失</td>
+</tr>
+<tr>
+<td>角色边界（只读 reviewer)</td>
+<td>一两行小改</td>
+<td>子代理"启动仪式"成本大于收益</td>
+</tr>
+</tbody></table>
+<h3>子代理的三种定义方式</h3>
+<p>子代理的"载体"是一个 .md 文件（类似 CLAUDE.md 的结构）、有 frontmatter 声明元数据 + 正文写 system prompt。Claude Code 提供三种创建方式：</p>
+<p><strong>方式 1：交互式 /agents 命令（推荐新手）</strong></p>
+<p>在 Claude Code 里输入 <code>/agents</code>、弹出交互菜单：Create new agent → 选 user-level 或 project-level → Generate with Claude（用一句话描述它要干什么、Claude 自动生成 system prompt)→ 选择工具 → 选择模型 → 保存。</p>
+<p>优点：零摩擦、不用记字段名。缺点：Claude 自动生成的 system prompt 质量参差、你得改。</p>
+<p><strong>方式 2：手写 .md 文件（推荐熟手）</strong></p>
+<p>直接创建 <code>.claude/agents/&lt;name&gt;.md</code>（项目级）或 <code>~/.claude/agents/&lt;name&gt;.md</code>（用户级）、按 frontmatter + 正文结构写。</p>
+<p>优点：完全可控、可版本管理、可 code review。缺点：得知道字段名（name / description / tools / model 的语义）。</p>
+<p><strong>方式 3：从模板复制（推荐进阶）</strong></p>
+<p>从官方仓库或社区复制一个现成的子代理、改一改 description 和 system prompt 就用。</p>
+<p>优点：起点高、避免常见错误。缺点：得看懂模板为什么这么写、否则改坏也不知道。</p>
+<p><strong>user-level vs project-level 的选型</strong></p>
+<p>简单规则：跨项目用的放 user-level（比如通用 code-reviewer、通用 explore)；只在本项目用的放 project-level（比如本项目的 domain-expert 子代理）。Project-level 进 git,user-level 不进。</p>
+<p>判断细节：如果子代理 description 里出现项目专有名词、基本就是 project-level；如果完全是通用能力（审查、搜索、文档生成）、就 user-level。</p>
+<h2 class="section-anchor">🛠️ 实战代码</h2>
+<p><strong>📄 第 4 讲配套：三个最小可用的子代理（项目级）</strong></p>
+<pre><code class="lang-markdown">---
+# .claude/agents/code-reviewer.md
+# 角色:只读代码审查员,绝对不能改代码
+name: code-reviewer
+description: Proactively review code changes for quality and security after I modify code.
+tools: Read, Grep, Glob, Bash
+model: sonnet
+---
+You are a senior Python code reviewer with 10+ years of production experience.
+
+When invoked:
+1. Run `git diff` to see recent changes
+2. Focus on changed files only
+3. Report issues by priority: Critical / Warning / Suggestion
+4. For each issue: cite the line, explain the risk, suggest the fix
+
+Constraints:
+- You may only READ files. Never use Edit or Write tools.
+- Do not run tests or builds (that's test-runner's job).
+- Be specific and actionable. No vague feedback like "code could be better".</code></pre>
+<pre><code class="lang-markdown">---
+# .claude/agents/test-runner.md
+# 角色:跑测试并报告,不能改代码
+name: test-runner
+description: Run tests when I say "test it" / "跑测试" / "verify" / "ci".
+tools: Bash, Read, Grep
+model: haiku
+---
+You are a test runner. Your only job is to execute the test suite and report results concisely.
+
+When invoked:
+1. Detect the test runner (pytest / npm test / go test / cargo test)
+2. Run the FULL suite (don't skip slow tests unless told)
+3. Parse output, report: pass count / fail count / coverage / failure details
+4. If failures, group by file and show first error of each group
+
+Output format (always):
+```
+✓ Passed: 47
+✗ Failed: 3 (src/orders/timeout.py:42, src/payments/callback.py:88, ...)
+Coverage: 82% (target: 80%)
+```
+
+Constraints:
+- Run tests, do not modify test files or source code.
+- If a test is flaky, run it 3 times to confirm before reporting.</code></pre>
+<pre><code class="lang-markdown">---
+# .claude/agents/explorer.md
+# 角色:全项目侦察兵,只找不读全文
+name: explorer
+description: Find files and code locations when I ask "where is X" / "find all Y" / "locate Z".
+tools: Grep, Glob, Read
+model: haiku
+---
+You are a codebase exploration agent. You find things; you do not read them in full.
+
+When invoked:
+1. Identify what the user is looking for (function / class / file pattern / config key)
+2. Use Grep/Glob to locate candidates
+3. For each candidate: show file:line + 5-line context
+4. Rank results by relevance
+
+Output format (always):
+```
+Found 7 matches across 3 files:
+
+1. src/orders/service.py:142  ← most likely
+   def create_order(...): ...
+
+2. src/orders/legacy.py:88   ← old version, may be deprecated
+   def createOrder(...): ...
+```
+
+Constraints:
+- Match the user's intent, not just literal text.
+- If ambiguous, ask back (return a clarification question, not a guess).</code></pre>
+<p><strong>📄 第 4 讲配套：user-level vs project-level 目录位置与选型</strong></p>
+<pre><code class="lang-bash"># user-level(用户级,跨项目共享,~ / .claude/agents/)
+~/.claude/agents/
+├── general-code-reviewer.md   # 通用代码审查(任何项目能用)
+├── general-explorer.md        # 通用全项目搜索
+└── doc-writer.md              # 通用文档生成
+
+# project-level(项目级,只在本项目,./.claude/agents/)
+.claude/agents/
+├── order-domain-expert.md     # 订单领域专家(只有订单项目能懂)
+├── migration-expert.md        # 数据库迁移专家(本项目迁移规范)
+└── legacy-code-archaeologist.md # 考古学家:专门读 src/legacy/
+
+# 选型决策(简单规则):
+#   description 里出现项目专有名词(如 "OrderFlow 订单系统")-&gt; project-level
+#   description 完全是通用能力("review code" / "find files")-&gt; user-level</code></pre>
+<p><strong>📄 第 4 讲配套：在主对话里怎么调起子代理</strong></p>
+<pre><code class="lang-bash"># 方法 1:主对话里"点名"调起(最直接)
+# &gt; 用 code-reviewer 子代理检查我刚改的代码
+
+# 方法 2:用 /agents 命令列出所有可用子代理,然后用 @ 引用
+# &gt; @code-reviewer 审查 src/orders/timeout.py
+
+# 方法 3:让 Claude 自己决定(基于子代理的 description 自动触发)
+# &gt; 帮我看看最近的代码改得怎么样
+# (Claude 看到 description 是 "review code changes after I modify code",自动用 code-reviewer)
+
+# 方法 4:并行调起多个
+# &gt; 同时用三个子代理探索 auth / db / api 三个模块,各自报告</code></pre>
+<p><strong>📄 第 4 讲配套：验证子代理真的"隔离"了</strong></p>
+<pre><code class="lang-bash"># 启动 Claude Code 时加 --debug,看子代理启动日志
+claude --debug
+
+# &gt; 用 code-reviewer 审查 src/orders/timeout.py
+# (输出里应该能看到):
+# [SubAgent] spawning code-reviewer
+# [SubAgent] system prompt: "You are a senior Python code reviewer..."
+# [SubAgent] tools: [Read, Grep, Glob, Bash]
+# [SubAgent] context: isolated (len=0, loading project files on demand)
+# [SubAgent] result: 200 chars summary returned to main conversation
+
+# 验证"只读":
+# &gt; 用 code-reviewer 把 src/orders/timeout.py 改一下
+# (预期:code-reviewer 拒绝,说"我没有 Edit 工具")</code></pre>
+<h2 class="section-anchor">⚠️ 常见坑</h2>
+<div class="callout warn">
+<strong>⚠️ 把子代理当"万能小助手"用</strong>
+<p>最常见的错误：子代理工具白名单给得太大、基本等于"啥都能干"。这样的子代理没有"角色"概念、和主对话没区别、只是多了一层跳转。正确做法：白名单要"窄而深"——code-reviewer 就只给 Read/Grep/Glob,test-runner 就只给 Bash。权限给大 = 失去约束性 = 子代理价值归零。判断标准：子代理 description 里说"只做 X"、工具白名单就只能出现"做 X 必需"的工具、多一个都不行。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 启动子代理做一两行小改</strong>
+<p>新人最常犯的错："为了用子代理而用子代理"。改一行 import、加一行 log、这种事在主对话里 2 秒搞定；启动子代理得"加载 system prompt + 选择工具 + 切换上下文 + 序列化任务 + 回传摘要"、固定 5-15 秒起步、得不偿失。判断标准：这件事你"自己手工 1 分钟内能做完"、就别用子代理。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 子代理 description 写得像普通 prompt</strong>
+<p>子代理的 description 字段是"自动触发器"——Claude 看到主对话里用户的话匹配 description、就自动用这个子代理。所以 description 必须写成"何时触发"的形式（"在 X 之后" / "当用户说 Y 时")、而不是"做什么"的形式（"你是一个审查员"）。错例：description="A senior code reviewer"。正例：description="Proactively review code changes after I modify code"。区别：前者描述角色、后者描述触发条件。Claude 看到前者不知道怎么触发、看到后者知道"用户改完代码就该用我"。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 子代理 prompt 没规定输出格式</strong>
+<p>子代理回传主对话的是"摘要"、而摘要默认是一坨自然语言——主对话里 Claude 看完还得自己再整理一遍。正确做法：在子代理的 system prompt 里硬性规定输出格式（用代码块模板、字段名、长度限制）。例如 test-runner 必须输出 "✓ Passed: N / ✗ Failed: N / 覆盖： X%" 三行固定结构、主对话里就能直接用。结果：子代理的输出"机器可读"、主对话处理成本下降 80%。</p>
+</div>
+<h2 class="section-anchor">💡 一句话备忘</h2>
+<blockquote>子代理不是"另一个 Claude"、是"主对话外包出去的专职岗位"——三件套定义角色、四特性决定效果、四类任务最适合、三类任务千万别碰。</blockquote>
+<hr>
+<p class="breadcrumb">← 回到 <a href="#top">本讲网页顶部</a></p>
+</main>
+<script>
+  (function () {
+    var STORAGE_KEY = "***";
+    var root = document.documentElement;
+    var btn  = document.getElementById("themeToggle");
+    var icon = document.getElementById("themeIcon");
+    var lbl  = document.getElementById("themeLabel");
+    function apply(theme) {
+      root.setAttribute("data-theme", theme);
+      if (theme === "dark") {
+        icon.innerHTML = "&#9728;&#65039;";
+        lbl.textContent  = "亮色";
+      } else {
+        icon.innerHTML = "&#127769;";
+        lbl.textContent  = "暗色";
+      }
+    }
+    var saved = null;
+    try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    if (saved === "light" || saved === "dark") {
+      apply(saved);
+    } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      apply("dark");
+    } else {
+      apply("light");
+    }
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") || "light";
+      var next = cur === "dark" ? "light" : "dark";
+      apply(next);
+      try { localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>
