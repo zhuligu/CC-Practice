@@ -1,0 +1,651 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 8 讲 · 并行不悖 · 多子代理协同实战</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fff; --fg: #222; --muted: #555; --link: #1a73e8;
+    --code-bg: #f4f4f4; --code-fg: inherit;
+    --pre-bg: #1e1e1e; --pre-fg: #eaeaea;
+    --border: #ddd; --th-bg: #f5f5f5; --zebra: #fafafa;
+    --hover-row: #e8f0fe; --hover-th: #eef2f7;
+    --blockquote-bg: #fafafa; --blockquote-border: #ddd;
+    --hr: #eee;
+    --toggle-bg: #f5f5f5; --toggle-fg: #333; --toggle-border: #ddd;
+    --tag-bg: #eef4ff; --tag-fg: #1a73e8;
+    --callout-bg: #fffbe6; --callout-border: #fadb14;
+    --warn-bg: #fff1f0; --warn-border: #ff4d4f;
+    --ok-bg: #f6ffed; --ok-border: #52c41a;
+    --code-block-bg: #f8f9fa;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1115; --fg: #e6e6e6; --muted: #9aa0a6; --link: #8ab4f8;
+    --code-bg: #1e1f24; --code-fg: #e6e6e6;
+    --pre-bg: #1a1d23; --pre-fg: #e6e6e6;
+    --border: #303136; --th-bg: #1c1f25; --zebra: #16181d;
+    --hover-row: #1f2733; --hover-th: #262c36;
+    --blockquote-bg: #181a20; --blockquote-border: #303136;
+    --hr: #2a2d33;
+    --toggle-bg: #1c1f25; --toggle-fg: #e6e6e6; --toggle-border: #303136;
+    --tag-bg: #1a2540; --tag-fg: #8ab4f8;
+    --callout-bg: #2a261a; --callout-border: #b89333;
+    --warn-bg: #2a1a1a; --warn-border: #a84545;
+    --ok-bg: #1a261a; --ok-border: #4a8a4a;
+    --code-block-bg: #16181d;
+  }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 "PingFang SC", "Microsoft YaHei", "Helvetica Neue",
+                 Arial, sans-serif;
+    font-size: 15px; line-height: 1.7;
+    transition: background-color .2s ease, color .2s ease;
+  }
+  main {
+    max-width: 1100px;
+    width: calc(100% - 32px);
+    margin: 0 auto;
+    padding: 24px 0 64px 0;
+    box-sizing: border-box;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    line-height: 1.3; margin: 1.5em 0 .6em;
+  }
+  h1 { font-size: 1.9em; border-bottom: 2px solid var(--hr); padding-bottom: .3em; }
+  h2 { font-size: 1.45em; border-bottom: 1px solid var(--hr); padding-bottom: .25em; margin-top: 2em; }
+  h3 { font-size: 1.18em; color: var(--link); margin-top: 1.5em; }
+  h4 { font-size: 1.05em; margin-top: 1.2em; color: var(--fg); font-weight: 600; }
+  p, ul, ol, blockquote, pre, table { margin: .7em 0; }
+  ul, ol { padding-left: 1.6em; }
+  li { margin: .3em 0; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  blockquote {
+    margin: .8em 0; padding: .6em 1em;
+    border-left: 4px solid var(--blockquote-border);
+    color: var(--muted); background: var(--blockquote-bg);
+  }
+  .callout {
+    background: var(--callout-bg);
+    border-left: 4px solid var(--callout-border);
+    padding: 12px 16px; margin: 1.2em 0; border-radius: 4px;
+  }
+  .callout.warn { background: var(--warn-bg); border-left-color: var(--warn-border); }
+  .callout.ok   { background: var(--ok-bg);   border-left-color: var(--ok-border); }
+  code {
+    font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: .9em; background: var(--code-bg); color: var(--code-fg);
+    padding: 1px 5px; border-radius: 3px;
+  }
+  pre {
+    background: var(--pre-bg); color: var(--pre-fg);
+    padding: 14px 16px; border-radius: 6px;
+    overflow-x: auto; font-size: 13px; line-height: 1.55;
+    margin: 1em 0;
+  }
+  pre code { background: transparent; padding: 0; color: inherit; }
+  pre.lang-flow {
+    background: var(--code-block-bg); color: var(--fg);
+    border: 1px solid var(--border);
+  }
+  :root[data-theme="dark"] pre.lang-flow {
+    background: #0a0b0d; color: #d4d4d4;
+  }
+  table {
+    width: 100% !important; border-collapse: collapse;
+    table-layout: auto; margin: 1em 0;
+    font-size: 14px; display: table;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left; vertical-align: top;
+    transition: background-color .15s ease;
+  }
+  th { background: var(--th-bg); font-weight: 600; }
+  tbody tr:nth-child(even) td { background: var(--zebra); }
+  tbody tr:hover td, tbody tr:hover th { background: var(--hover-row) !important; }
+  thead th:hover { background: var(--hover-th) !important; }
+  :root[data-theme="dark"] tbody tr:hover td,
+  :root[data-theme="dark"] tbody tr:hover th,
+  :root[data-theme="dark"] thead th:hover { color: #fff; }
+  hr { border: none; border-top: 1px solid var(--hr); margin: 2em 0; }
+  img { max-width: 100%; height: auto; }
+
+  .tag {
+    display: inline-block; padding: 2px 8px; margin-right: 6px;
+    background: var(--tag-bg); color: var(--tag-fg);
+    border-radius: 12px; font-size: 12px; font-weight: 500;
+  }
+  .breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 1em; }
+  .breadcrumb a { color: var(--muted); }
+  .breadcrumb a:hover { color: var(--link); }
+
+  .theme-toggle {
+    position: fixed; top: 12px; right: 12px; z-index: 9999;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: var(--toggle-bg); color: var(--toggle-fg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 6px; font-size: 13px; font-family: inherit;
+    cursor: pointer; user-select: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    transition: background-color .2s ease, transform .1s ease;
+  }
+  .theme-toggle:hover { background: var(--hover-row); }
+  .theme-toggle:active { transform: scale(.97); }
+  .theme-toggle .icon { font-size: 15px; line-height: 1; }
+
+  .lesson-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, #1a73e8, #6f42c1);
+    color: #fff; font-size: 24px; font-weight: 700;
+    margin-right: 14px; vertical-align: middle;
+  }
+
+  .section-anchor { scroll-margin-top: 60px; }
+</style>
+<link rel="stylesheet" href="assets/flow.css">
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="切换暗色模式">
+  <span class="icon" id="themeIcon">&#127769;</span>
+  <span id="themeLabel">暗色</span>
+</button>
+<main>
+<div class="breadcrumb">课程导航： « <a href="lesson-07.html">第 7 讲</a>  ·  <a href="lesson-09.html">第 9 讲</a> »</div>
+<h1><span class="lesson-badge">08</span>第 8 讲 · 并行不悖 · 多子代理协同实战</h1>
+<p>
+  <span class="tag">正课</span>
+  <span class="tag">第 8 / 33 讲</span>
+  <span class="tag">Claude Code 工程化实战</span>
+</p>
+<div class="callout ok">
+<strong>📌 本讲摘要</strong>
+<p>本讲是 SubAgent 系列的第 4 个实战、聚焦多子代理协同——前 3 讲（只读 / 可执行 / 可写）都是"单兵作战"（启动 1 个、跑完、返回）。本讲讲"团队作战"：怎么用 N 个子代理同时跑（并行模式）或 A→B→C 顺序跑（流水线模式）、让 Claude Code 从"单人 AI 助手"升级为"小型 AI 团队"。</p>
+<p>本讲的三条主线:</p>
+<p>第一、什么时候需要多子代理?——3 类高价值场景（并行探索省 2-3 倍时间 / 流水线分而治之各段最合适角色 / 错误恢复降级子代理接手）、反过来说 3 类不需要（任务简单 / 强耦合共享上下文 / 频繁来回追问）。</p>
+<p>第二、两种协同模式怎么选?——并行模式（主对话一句话调起 N 个子代理、各自独立工作、主对话综合）适合"互不依赖的探索";流水线模式（Explore→Reviewer→Debugger→Test-runner）适合"链式依赖的修复"。</p>
+<p>第三、子代理之间怎么通信?——3 种方式:文件（中间结果写 .claude/pipeline/）、状态（state.json 记录当前阶段）、队列（tasks.json 待办清单）;子代理间不共享上下文是设计约束也是工程优势、迫使通信显式化、可持久化、可调试。</p>
+<p>学完本讲、你应该能判断"该用并行还是流水线"、能设计 4 段流水线修复链、能用 3 种通信方式协调多子代理、能用"主对话是项目经理"的思路拆任务、派子代理、收结果、综合报告。</p>
+</div>
+<h2 class="section-anchor">📖 详细内容</h2>
+<h3>从"单兵"到"团队"：什么时候需要多个子代理?</h3>
+<p>前 3 讲我们讲了 3 类"单兵"子代理：观察者（只读）、可执行、可写。每类都假设"启动 1 个、跑完、返回"。但现实中很多任务用 1 个子代理"扛不动"——要么是工作量太大（1 个子代理跑 10 分钟）、要么是任务需要多角色（1 个子代理身兼数职 = 角色漂移）。</p>
+<p>多子代理协同解决的正是这两个问题。但"多个"不等于"更好"——下面 3 类场景用多子代理价值最高、3 类用了反而是负优化：</p>
+<p><strong>该用多子代理的 3 类场景</strong></p>
+<p>类型 1：并行探索（3 路独立、省 2-3 倍时间）</p>
+<p>任务特征：多个互不依赖的探索目标。比如"同时摸清 auth / db / api 三个模块的代码结构"、"同时比较 3 个候选方案"、"同时给 3 套实现路径打优缺点"。这些任务的特点是"每个子目标独立"、完全可以并行、串行做会浪费 2-3 倍时间。</p>
+<p>类型 2：流水线修复（链式 4 段、各段最合适的角色）</p>
+<p>任务特征：一个任务可以拆成 4 段、每段用最合适的子代理。比如"找一个 bug 修掉":Explore（找位置）→ Reviewer（找问题）→ Debugger（修）→ Test-runner（验）。如果只用一个万能子代理、它可能"找不到位置"、"找不到问题"、"修错地方"、"修完没测"；拆成 4 段、每段用最专的角色、效果和效率都更好。</p>
+<p>类型 3：错误恢复（主代理失败、降级子代理接手）</p>
+<p>任务特征：主代理（比如 Sonnet）跑某个任务超时 / 失败、降级到子代理（比如 Haiku）兜底重试、或者切换到另一个范式（"Sonnet 写代码失败、降级到 Sonnet 写测试让 Claude 写代码"）。这种"代理间降级"是高可用系统的常见模式。</p>
+<p><strong>千万别用多子代理的 3 类场景</strong></p>
+<p>类型 1：任务简单——1 个子代理 5 秒能搞定的事、不需要拆成 N 个。判断标准：这件事"1 个子代理 1 次启动能搞定"就别拆。</p>
+<p>类型 2：强耦合共享上下文——多阶段共享同一上下文的需求、子代理间不共享上下文、会陷入"序列化传递摘要 → 摘要丢失关键细节 → 反复重传"的死循环。</p>
+<p>类型 3：频繁来回追问——用户得反复"先这样?好、再那样?嗯、改一下……"、子代理每次启动都是新上下文、追问成本极高。</p>
+<h3>并行模式：3 个 explorer 同时跑</h3>
+<p>并行模式是多子代理协同最简单的一类：主对话说"用 3 个子代理同时探索 X / Y / Z",3 个 explorer 各自独立工作、主对话拿到 3 份报告后综合成总览。</p>
+<p>并行模式的关键设计点有 4 个：</p>
+<p>1. <strong>明确分工</strong>——3 个子代理不能探索同一件事（重复劳动）、也不能探索无关的事（浪费算力）。主对话的 prompt 要明确"explorer-1 探索 auth 模块的入口和中间件"、"explorer-2 探索 db 模块的 ORM 和迁移文件"、"explorer-3 探索 api 模块的路由和 schema"。</p>
+<p>2. <strong>统一输出格式</strong>——3 个子代理的报告格式必须一致（都用 Markdown 模板 / 都用 JSON)、主对话才好综合。否则就是"3 份格式不一的报告拼成一份" = 痛苦。</p>
+<p>3. <strong>独立上下文</strong>——3 个子代理之间不共享任何上下文（这是 Claude Code 的设计约束、也是优势：避免互相污染）。主对话要确保 3 个子代理各自有完整的必要信息（比如都拿到项目的 CLAUDE.md）。</p>
+<p>4. <strong>速度对比</strong>——串行 3 分钟 vs 并行 1 分钟（假设每个子代理跑 1 分钟）。这 2-3 倍速度提升是并行模式的核心价值。</p>
+<p>并行模式适合"探索 / 调研 / 选型"类任务——这些任务的特点是"没有对错、只有全面",3 个独立视角拼起来比 1 个深度视角更全面。</p>
+<div class="flow-diagram">
+  <div class="flow-actor">
+    <div class="flow-actor-label">用户（主对话）</div>
+    <div class="flow-actor-desc">"用 3 个 explorer 同时探索 auth / db / api，综合报告"</div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">主对话 · 协调者</div>
+    <ul>
+      <li>拆任务：3 个互不依赖的探索目标</li>
+      <li>派子代理：<code>explorer-auth</code> / <code>-db</code> / <code>-api</code></li>
+    </ul>
+  </div>
+  <div class="flow-arrow-fork"></div>
+  <div class="flow-row flow-row-3 flow-row-forked" style="max-width:620px;width:100%">
+    <div class="flow-box">
+      <div class="flow-box-title">auth explorer</div>
+      <div class="flow-box-sub">01-auth.md</div>
+    </div>
+    <div class="flow-box">
+      <div class="flow-box-title">db explorer</div>
+      <div class="flow-box-sub">01-db.md</div>
+    </div>
+    <div class="flow-box">
+      <div class="flow-box-title">api explorer</div>
+      <div class="flow-box-sub">01-api.md</div>
+    </div>
+  </div>
+  <div class="flow-arrow"><span class="flow-arrow-label">各自回传</span></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">主对话 · 综合报告</div>
+    <ul>
+      <li>共同点（3 个子代理都同意）</li>
+      <li>差异点（子代理之间矛盾）</li>
+      <li>未覆盖（没有任何子代理探索到）</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-actor flow-actor-final">
+    <div class="flow-actor-label">用户拿到总览，做决策</div>
+  </div>
+</div>
+<h3>流水线模式：Explore→Reviewer→Debugger→Test-runner</h3>
+<p>流水线模式是多子代理协同的进阶类：把一个任务拆成 4 段、每段用最合适的子代理、段间用文件传递中间结果。这是"软件工程流水线思想"在 AI 协同里的应用。</p>
+<p>典型 4 段流水线：Explore（找位置）→ Reviewer（找问题）→ Debugger（修）→ Test-runner（验）。</p>
+<div class="flow-container" style="margin:22px auto 0">
+  <div class="flow-container-title">流水线模式（4 阶段 + 门控）</div>
+  <div class="flow-steps" style="margin-top:8px">
+    <div class="flow-step">
+      <div class="flow-step-num">1</div>
+      <div class="flow-step-body">
+        <div class="flow-step-title">Explore（找位置）</div>
+        <div class="flow-step-desc">输出 <code>01-explore.md</code>。门控：文件存在 + 非空</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-num">2</div>
+      <div class="flow-step-body">
+        <div class="flow-step-title">Reviewer（找问题）</div>
+        <div class="flow-step-desc">输出 <code>02-review.md</code>。门控：文件存在 + 非空</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-num">3</div>
+      <div class="flow-step-body">
+        <div class="flow-step-title">Debugger（修）</div>
+        <div class="flow-step-desc">输出 <code>03-debug.md</code>。门控：文件存在 + 非空</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-num">4</div>
+      <div class="flow-step-body">
+        <div class="flow-step-title">Test-runner（验）</div>
+        <div class="flow-step-desc">输出 <code>04-test.md</code>。门控：测试全过</div>
+      </div>
+    </div>
+  </div>
+</div>
+<p><strong>段 1:Explore（找位置）</strong></p>
+<p>子代理：explorer（只读、Read/Grep/Glob）。输入："找出订单超时的所有相关代码位置"。输出：.claude/pipeline/01-explore.md、列文件：行号 + 5 行上下文。</p>
+<p><strong>段 2:Reviewer（找问题）</strong></p>
+<p>子代理：code-reviewer（只读、Read/Grep/Glob）。输入：读 .claude/pipeline/01-explore.md 拿到的位置。输出：.claude/pipeline/02-review.md、列每个位置的问题清单。</p>
+<p><strong>段 3:Debugger（修）</strong></p>
+<p>子代理：debugger（可写、Edit/Write,permission 严格 ask）。输入：读 .claude/pipeline/02-review.md 拿问题清单。输出：实际修改代码 + .claude/pipeline/03-debug.md 记录改了什么。</p>
+<p><strong>段 4:Test-runner（验）</strong></p>
+<p>子代理：test-runner（可执行、Bash 白名单）。输入：跑测试 + 读 .claude/pipeline/03-debug.md 知道改了什么。输出：.claude/pipeline/04-test.md、测试结果摘要 + 是否通过。</p>
+<p>4 段链式、每段用自己的 system prompt + 工具白名单 + 输出格式。每段的输出都是下一段的输入——段间用文件显式传递、避免子代理间共享上下文。</p>
+<p><strong>错误传播：任一段失败、流水线暂停、人介入</strong></p>
+<p>流水线有 3 个失败模式：Explore 找不到（项目结构不熟）/ Reviewer 找不到（代码复杂）/ Debugger 修错（权限失控）/ Test-runner 跑挂（回归测试失败）。</p>
+<p>每段失败、流水线不应该自动继续（否则会把错误传到下一段、放大问题）。正确做法：在每段之间加"门控"、读 .claude/pipeline/&lt;N&gt;-*.md 看上一段输出、如果不通过、主对话弹窗让人决定"继续 / 跳过 / 终止"。</p>
+<table>
+<thead><tr>
+<th>维度</th>
+<th>并行模式</th>
+<th>流水线模式</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>适用场景</td>
+<td>互不依赖的探索/调研/选型</td>
+<td>链式依赖的修复/构建/分析</td>
+</tr>
+<tr>
+<td>速度</td>
+<td>2-3 倍（N 个子代理同时跑）</td>
+<td>各段依次跑、总时间=各段之和</td>
+</tr>
+<tr>
+<td>通信方式</td>
+<td>子代理间不通信（各自回主对话）</td>
+<td>段间用文件/state.json 显式传递</td>
+</tr>
+<tr>
+<td>失败恢复</td>
+<td>单子代理失败不影响其他</td>
+<td>任一段失败、流水线暂停、人介入</td>
+</tr>
+<tr>
+<td>典型场景</td>
+<td>"同时摸清 3 个模块"</td>
+<td>"修一个 bug 链式 4 段"</td>
+</tr>
+</tbody></table>
+<h3>子代理间的通信机制：文件 vs 状态 vs 队列</h3>
+<p>子代理间不共享上下文是 Claude Code 的设计约束——这看起来是限制、实际是优势：迫使通信"显式化、可持久化、可调试"。3 种通信方式各有适用场景：</p>
+<p><strong>方式 1：文件传递（最常用）</strong></p>
+<p>机制：每段子代理把输出写到 .claude/pipeline/&lt;N&gt;-&lt;role&gt;.md、下一段子代理读这个文件作为输入。</p>
+<p>优点：简单、可读、可版本管理（git diff 看每段输出变化）、可调试（出问题时直接看哪段输出错了）。</p>
+<p>缺点：文件多时混乱（需要命名规范）、不适合"动态任务队列"场景。</p>
+<p>适用：流水线模式（固定段数、固定文件路径）。</p>
+<p><strong>方式 2:state.json 状态机（中级）</strong></p>
+<p>机制：用 .claude/state.json 记录整个协同的当前状态——`{"current_stage": 2, "completed_tasks": ["01-explore"], "pending_tasks": ["02-review", "03-debug", "04-test"], "errors": []}`。每段子代理读 state.json 知道自己处于哪一段、完成后更新 state.json。</p>
+<p>优点：可动态调整任务列表（根据前一段结果决定下一段做啥）、支持"跳过 / 重试 / 回退"、可序列化和恢复（重启流水线不丢状态）。</p>
+<p>缺点：比文件复杂（要维护 state.json 的读写一致性）、需要原子性保证（多子代理同时写会冲突）。</p>
+<p>适用：动态流水线（根据前一段结果决定下一段）、长时任务（可能跨多次会话）。</p>
+<p><strong>方式 3:tasks.json 任务队列（高级）</strong></p>
+<p>机制：用 .claude/tasks.json 当作"待办任务队列"——`[{"id": "task-1", "status": "in_progress", "agent": "explorer", "input": "..."}, ...]`。主对话往队列里加任务、空闲的子代理从队列里取任务跑。适合"任务不确定什么时候来、需要排队处理"的场景。</p>
+<p>优点：支持异步任务、可负载均衡（多个子代理并发取任务）、可暂停/恢复（队列状态保存）。</p>
+<p>缺点：复杂度高（需要"调度器"概念、Claude Code 本身不提供、需要主对话扮演）、调试困难（任务在队列里卡住不知道为啥）。</p>
+<p>适用：多任务并行（队列里 10 个任务、3 个子代理并发跑）、异步场景（用户提交任务后、后台慢慢跑）。</p>
+<p>3 种方式的选择心法：流水线用文件、动态任务用 state.json、异步队列用 tasks.json。新手从文件开始、熟练了再升级到 state.json,tasks.json 是高级模式（第 32 讲性能优化会再讲）。</p>
+<table>
+<thead><tr>
+<th>通信方式</th>
+<th>机制</th>
+<th>优点</th>
+<th>适用场景</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>文件传递</td>
+<td>每段写 .claude/pipeline/&lt;N&gt;-&lt;role&gt;.md、下段读</td>
+<td>简单、可读、可版本管理</td>
+<td>流水线模式（固定段数）</td>
+</tr>
+<tr>
+<td>state.json</td>
+<td>记录 current_stage / completed / pending / errors</td>
+<td>动态调整、跳过/重试/回退、可序列化</td>
+<td>动态流水线、长时任务</td>
+</tr>
+<tr>
+<td>tasks.json</td>
+<td>待办任务队列、子代理从队列取任务</td>
+<td>异步、负载均衡、暂停/恢复</td>
+<td>多任务并行、异步场景</td>
+</tr>
+</tbody></table>
+<h3>协调模式：主对话是天然的协调者</h3>
+<p>多子代理协同里、主对话不是"被服务对象"、而是"项目经理"。它的核心职责是 4 件：</p>
+<p>1. <strong>拆任务</strong>——把用户的复杂需求拆成 N 个可独立执行的子任务。</p>
+<p>2. <strong>派子代理</strong>——为每个子任务选最合适的子代理（探索用 explorer、审查用 reviewer、修用 debugger、验用 test-runner）。</p>
+<p>3. <strong>收结果</strong>——收集各子代理的报告、统一格式（主对话 prompt 里规定子代理的输出格式）。</p>
+<p>4. <strong>综合报告</strong>——把多份报告综合成一份"人类可读 + 机器可处理"的总览、反馈给用户。</p>
+<p>主对话的"协调 prompt"模板（实战代码里有完整版）有 4 个标准段：</p>
+<p>1. "我有一个复杂任务：[用户需求]。我打算拆成 N 个子任务。"</p>
+<p>2. "对每个子任务、我会派一个 [子代理名] 去跑。它会输出 [格式] 的报告。"</p>
+<p>3. "我需要你[主对话的工作]：拆任务 / 派子代理 / 收结果 / 综合报告。"</p>
+<p>4. "综合报告的格式：[用户最终想看到的格式]"</p>
+<p>这种"协调 prompt"让主对话有清晰的"项目经理"身份、而不是"被服务对象"——多子代理协同能否成功、80% 取决于主对话的协调质量。</p>
+<h3>3 类多子代理失败模式及应对</h3>
+<p>多子代理协同有 3 类典型失败模式、需要提前设计应对：</p>
+<p><strong>失败 1：结果冲突（N 个子代理给出矛盾建议）</strong></p>
+<p>场景：explorer-1 说"auth 用 JWT",explorer-2 说"auth 用 session",explorer-3 说"auth 用 OAuth"。3 个矛盾的答案、主对话做仲裁。</p>
+<p>应对：主对话 prompt 里加"如果子代理报告冲突、列出冲突点 + 各自的依据 + 我的建议"——把"仲裁"显式化、而不是忽略冲突或随机选一个。</p>
+<p><strong>失败 2：重复劳动（N 个子代理做了同一件事）</strong></p>
+<p>场景：explorer-1 和 explorer-2 都探索了 auth 模块、浪费了一半算力。</p>
+<p>应对：主对话 prompt 里给每个子代理明确"你的边界是 X、不要探索 Y"——边界明确、重复劳动就被设计层面堵死。</p>
+<p><strong>失败 3：上下文丢失（关键信息在子代理间传递时丢失）</strong></p>
+<p>场景：explorer 找到 3 个相关文件、Reviewer 只读了 1 个、Debugger 修了 1 个错位的文件。</p>
+<p>应对：用文件显式传递（不靠主对话的对话历史）、文件里包含完整必要信息——文件名、行号、上下文段、问题描述。每段子代理读文件时检查"信息够不够"、不够就回退到上一段重跑。</p>
+<p>3 类失败模式都对应一个工程原则："把协调逻辑显式化、不靠模型概率"——子代理可能漏、可能错、可能冲突、但主对话的协调 prompt + 文件传递 + 边界设计能让协同的失败率降到可接受范围。</p>
+<h2 class="section-anchor">🛠️ 实战代码</h2>
+<p><strong>📄 第 8 讲配套：并行模式实战 —— 3 个 explorer 同时探索</strong></p>
+<pre><code class="lang-markdown"># .claude/agents/explorer-auth.md
+---
+name: explorer-auth
+description: Explore the auth module (login, session, JWT, OAuth). Run when user says "explore auth" / "摸清认证模块".
+tools: Read, Grep, Glob
+model: haiku
+---
+You are an auth module explorer. Find all auth-related code in the project.
+
+Output file: .claude/pipeline/01-auth.md
+Output format (strict):
+```markdown
+# Auth Module Map
+
+## Entry Points
+- file:line — function — purpose
+
+## Middleware
+- ...
+
+## Token / Session Logic
+- ...
+
+## Dependencies
+- ...
+
+## Notes
+- any unusual patterns, deprecated code, TODOs
+```
+
+Constraints:
+- Only the auth module. Do NOT explore other modules.
+- Use Grep for "auth|login|jwt|session|oauth" patterns.</code></pre>
+<pre><code class="lang-bash"># 主对话中一句话调起 3 个 explorer
+# &gt; 用 explorer-auth / explorer-db / explorer-api 同时探索三个模块,
+#   各自输出到 .claude/pipeline/01-{auth,db,api}.md,
+#   综合报告写到 .claude/pipeline/00-summary.md
+
+# 3 个 explorer 各自独立工作(并行):
+#   explorer-auth ────&gt; .claude/pipeline/01-auth.md
+#   explorer-db   ────&gt; .claude/pipeline/01-db.md
+#   explorer-api  ───&gt; .claude/pipeline/01-api.md
+#
+# 主对话收集 3 份报告,综合成总览:
+#   summary.md = 结构化整合(auth + db + api 三方视角,标出交集、差异、未覆盖)
+
+# 速度对比:
+#   串行 3 个 = 3 分钟
+#   并行 3 个 = 1 分钟(2-3 倍速度提升)</code></pre>
+<p><strong>📄 第 8 讲配套：流水线模式实战 —— 4 段链式修复</strong></p>
+<pre><code class="lang-bash"># .claude/pipelines/fix-order-timeout.sh
+# 4 段流水线:Explore → Reviewer → Debugger → Test-runner
+# 中间结果用文件传递,每段失败流水线暂停
+
+set -e
+PIPELINE_DIR=".claude/pipeline/fix-order-timeout"
+mkdir -p "$PIPELINE_DIR"
+
+# === 段 1:Explore(找位置) ===
+echo "=== [1/4] Explore: 找位置 ==="
+claude --headless --agent explorer \
+  --task "找出订单超时相关的所有代码位置,写到 $PIPELINE_DIR/01-explore.md"
+
+# 门控:检查输出
+if [ ! -s "$PIPELINE_DIR/01-explore.md" ]; then
+  echo "❌ 段 1 失败:explorer 没找到相关位置。流水线终止。"
+  exit 1
+fi
+echo "✅ 段 1 完成"
+
+# === 段 2:Reviewer(找问题) ===
+echo "=== [2/4] Reviewer: 找问题 ==="
+claude --headless --agent code-reviewer \
+  --task "读 $PIPELINE_DIR/01-explore.md,审查列出的代码位置,找出超时相关的 bug,写到 $PIPELINE_DIR/02-review.md"
+
+if [ ! -s "$PIPELINE_DIR/02-review.md" ]; then
+  echo "❌ 段 2 失败:reviewer 没找到问题。流水线终止。"
+  exit 1
+fi
+echo "✅ 段 2 完成"
+
+# === 段 3:Debugger(修) ===
+echo "=== [3/4] Debugger: 修 ==="
+claude --headless --agent debugger \
+  --task "读 $PIPELINE_DIR/02-review.md,修里面的 bug,实际修改代码,并把改动摘要写到 $PIPELINE_DIR/03-debug.md"
+
+if [ ! -s "$PIPELINE_DIR/03-debug.md" ]; then
+  echo "❌ 段 3 失败:debugger 没修任何东西。流水线终止。"
+  exit 1
+fi
+echo "✅ 段 3 完成"
+
+# === 段 4:Test-runner(验) ===
+echo "=== [4/4] Test-runner: 验 ==="
+claude --headless --agent test-runner \
+  --task "跑测试,确认 $PIPELINE_DIR/03-debug.md 里描述的修改没破坏任何东西。报告写到 $PIPELINE_DIR/04-test.md"
+
+if grep -q "Failed" "$PIPELINE_DIR/04-test.md"; then
+  echo "❌ 段 4 失败:测试不通过。流水线终止,需要回退。"
+  exit 1
+fi
+echo "✅ 段 4 完成"
+
+echo ""
+echo "🎉 流水线全部完成。中间结果:"
+ls -la "$PIPELINE_DIR"/</code></pre>
+<p><strong>📄 第 8 讲配套：3 种通信方式实战</strong></p>
+<pre><code class="lang-bash"># 方式 1:文件传递(最简单)
+# 每段子代理写固定路径,下一段读固定路径
+PIPELINE_DIR=".claude/pipeline/$(date +%s)"
+mkdir -p "$PIPELINE_DIR"
+
+# 段 1 写:$PIPELINE_DIR/01-explore.md
+# 段 2 读:01-explore.md,写:$PIPELINE_DIR/02-review.md
+# 段 3 读:02-review.md,写:$PIPELINE_DIR/03-debug.md
+# 段 4 读:03-debug.md,写:$PIPELINE_DIR/04-test.md</code></pre>
+<pre><code class="lang-json">// 方式 2:state.json 状态机
+// .claude/state.json
+{
+  "current_pipeline": "fix-order-timeout",
+  "current_stage": 2,
+  "completed": [
+    {"stage": 1, "role": "explorer", "output": ".claude/pipeline/.../01-explore.md", "duration_s": 45}
+  ],
+  "pending": [
+    {"stage": 2, "role": "reviewer",  "input": "01-explore.md"},
+    {"stage": 3, "role": "debugger",  "input": "02-review.md"},
+    {"stage": 4, "role": "test-runner", "input": "03-debug.md"}
+  ],
+  "errors": [],
+  "started_at": "2026-06-02T12:00:00+08:00"
+}
+
+// 每段子代理启动时读 state.json,完成后更新它:
+{
+  "current_stage": 3,
+  "completed": [..., {"stage": 2, "role": "reviewer", "output": "02-review.md", "duration_s": 30}],
+  "pending": [
+    {"stage": 3, ...},
+    {"stage": 4, ...}
+  ],
+  "errors": []
+}</code></pre>
+<pre><code class="lang-json">// 方式 3:tasks.json 任务队列(高级,异步场景)
+// .claude/tasks.json
+[
+  {
+    "id": "task-001",
+    "status": "in_progress",
+    "agent": "explorer-auth",
+    "input": "Explore the auth module",
+    "created_at": "2026-06-02T12:00:00+08:00",
+    "assigned_to": "agent-instance-1"
+  },
+  {
+    "id": "task-002",
+    "status": "pending",
+    "agent": "explorer-db",
+    "input": "Explore the db module"
+  },
+  {
+    "id": "task-003",
+    "status": "pending",
+    "agent": "test-runner",
+    "input": "Run tests after fix"
+  }
+]
+
+// 主对话往队列里加任务,空闲的子代理从队列里取任务跑:
+{
+  "id": "task-001",
+  "status": "completed",
+  "completed_at": "2026-06-02T12:01:30+08:00",
+  "output": "..."
+}</code></pre>
+<p><strong>📄 第 8 讲配套：协调者主对话的 prompt 模板</strong></p>
+<pre><code class="lang-markdown"># 协调 prompt 模板(主对话用)
+
+## 任务
+[用户原始需求,比如"摸清订单系统的代码结构"]
+
+## 拆任务
+我打算拆成 N 个子任务:
+1. [子任务 1] —— 用 [子代理 1]
+2. [子任务 2] —— 用 [子代理 2]
+3. [子任务 3] —— 用 [子代理 3]
+
+## 通信
+- 每段子代理输出到 [文件路径]
+- 下一段子代理读 [文件路径] 作为输入
+- 失败处理:任一段失败,流水线暂停,弹窗让人决定
+
+## 综合报告
+N 个子代理完成后,综合成一份总览:
+- 共同点(N 个子代理都同意的)
+- 差异点(子代理之间矛盾的)
+- 未覆盖(没有任何子代理探索到的)
+
+格式:[Markdown / JSON / 表格 / 自由文本]</code></pre>
+<h2 class="section-anchor">⚠️ 常见坑</h2>
+<div class="callout warn">
+<strong>⚠️ 启动了 N 个子代理但没明确分工（重复劳动同一件事）</strong>
+<p>最常见的失败模式：主对话说"用 3 个 explorer 探索项目",3 个 explorer 都去探索 auth 模块——结果 3 份几乎相同的报告、1 份价值 3 份算力。原因是主对话没给"边界"。正确做法：每个子代理的 prompt 都明确"你的边界是 X、不要探索 Y"——explorer-auth 只探索 auth,explorer-db 只探索 db,explorer-api 只探索 api。判断标准：如果 3 个子代理的报告"看起来很像"、就是分工没做好。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 子代理输出格式不规范（主对话拿到"自然语言散文"没法综合）</strong>
+<p>多子代理协同的常见痛点：N 个子代理的报告格式不一（有的用 Markdown 标题、有的用 JSON、有的用自由文本）、主对话拿到 N 份格式不一致的报告、综合时"无所适从"。正确做法：主对话的协调 prompt 里硬性规定所有子代理的输出格式（用代码块模板）、所有子代理的 system prompt 里也写明"严格按这个格式输出"。这样 N 份报告格式统一、主对话用 jq / grep / 模板就能批量处理。判断标准：如果主对话综合时需要"先看 N 份报告手动理解"、就是格式没规范。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 流水线串行跑了（本质是流水线、但写成了串行、失去并行优势）</strong>
+<p>新人最常犯的"形式像但本质不像"错误：明明 4 段之间没有强依赖（比如 Explore 找位置和 Reviewer 找问题可以并行）、却写成了"Explore 等结果 → Reviewer 等 Explore → Debugger 等 Reviewer"——总时间=4 段之和。正确做法：画数据依赖图、能并行的段就用并行模式；不能并行的（必须有上游输出）才用流水线。新手容易把"逻辑顺序"误认为"执行顺序"——"先找位置再找问题"在逻辑上有顺序、但在执行上完全可以并行（先并行跑 4 段 explorer 都找、再 reviewer 统一分析）。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 没设计失败恢复（A 失败 → B 等着 → 死锁）</strong>
+<p>多子代理协同里最阴险的失败：流水线在段 2 失败了（网络问题 / 子代理超时 / 输出格式不对）、但段 3 还在"等段 2 的输出"——死锁、流水线卡住。正确做法：每段加"超时"和"重试"——段 2 跑了 5 分钟没输出、自动重试 1 次；再失败就"跳过 + 报告"或"终止 + 通知人"。状态记录到 state.json、这样重启流水线能从失败点继续、不会从头跑。判断标准：你的流水线有没有 timeout / retry / fallback 机制。如果没有、补上——生产环境的协同系统必须有失败恢复。</p>
+</div>
+<h2 class="section-anchor">💡 一句话备忘</h2>
+<blockquote>多子代理协同是 Claude Code 从"单人 AI 助手"升级为"小型 AI 团队"的入口——主对话当协调者、文件传递状态、流水线门控失败、9 层叠加才能让 N 个子代理既并行不悖、又失败可恢复。</blockquote>
+<hr>
+<p class="breadcrumb">← 回到 <a href="#top">本讲网页顶部</a></p>
+</main>
+<script>
+  (function () {
+    var STORAGE_KEY = "***";
+    var root = document.documentElement;
+    var btn  = document.getElementById("themeToggle");
+    var icon = document.getElementById("themeIcon");
+    var lbl  = document.getElementById("themeLabel");
+    function apply(theme) {
+      root.setAttribute("data-theme", theme);
+      if (theme === "dark") {
+        icon.innerHTML = "&#9728;&#65039;";
+        lbl.textContent  = "亮色";
+      } else {
+        icon.innerHTML = "&#127769;";
+        lbl.textContent  = "暗色";
+      }
+    }
+    var saved = null;
+    try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    if (saved === "light" || saved === "dark") {
+      apply(saved);
+    } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      apply("dark");
+    } else {
+      apply("light");
+    }
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") || "light";
+      var next = cur === "dark" ? "light" : "dark";
+      apply(next);
+      try { localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>

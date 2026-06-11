@@ -1,0 +1,609 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 7 讲 · 越俎代庖 · 可写型子代理实战</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fff; --fg: #222; --muted: #555; --link: #1a73e8;
+    --code-bg: #f4f4f4; --code-fg: inherit;
+    --pre-bg: #1e1e1e; --pre-fg: #eaeaea;
+    --border: #ddd; --th-bg: #f5f5f5; --zebra: #fafafa;
+    --hover-row: #e8f0fe; --hover-th: #eef2f7;
+    --blockquote-bg: #fafafa; --blockquote-border: #ddd;
+    --hr: #eee;
+    --toggle-bg: #f5f5f5; --toggle-fg: #333; --toggle-border: #ddd;
+    --tag-bg: #eef4ff; --tag-fg: #1a73e8;
+    --callout-bg: #fffbe6; --callout-border: #fadb14;
+    --warn-bg: #fff1f0; --warn-border: #ff4d4f;
+    --ok-bg: #f6ffed; --ok-border: #52c41a;
+    --code-block-bg: #f8f9fa;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1115; --fg: #e6e6e6; --muted: #9aa0a6; --link: #8ab4f8;
+    --code-bg: #1e1f24; --code-fg: #e6e6e6;
+    --pre-bg: #1a1d23; --pre-fg: #e6e6e6;
+    --border: #303136; --th-bg: #1c1f25; --zebra: #16181d;
+    --hover-row: #1f2733; --hover-th: #262c36;
+    --blockquote-bg: #181a20; --blockquote-border: #303136;
+    --hr: #2a2d33;
+    --toggle-bg: #1c1f25; --toggle-fg: #e6e6e6; --toggle-border: #303136;
+    --tag-bg: #1a2540; --tag-fg: #8ab4f8;
+    --callout-bg: #2a261a; --callout-border: #b89333;
+    --warn-bg: #2a1a1a; --warn-border: #a84545;
+    --ok-bg: #1a261a; --ok-border: #4a8a4a;
+    --code-block-bg: #16181d;
+  }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 "PingFang SC", "Microsoft YaHei", "Helvetica Neue",
+                 Arial, sans-serif;
+    font-size: 15px; line-height: 1.7;
+    transition: background-color .2s ease, color .2s ease;
+  }
+  main {
+    max-width: 1100px;
+    width: calc(100% - 32px);
+    margin: 0 auto;
+    padding: 24px 0 64px 0;
+    box-sizing: border-box;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    line-height: 1.3; margin: 1.5em 0 .6em;
+  }
+  h1 { font-size: 1.9em; border-bottom: 2px solid var(--hr); padding-bottom: .3em; }
+  h2 { font-size: 1.45em; border-bottom: 1px solid var(--hr); padding-bottom: .25em; margin-top: 2em; }
+  h3 { font-size: 1.18em; color: var(--link); margin-top: 1.5em; }
+  h4 { font-size: 1.05em; margin-top: 1.2em; color: var(--fg); font-weight: 600; }
+  p, ul, ol, blockquote, pre, table { margin: .7em 0; }
+  ul, ol { padding-left: 1.6em; }
+  li { margin: .3em 0; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  blockquote {
+    margin: .8em 0; padding: .6em 1em;
+    border-left: 4px solid var(--blockquote-border);
+    color: var(--muted); background: var(--blockquote-bg);
+  }
+  .callout {
+    background: var(--callout-bg);
+    border-left: 4px solid var(--callout-border);
+    padding: 12px 16px; margin: 1.2em 0; border-radius: 4px;
+  }
+  .callout.warn { background: var(--warn-bg); border-left-color: var(--warn-border); }
+  .callout.ok   { background: var(--ok-bg);   border-left-color: var(--ok-border); }
+  code {
+    font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: .9em; background: var(--code-bg); color: var(--code-fg);
+    padding: 1px 5px; border-radius: 3px;
+  }
+  pre {
+    background: var(--pre-bg); color: var(--pre-fg);
+    padding: 14px 16px; border-radius: 6px;
+    overflow-x: auto; font-size: 13px; line-height: 1.55;
+    margin: 1em 0;
+  }
+  pre code { background: transparent; padding: 0; color: inherit; }
+  pre.lang-flow {
+    background: var(--code-block-bg); color: var(--fg);
+    border: 1px solid var(--border);
+  }
+  :root[data-theme="dark"] pre.lang-flow {
+    background: #0a0b0d; color: #d4d4d4;
+  }
+  table {
+    width: 100% !important; border-collapse: collapse;
+    table-layout: auto; margin: 1em 0;
+    font-size: 14px; display: table;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left; vertical-align: top;
+    transition: background-color .15s ease;
+  }
+  th { background: var(--th-bg); font-weight: 600; }
+  caption {
+    font-size: 1.1em;
+    font-weight: 700;
+    text-align: left;
+    padding: 0.4em 0 0.6em 0;
+    color: var(--fg);
+  }
+  tbody tr:nth-child(even) td { background: var(--zebra); }
+  tbody tr:hover td, tbody tr:hover th { background: var(--hover-row) !important; }
+  thead th:hover { background: var(--hover-th) !important; }
+  :root[data-theme="dark"] tbody tr:hover td,
+  :root[data-theme="dark"] tbody tr:hover th,
+  :root[data-theme="dark"] thead th:hover { color: #fff; }
+  hr { border: none; border-top: 1px solid var(--hr); margin: 2em 0; }
+  img { max-width: 100%; height: auto; }
+
+  .tag {
+    display: inline-block; padding: 2px 8px; margin-right: 6px;
+    background: var(--tag-bg); color: var(--tag-fg);
+    border-radius: 12px; font-size: 12px; font-weight: 500;
+  }
+  .breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 1em; }
+  .breadcrumb a { color: var(--muted); }
+  .breadcrumb a:hover { color: var(--link); }
+
+  .theme-toggle {
+    position: fixed; top: 12px; right: 12px; z-index: 9999;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: var(--toggle-bg); color: var(--toggle-fg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 6px; font-size: 13px; font-family: inherit;
+    cursor: pointer; user-select: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    transition: background-color .2s ease, transform .1s ease;
+  }
+  .theme-toggle:hover { background: var(--hover-row); }
+  .theme-toggle:active { transform: scale(.97); }
+  .theme-toggle .icon { font-size: 15px; line-height: 1; }
+
+  .lesson-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, #1a73e8, #6f42c1);
+    color: #fff; font-size: 24px; font-weight: 700;
+    margin-right: 14px; vertical-align: middle;
+  }
+
+  .section-anchor { scroll-margin-top: 60px; }
+</style>
+<link rel="stylesheet" href="assets/flow.css">
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="切换暗色模式">
+  <span class="icon" id="themeIcon">&#127769;</span>
+  <span id="themeLabel">暗色</span>
+</button>
+<main>
+<div class="breadcrumb">课程导航： « <a href="lesson-06.html">第 6 讲</a>  ·  <a href="lesson-08.html">第 8 讲</a> »</div>
+<h1><span class="lesson-badge">07</span>第 7 讲 · 越俎代庖 · 可写型子代理实战</h1>
+<p>
+  <span class="tag">正课</span>
+  <span class="tag">第 7 / 33 讲</span>
+  <span class="tag">Claude Code 工程化实战</span>
+</p>
+<div class="callout ok">
+<strong>📌 本讲摘要</strong>
+<p>本讲是 SubAgent 系列的第 3 个实战、聚焦可写型子代理——Claude Code 工程化里权限最高的子代理类型。前 3 讲（只读 / 可执行 / 子代理链）都不会改变状态；可写是第一个"会改变状态"的类别、一旦写错就回不去了。</p>
+<p>本讲的三条主线：</p>
+<p><strong>第一、</strong>可写子代理的核心约束：人 review 永远是最后一道关——工具白名单给 Edit/Write 是"授权",permission 加 ask 机制是"逐次审批"；写之前必须弹窗让人确认、不能 AI 自由改。</p>
+<p><strong>第二、</strong>4 种可写但安全的子代理设计模式——PR-drafter（写 commit message 草稿、不直接 push）、doc-writer（只写 docs/ 目录、不碰 src/）、test-writer（写测试但 commit 前必须 review）、config-generator（只生成新 config、不覆盖现有）。每种模式都把"写"约束在安全边界内。</p>
+<p><strong>第三、</strong>3 道防线兜底——Git Hook 拦截（commit 前再 review 一次）、软删除（写新文件不删旧文件）、Audit 日志（每次写都记录到日志、可追溯）。</p>
+<p>学完本讲、你应该能设计 4 种"可写但安全"的子代理模板、会用 permission 的 ask 机制做"逐次审批"、能用 3 道防线兜底、能用 Audit 日志追溯"谁在什么时候改了什么"。</p>
+</div>
+<table>
+<caption>05,06,07讲子代理的对比</caption>
+<thead><tr>
+<th>维度</th>
+<th>只读子代理（观察者）</th>
+<th>可执行子代理</th>
+<th>可写子代理</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>工具</td>
+<td>Read/Grep/Glob</td>
+<td>Bash（白名单）/Read/Grep</td>
+<td>Edit/Write + Read/Grep/Glob（部分）</td>
+</tr>
+<tr>
+<td>permission</td>
+<td>无（无 Bash)</td>
+<td>Bash 配 deny/ask/allow</td>
+<td>Edit/Write 配 ask + file_path 维度</td>
+</tr>
+<tr>
+<td>改变状态</td>
+<td>否</td>
+<td>否</td>
+<td>是</td>
+</tr>
+<tr>
+<td>回滚难度</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>git revert / 人手工修</td>
+</tr>
+<tr>
+<td>适用阶段</td>
+<td>开发全程</td>
+<td>开发/CI</td>
+<td>开发后期（commit 前 review)</td>
+</tr>
+</tbody></table>
+<h2 class="section-anchor">📖 详细内容</h2>
+<h3>从"可执行"到"可写"：最大的权限跃迁</h3>
+<p>前 3 讲我们讲了 3 类子代理：观察者（无状态）、只读（只看不改）、可执行（跑命令但不改文件）。这 3 类的共同点是"不改变项目状态"——跑测试失败了、改一下测试、跑通了、项目状态变了；但跑测试本身不改任何文件、所以跑失败、跑成功对项目无副作用。</p>
+<p>可写子代理是第一个"会改变状态"的类别。Edit/Write 工具能直接修改文件内容、影响项目的真实状态。一旦写错——写错代码、覆盖了重要文件、误删了测试——就不是"重跑一下"能解决的、得 `git revert` 甚至人手工修。</p>
+<p>这就是为什么"可写"是 SubAgent 权限的"最高一级"、也是工程化落地最需要谨慎的一类。原则有三条：</p>
+<p><strong>原则 1：写之前必须人确认（逐次审批）</strong></p>
+<p>permission 字段对 Edit/Write 工具配 ask 机制：每次子代理想写、Claude Code 都会暂停、弹窗、让用户决定"放行 / 拒绝 / 编辑后再放行"。这等于在子代理和人之间加了"逐次审批"环节、AI 想偷偷改点啥也改不了。</p>
+<p><strong>原则 2：写"草稿"不写"终稿"</strong></p>
+<p>AI 写的第一版永远是"草稿"、人 review 后再决定要不要采用。具体模式：PR-drafter 只产 commit message 草稿、不直接 commit;doc-writer 只产新 .md 文件的草稿、不覆盖现有；test-writer 只产测试代码草稿、人决定要不要合入。"草稿"是 AI 的产出、"终稿"是人的产出——这条边界划清、AI 就翻不了天。</p>
+<p><strong>原则 3:3 道防线兜底</strong></p>
+<p>即使前面两层都失效（permission 没配 / 草稿直接被采纳）、还有 3 道防线：Git Hook 拦截（commit 前再 review 一次）、软删除（写新文件不删旧文件）、Audit 日志（每次写都记录到日志）。这 3 道防线是"可写子代理的安全网",3 层叠加基本能保证"可写子代理不会造成不可逆的破坏"。</p>
+<div class="flow-diagram">
+  <div class="flow-actor">
+    <div class="flow-actor-label">用户（主对话）</div>
+    <div class="flow-actor-desc">"用 pr-drafter 帮我写个 commit message"</div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">SubAgent: pr-drafter 启动</div>
+    <ul>
+      <li>tools: <code>[Bash / Read / Grep / Edit / Write]</code></li>
+      <li>permission: ask + 路径白名单</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"><span class="flow-arrow-label">① git diff --cached</span></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">生成草稿</div>
+    <ul>
+      <li><code>.claude/drafts/commit-msg.txt</code></li>
+      <li><code>.claude/drafts/pr-desc.md</code></li>
+    </ul>
+  </div>
+  <div class="flow-arrow"><span class="flow-arrow-label">② permission 检查 file_path 匹配 allow</span></div>
+  <div class="flow-box">
+    <div class="flow-box-title">✅ 放行，用户无需审批</div>
+  </div>
+  <div class="flow-arrow"><span class="flow-arrow-label">③ 写入完成</span></div>
+  <div class="flow-box">
+    <div class="flow-box-title">PostToolUse Hook</div>
+    <div class="flow-box-sub">记录到 .claude/audit.log</div>
+  </div>
+  <div class="flow-arrow"><span class="flow-arrow-label">④ 子代理返回</span></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">主对话</div>
+    <ul>
+      <li>"pr-drafter 已生成草稿"</li>
+      <li><code>.claude/drafts/commit-msg.txt</code></li>
+      <li>请 review 后自己 <code>git commit</code></li>
+    </ul>
+  </div>
+  <div class="flow-arrow"><span class="flow-arrow-label">用户自己跑 git commit</span></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">PreToolUse Hook 触发</div>
+    <ul>
+      <li>调 <code>code-reviewer</code> 再 review</li>
+      <li><code>REQUEST_CHANGES</code> → exit 2</li>
+      <li><code>APPROVE</code> → exit 0</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-actor flow-actor-final">
+    <div class="flow-actor-label">commit 成功 / 失败</div>
+  </div>
+</div>
+<h3>可写子代理的 4 种"安全模式"</h3>
+<p>"可写"不是一个"全有或全无"的权限、实际工程中会拆成 4 种"安全模式"、每种把"写"约束在不同的边界内：</p>
+<p><strong>模式 1：写 PR draft（人 review 后合入）</strong></p>
+<p>适用：commit message / PR description / changelog。</p>
+<p>边界：子代理只"写"到 .git/ 目录的 draft 区域（或本地草稿文件）、不直接 commit、不直接 push。人 review 草稿后、自己 `git commit -m "..."` 走流程。</p>
+<p>典型子代理：PR-drafter（产出 commit message / PR description 草稿）。</p>
+<p>风险：低（草稿不直接影响代码）。</p>
+<p><strong>模式 2：写新文件（不覆盖现有）</strong></p>
+<p>适用：自动生成 boilerplate / scaffold / 新模块。</p>
+<p>边界：子代理用 Write 工具（不是 Edit）创建新文件、绝不 Edit 现有文件。如果目标文件已存在、直接拒绝、提示"已存在、请用 Edit 改"。</p>
+<p>典型子代理：scaffold-generator（用模板生成新模块）、boilerplate-writer（初始化新项目结构）。</p>
+<p>风险：中（新文件可能不符合项目规范、需人 review）。</p>
+<p><strong>模式 3：写文档（不碰代码）</strong></p>
+<p>适用：自动从 docstring 生成 API 文档 / 自动更新 README / 自动同步 doc 里的版本号。</p>
+<p>边界：子代理只能写 docs/ 目录、*.md 文件、CHANGELOG 等"纯文本文档"位置。绝对不能写 src/、tests/、config/ 等代码相关位置。permission 字段对 Edit/Write 工具的 file_path 参数配正则：`.*\.md$` 允许、其他全部 ask 或 deny。</p>
+<p>典型子代理：doc-writer（自动更新文档）、api-doc-generator（从代码注释生成 API 文档）。</p>
+<p>风险：中（文档写错不致命、但可能误导读者）。</p>
+<p><strong>模式 4：写测试（commit 前必须人 review)</strong></p>
+<p>适用：补充测试覆盖、修复 flaky test。</p>
+<p>边界：子代理可以写 tests/ 目录下的测试代码、但有"必须人 review 才能 commit"的硬约束。具体实现：在 Git Hook 的 PreToolUse 阶段拦截 `git add tests/`、强制弹窗让人 review 子代理写的测试。</p>
+<p>典型子代理：test-writer（补测试）、test-fixer（修 flaky test）。</p>
+<p>风险：中-高（测试可能写错覆盖或漏覆盖）。</p>
+<p>4 种模式可以共存：PR-drafter（模式 1) + scaffold-generator（模式 2) + doc-writer（模式 3) + test-writer（模式 4)、各自独立、各自有边界。组合起来、Claude Code 就能"写很多东西"、但每一种写都被约束在安全范围内。</p>
+<table>
+<thead><tr>
+<th>模式</th>
+<th>写什么</th>
+<th>写到哪里</th>
+<th>安全等级</th>
+<th>典型子代理</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>写 PR draft</td>
+<td>commit message / PR desc</td>
+<td>.claude/drafts/</td>
+<td>高（草稿不直接影响代码）</td>
+<td>pr-drafter</td>
+</tr>
+<tr>
+<td>写新文件</td>
+<td>boilerplate / scaffold</td>
+<td>任意位置（新路径）</td>
+<td>中（不覆盖现有、但可能不符合规范）</td>
+<td>scaffold-generator</td>
+</tr>
+<tr>
+<td>写文档</td>
+<td>README / API docs / CHANGELOG</td>
+<td>docs/ + *.md</td>
+<td>中（写错文档不致命、但误导读者）</td>
+<td>doc-writer</td>
+</tr>
+<tr>
+<td>写测试</td>
+<td>补充测试 / 修 flaky test</td>
+<td>tests/</td>
+<td>中-高（测试可能写错覆盖）</td>
+<td>test-writer</td>
+</tr>
+</tbody></table>
+<h3>permission 在可写场景的精细用法</h3>
+<p>permission 字段在可写场景的用法和可执行场景有 3 个关键差异：</p>
+<p><strong>差异 1:Edit/Write 工具的 ask 机制必须开</strong></p>
+<p>permission 配置里 Edit/Write 工具默认 ask、不是 deny 也不是 allow。每次子代理想写文件、Claude Code 暂停、弹窗、展示"它想写什么 / 写到哪 / 改了什么"、让用户决定。</p>
+<p>不要把 Edit/Write 配成 allow——那等于 AI 自由改代码、permission 完全失效。也不要配成 deny——那等于完全不让写、失去子代理价值。ask 是唯一合理选择。</p>
+<p><strong>差异 2：批量写的"危险叠加"效应</strong></p>
+<p>一次写 1 个文件、人 review 5 秒、判断"放行/拒绝"成本低。一次写 10 个文件、人 review 50 秒、容易"扫一眼全放过"（实际很多 diff 没看到）。这是"批量写"的危险——10 倍 diff 难 review、容易"夹带私货"。</p>
+<p>应对：permission 配 Edit/Write 工具时、加 file_count 限制：1 次最多改 3 个文件、超过就触发额外的"批量写警告"。具体配置在实战代码里展示。</p>
+<p><strong>差异 3:file_path 维度的精细控制</strong></p>
+<p>Edit/Write 工具的 permission 可以配到 file_path 维度。比如：写 *.md 允许、写 src/*.py 询问、写 migrations/* 拒绝。这种"按文件类型 / 按目录"的精细控制是可写子代理的核心安全机制。</p>
+<p>具体格式：permission 用 file_path 字段配正则。`{"file_path": "docs/.*", "permission": "allow"}` / `{"file_path": "src/.*", "permission": "ask"}` / `{"file_path": "migrations/.*", "permission": "deny"}`。</p>
+<p>3 个差异汇总：可写场景的 permission 配法是"ask 为主 + file_path 维度精细控制 + file_count 限制"、三者缺一就会留下安全漏洞。</p>
+<h3>PR-drafter 的完整实战</h3>
+<p>PR-drafter 是可写子代理里最常用的一类——它写 commit message 和 PR description、但不直接 commit/push、只产"草稿"。下面是一个完整的实战配置：</p>
+<p>角色：写 commit message 草稿 + PR description 草稿。行为：读 git diff、生成符合 Conventional Commits 规范的 commit message；读 commits since main、生成 PR description（包含 Summary / Changes / Test Plan / Risk）。边界：只写 .claude/drafts/ 目录下的草稿文件、不直接 git commit、绝对不 git push。</p>
+<p>PR-drafter 的安全优势：即使它写错了、也只是草稿文件写错、git 历史没动、远程仓库没动、人随时能删草稿重来。这是"可写子代理里最安全的一类"。</p>
+<h3>doc-writer 的完整实战</h3>
+<p>doc-writer 是第二常用的可写子代理——它自动更新文档（API 文档 / README / CHANGELOG)、但严格限制在 docs/ 目录、绝不碰 src/。</p>
+<p>角色：从 docstring 生成 API 文档 / 从 package.json 同步版本号到 README / 从 commits 生成 CHANGELOG。边界：用 permission 的 file_path 维度配正则、只允许 docs/.* 和 *.md 文件。绝对禁止 src/.* / tests/.* / config/.*。绝对禁止 .env / secrets / credentials 等敏感文件。</p>
+<p>doc-writer 的安全优势：即使它写错了、也只是文档错、不直接影响代码运行；但文档错可能误导读者、所以仍然要 ask 机制弹窗确认。</p>
+<h3>3 道防线：可写子代理的"安全网"</h3>
+<p>即使前面"逐次审批 + 草稿模式"都失效、还有 3 道防线兜底：</p>
+<p><strong>防线 1:Git Hook 拦截（commit 前再 review 一次）</strong></p>
+<p>在 PreToolUse Hook 里配：匹配 Bash 工具 + `git commit` 命令、自动跑 code-reviewer 子代理审查当前 diff（可以复用第 5 讲配的 pre-commit-review.sh）。即使子代理已经写完文件、commit 之前再过一道 review。失败 → exit 非 0 阻止 commit。</p>
+<p><strong>防线 2：软删除（写新文件不删旧文件）</strong></p>
+<p>子代理的 system prompt 里硬约束："Never delete files. If a file should be removed, rename it to .deprecated instead."——AI 永远只能"加"、不能"减"。即使 AI 觉得"这个文件没用了"、也只能改名 .deprecated、人决定要不要真删。这一条把"可写"风险再降一档——子代理永远不会"夹带"删除操作。</p>
+<p><strong>防线 3:Audit 日志（可追溯）</strong></p>
+<p>每次 Edit/Write 工具调用、Claude Code 自动记录一条 audit log：时间戳 / 子代理名 / file_path / diff_size / user_decision（放行/拒绝/编辑后放行）。Audit 日志写到 .claude/audit.log（不进 git)、出现事故时能查"谁在什么时候改了什么"。</p>
+<p>3 道防线叠加、可写子代理的"最大可承受损失"被严格限定：即使所有审批都失效、Git Hook 会拦截（防线 1)+ 软删除不会真正删文件（防线 2)+ Audit 日志能追溯事故原因（防线 3）。这一套是 SubAgent 工程化落地的"终极安全网"。</p>
+<h2 class="section-anchor">🛠️ 实战代码</h2>
+<p><strong>📄 第 7 讲配套：完整版 PR-drafter.md（写 commit message / PR description 草稿）</strong></p>
+<pre><code class="lang-markdown">---
+# .claude/agents/pr-drafter.md
+# 角色:写 commit message 和 PR description 的草稿,不直接 commit/push
+name: pr-drafter
+description: Draft commit message and PR description from my staged changes. Use when I say "写个 commit" / "draft PR" / "总结一下这次改动".
+tools: Bash, Read, Grep, Edit, Write
+model: sonnet
+---
+You are a PR drafting assistant. Your only job is to write clear, complete commit messages
+and PR descriptions. You NEVER commit, push, or merge — that is always a human action.
+
+# 角色
+- Read `git diff --cached` to see staged changes
+- Generate a Conventional Commits compliant commit message
+- Generate a PR description with sections: Summary / Changes / Test Plan / Risk
+
+# 硬约束
+- You may only write to `.claude/drafts/`. Never to source files, never to `.git/`.
+- Never run: `git commit`, `git push`, `git merge`, `git rebase`.
+- Never modify CLAUDE.md, settings.json, or any config file.
+- If `git diff --cached` is empty, ask the user to stage changes first.
+
+# 输出格式(写两个文件)
+1. `.claude/drafts/commit-msg.txt` — commit message,格式:
+```
+&lt;type&gt;(&lt;scope&gt;): &lt;subject&gt;
+
+&lt;body&gt;
+
+&lt;footer&gt;
+```
+
+2. `.claude/drafts/pr-description.md` — PR description,格式:
+```markdown
+## Summary
+&lt;1-3 sentences&gt;
+
+## Changes
+- &lt;bullet list of key changes&gt;
+
+## Test Plan
+- [ ] &lt;how to verify&gt;
+
+## Risk
+- &lt;what could go wrong / how to mitigate&gt;
+```
+
+报告回主对话:
+"已生成草稿:
+  - .claude/drafts/commit-msg.txt
+  - .claude/drafts/pr-description.md
+请 review 后用 `git commit -F .claude/drafts/commit-msg.txt` 提交。"</code></pre>
+<p><strong>📄 第 7 讲配套：完整版 doc-writer.md（只写 docs/ 目录、绝对不动 src/)</strong></p>
+<pre><code class="lang-markdown">---
+# .claude/agents/doc-writer.md
+# 角色:自动更新文档,严格限制在 docs/ 目录
+name: doc-writer
+description: Update README, generate API docs from docstrings, or sync CHANGELOG. Use when I say "更新文档" / "sync docs" / "generate API docs".
+tools: Read, Grep, Glob, Edit, Write
+model: haiku
+---
+You are a documentation writer. You keep docs/ in sync with code, but you NEVER touch source code.
+
+# 角色
+- Generate API docs from Python docstrings (src/&lt;module&gt;.py → docs/api/&lt;module&gt;.md)
+- Sync version numbers from package.json / pyproject.toml to README.md
+- Add entries to CHANGELOG.md based on commits since last release
+- Update README installation/usage sections when src/ changes
+
+# 硬约束
+- ✅ Allowed file paths: `docs/.*`, `README.md`, `CHANGELOG.md`, `*.md`
+- ❌ Forbidden paths: `src/.*`, `tests/.*`, `config/.*`, `.*\.env.*`, `.*secret.*`, `.*credential.*`
+- Never modify code files. If docs/ change requires code change, report it; do not improvise.
+- If target file doesn't exist in `docs/`, create it; if exists, use Edit (not Write).
+
+# 输出格式
+```
+## Doc Update: &lt;target&gt;
+
+Files changed:
+- docs/api/orders.md (created)
+- README.md (updated version: 1.2.3 → 1.3.0)
+- CHANGELOG.md (added 3 entries)
+
+⚠  Code changes needed (not done by me):
+- src/orders/service.py:42 — function signature changed, needs new docstring
+- src/api/CLAUDE.md:5 — install command needs update
+```</code></pre>
+<p><strong>📄 第 7 讲配套：permission 字段（可写场景的精细配置）</strong></p>
+<pre><code class="lang-json">// .claude/settings.json
+{
+  "permissions": {
+    "Edit": [
+      // === deny:绝对禁止 ===
+      {"file_path": "migrations/.*",            "permission": "deny"},
+      {"file_path": ".*\\.env.*",              "permission": "deny"},
+      {"file_path": ".*secret.*",              "permission": "deny"},
+      {"file_path": ".*credential.*",          "permission": "deny"},
+      {"file_path": "src/billing/.*",          "permission": "deny"},
+
+      // === ask:写之前弹窗 ===
+      {"file_path": "src/.*\\.py",             "permission": "ask"},
+      {"file_path": "tests/.*\\.py",            "permission": "ask"},
+      {"file_path": "config/.*",               "permission": "ask"},
+
+      // === allow:文档安全 ===
+      {"file_path": "docs/.*\\.md",             "permission": "allow"},
+      {"file_path": "README\\.md",             "permission": "allow"},
+      {"file_path": "CHANGELOG\\.md",          "permission": "allow"},
+      {"file_path": ".claude/drafts/.*",       "permission": "allow"}
+    ],
+    "Write": [
+      // Write 工具的 permission 字段和 Edit 同构,这里省略
+      // 重点:Write 只允许创建"新文件",如果目标文件已存在,改用 Edit
+    ],
+    "Bash": [
+      // ... 沿用第 6 讲的 deny/ask/allow 配置 ...
+    ]
+  },
+
+  "limits": {
+    "Edit": {
+      "max_files_per_call": 3,
+      "max_diff_lines_per_call": 200,
+      "warn_above_files": 5
+    }
+  }
+}</code></pre>
+<p><strong>📄 第 7 讲配套：3 道防线 — Audit 日志 + 软删除 + Git Hook</strong></p>
+<pre><code class="lang-bash"># 防线 1:Audit 日志 Hook(在 PostToolUse 阶段记录每次写)
+# .claude/hooks/audit-write.sh
+#!/usr/bin/env bash
+# 记录每次 Edit/Write 工具调用到 .claude/audit.log
+TOOL_NAME="$1"
+FILE_PATH="$2"
+USER_DECISION="$3"
+TIMESTAMP=$(date -Iseconds)
+
+if [[ "$TOOL_NAME" == "Edit" || "$TOOL_NAME" == "Write" ]]; then
+  echo "$TIMESTAMP | $TOOL_NAME | $FILE_PATH | $USER_DECISION" \
+    &gt;&gt; .claude/audit.log
+fi
+exit 0</code></pre>
+<pre><code class="lang-bash"># 防线 2:软删除约束(写到子代理的 system prompt)
+# 在所有"可写"子代理的硬约束里都加上:
+#
+#   ## 软删除原则
+#   - Never delete files. If a file should be removed:
+#       mv &lt;file&gt; &lt;file&gt;.deprecated
+#   - The human will decide later whether to truly delete the .deprecated file.
+#   - This way, even if your judgment is wrong, the file content is preserved.</code></pre>
+<pre><code class="lang-bash"># 防线 3:Git Hook 拦截(commit 前再 review 一次)
+# 复用第 5 讲的 .claude/hooks/pre-commit-review.sh
+# 关键逻辑:拦截 `git commit`,自动跑 code-reviewer,失败 → exit 2
+# 配在 .claude/settings.json 的 PreToolUse Hook 里
+# (具体配置见第 5 讲)
+
+# 完整 3 道防线叠加:
+#   可写子代理写文件
+#     ↓
+#   防线 1:permission ask 机制(逐次审批)
+#     ↓
+#   子代理写完文件
+#     ↓
+#   防线 2:Audit 日志(记录谁写了什么)
+#     ↓
+#   用户 `git commit`
+#     ↓
+#   防线 3:PreToolUse Hook → code-reviewer 再 review
+#     ↓
+#   放行 / 阻止</code></pre>
+<h2 class="section-anchor">⚠️ 常见坑</h2>
+<div class="callout warn">
+<strong>⚠️ 给了 Edit/Write 但没配 ask 机制（等于让 AI 自由改代码、灾难）</strong>
+<p>最危险也最隐蔽的错误：可写子代理的 frontmatter 里写了 `tools: Edit, Write`、但在 settings.json 里没配 permission 字段、或者配了但 Edit/Write 的 permission 是 allow（不是 ask）。结果：AI 现在能自由改任何文件——src/、tests/、config/、.env、secrets——任何它想改的。即使子代理的 system prompt 写得很保守（"只在 docs/ 写"),permission 没限制 = AI 随时能突破。判断标准：可写子代理的 Edit/Write 工具 permission 必须配 ask、且 file_path 维度要有限制。如果只有 allow 没有 ask、立即停用。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ "批量写"（一次写 10 个文件）的风险被低估</strong>
+<p>新人最容易忽略的危险：permission 给 Edit/Write 都配了 ask、但没限制"一次最多改几个文件"。结果：AI 一次性 Edit 10 个文件、弹窗弹 10 次、用户嫌烦"全放过"——等于 ask 失效。解决：permission 配置里加 limits 字段：`max_files_per_call: 3` / `max_diff_lines_per_call: 200` / `warn_above_files: 5`。Claude Code 超过阈值会触发额外的"批量写警告"、让用户更谨慎地 review。判断标准：你的 permission 配置里有没有 file_count / diff_size 限制。如果没有、补上。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 写新功能时 AI 顺手"重构"了无关代码（角色漂移成万能 dev)</strong>
+<p>常见的角色漂移：用户说"用 doc-writer 更新 README"——doc-writer 跑着跑着、顺手"优化"了 src/ 里的某个 import 顺序、改了一个 docstring 的措辞、删了一个注释行。结果：它本来只是"写 README"、现在顺便改了 src/。这违反了 doc-writer 的核心边界：只写 docs/、不碰 src/。修正：在 system prompt 的硬约束里写明"硬边界白名单 + 黑名单",permission 字段对 src/ 配 deny 而不是 ask,file_path 维度的正则严格匹配。AI 看到 deny 触发"我没权限"——角色漂移被工具层堵死。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 没有 Audit 日志（写错了不知道谁写的、什么时候写的、改了什么）</strong>
+<p>工程治理里最常见的"事后追溯"难题：出事故了、发现某个文件被改了、但不知道"谁改的?什么时候改的?改了哪些行?是 AI 改的还是人改的?走的是什么流程?"。解决：在 PostToolUse Hook 里配 audit 记录、每次 Edit/Write 工具调用都写一条到 .claude/audit.log（不进 git）。审计时直接查日志。判断标准：你的 .claude/settings.json 里有没有 PostToolUse Hook 配 audit 记录。如果没有、补上——这是 SubAgent 工程化落地的"黑匣子"、出事故时能救命。</p>
+</div>
+<h2 class="section-anchor">💡 一句话备忘</h2>
+<blockquote>可写子代理的"安全公式":permission ask 机制 + 4 种安全模式（PR 草稿/新文件/文档/测试）+ 3 道防线（Audit 日志/软删除/Git Hook)——9 层叠加才能让 AI 既会写、又写不乱。</blockquote>
+<hr>
+<p class="breadcrumb">← 回到 <a href="#top">本讲网页顶部</a></p>
+</main>
+<script>
+  (function () {
+    var STORAGE_KEY = "***";
+    var root = document.documentElement;
+    var btn  = document.getElementById("themeToggle");
+    var icon = document.getElementById("themeIcon");
+    var lbl  = document.getElementById("themeLabel");
+    function apply(theme) {
+      root.setAttribute("data-theme", theme);
+      if (theme === "dark") {
+        icon.innerHTML = "&#9728;&#65039;";
+        lbl.textContent  = "亮色";
+      } else {
+        icon.innerHTML = "&#127769;";
+        lbl.textContent  = "暗色";
+      }
+    }
+    var saved = null;
+    try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    if (saved === "light" || saved === "dark") {
+      apply(saved);
+    } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      apply("dark");
+    } else {
+      apply("light");
+    }
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") || "light";
+      var next = cur === "dark" ? "light" : "dark";
+      apply(next);
+      try { localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>
