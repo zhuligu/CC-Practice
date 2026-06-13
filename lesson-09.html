@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 9 讲 · 子代理专题总结</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fff; --fg: #222; --muted: #555; --link: #1a73e8;
+    --code-bg: #f4f4f4; --code-fg: inherit;
+    --pre-bg: #1e1e1e; --pre-fg: #eaeaea;
+    --border: #ddd; --th-bg: #f5f5f5; --zebra: #fafafa;
+    --hover-row: #e8f0fe; --hover-th: #eef2f7;
+    --blockquote-bg: #fafafa; --blockquote-border: #ddd;
+    --hr: #eee;
+    --toggle-bg: #f5f5f5; --toggle-fg: #333; --toggle-border: #ddd;
+    --tag-bg: #eef4ff; --tag-fg: #1a73e8;
+    --callout-bg: #fffbe6; --callout-border: #fadb14;
+    --warn-bg: #fff1f0; --warn-border: #ff4d4f;
+    --ok-bg: #f6ffed; --ok-border: #52c41a;
+    --code-block-bg: #f8f9fa;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1115; --fg: #e6e6e6; --muted: #9aa0a6; --link: #8ab4f8;
+    --code-bg: #1e1f24; --code-fg: #e6e6e6;
+    --pre-bg: #1a1d23; --pre-fg: #e6e6e6;
+    --border: #303136; --th-bg: #1c1f25; --zebra: #16181d;
+    --hover-row: #1f2733; --hover-th: #262c36;
+    --blockquote-bg: #181a20; --blockquote-border: #303136;
+    --hr: #2a2d33;
+    --toggle-bg: #1c1f25; --toggle-fg: #e6e6e6; --toggle-border: #303136;
+    --tag-bg: #1a2540; --tag-fg: #8ab4f8;
+    --callout-bg: #2a261a; --callout-border: #b89333;
+    --warn-bg: #2a1a1a; --warn-border: #a84545;
+    --ok-bg: #1a261a; --ok-border: #4a8a4a;
+    --code-block-bg: #16181d;
+  }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 "PingFang SC", "Microsoft YaHei", "Helvetica Neue",
+                 Arial, sans-serif;
+    font-size: 15px; line-height: 1.7;
+    transition: background-color .2s ease, color .2s ease;
+  }
+  main {
+    max-width: 1100px;
+    width: calc(100% - 32px);
+    margin: 0 auto;
+    padding: 24px 0 64px 0;
+    box-sizing: border-box;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    line-height: 1.3; margin: 1.5em 0 .6em;
+  }
+  h1 { font-size: 1.9em; border-bottom: 2px solid var(--hr); padding-bottom: .3em; }
+  h2 { font-size: 1.45em; border-bottom: 1px solid var(--hr); padding-bottom: .25em; margin-top: 2em; }
+  h3 { font-size: 1.18em; color: var(--link); margin-top: 1.5em; }
+  h4 { font-size: 1.05em; margin-top: 1.2em; color: var(--fg); font-weight: 600; }
+  p, ul, ol, blockquote, pre, table { margin: .7em 0; }
+  ul, ol { padding-left: 1.6em; }
+  li { margin: .3em 0; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  blockquote {
+    margin: .8em 0; padding: .6em 1em;
+    border-left: 4px solid var(--blockquote-border);
+    color: var(--muted); background: var(--blockquote-bg);
+  }
+  .callout {
+    background: var(--callout-bg);
+    border-left: 4px solid var(--callout-border);
+    padding: 12px 16px; margin: 1.2em 0; border-radius: 4px;
+  }
+  .callout.warn { background: var(--warn-bg); border-left-color: var(--warn-border); }
+  .callout.ok   { background: var(--ok-bg);   border-left-color: var(--ok-border); }
+  code {
+    font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: .9em; background: var(--code-bg); color: var(--code-fg);
+    padding: 1px 5px; border-radius: 3px;
+  }
+  pre {
+    background: var(--pre-bg); color: var(--pre-fg);
+    padding: 14px 16px; border-radius: 6px;
+    overflow-x: auto; font-size: 13px; line-height: 1.55;
+    margin: 1em 0;
+  }
+  pre code { background: transparent; padding: 0; color: inherit; }
+  pre.lang-flow {
+    background: var(--code-block-bg); color: var(--fg);
+    border: 1px solid var(--border);
+  }
+  :root[data-theme="dark"] pre.lang-flow {
+    background: #0a0b0d; color: #d4d4d4;
+  }
+  table {
+    width: 100% !important; border-collapse: collapse;
+    table-layout: auto; margin: 1em 0;
+    font-size: 14px; display: table;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left; vertical-align: top;
+    transition: background-color .15s ease;
+  }
+  th { background: var(--th-bg); font-weight: 600; }
+  tbody tr:nth-child(even) td { background: var(--zebra); }
+  tbody tr:hover td, tbody tr:hover th { background: var(--hover-row) !important; }
+  thead th:hover { background: var(--hover-th) !important; }
+  :root[data-theme="dark"] tbody tr:hover td,
+  :root[data-theme="dark"] tbody tr:hover th,
+  :root[data-theme="dark"] thead th:hover { color: #fff; }
+  hr { border: none; border-top: 1px solid var(--hr); margin: 2em 0; }
+  img { max-width: 100%; height: auto; }
+
+  .tag {
+    display: inline-block; padding: 2px 8px; margin-right: 6px;
+    background: var(--tag-bg); color: var(--tag-fg);
+    border-radius: 12px; font-size: 12px; font-weight: 500;
+  }
+  .breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 1em; }
+  .breadcrumb a { color: var(--muted); }
+  .breadcrumb a:hover { color: var(--link); }
+
+  .theme-toggle {
+    position: fixed; top: 12px; right: 12px; z-index: 9999;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: var(--toggle-bg); color: var(--toggle-fg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 6px; font-size: 13px; font-family: inherit;
+    cursor: pointer; user-select: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    transition: background-color .2s ease, transform .1s ease;
+  }
+  .theme-toggle:hover { background: var(--hover-row); }
+  .theme-toggle:active { transform: scale(.97); }
+  .theme-toggle .icon { font-size: 15px; line-height: 1; }
+
+  .lesson-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, #1a73e8, #6f42c1);
+    color: #fff; font-size: 24px; font-weight: 700;
+    margin-right: 14px; vertical-align: middle;
+  }
+
+  .section-anchor { scroll-margin-top: 60px; }
+</style>
+<link rel="stylesheet" href="assets/flow.css">
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="切换暗色模式">
+  <span class="icon" id="themeIcon">&#127769;</span>
+  <span id="themeLabel">暗色</span>
+</button>
+<main>
+<div class="breadcrumb">课程导航： « <a href="lesson-08.html">第 8 讲</a>  ·  <a href="lesson-10.html">第 10 讲</a> »</div>
+<h1><span class="lesson-badge">09</span>第 9 讲 · 子代理专题总结</h1>
+<p>
+  <span class="tag">正课</span>
+  <span class="tag">第 9 / 33 讲</span>
+  <span class="tag">Claude Code 工程化实战</span>
+  <span class="tag">SubAgent 收官篇</span>
+</p>
+<div class="callout ok">
+<strong>📌 本讲摘要</strong>
+<p>本讲是 SubAgent 系列的收官篇、做 4 件事：全景图回顾（8 个常用子代理角色速查）、选型决策树（从"任务特征"反推"该用哪个"）、模板库沉淀（怎么把团队子代理变成可复用资产）、未来演进（多模态 / Agent 协议 / MCP 集成）。目的是让你"看完就能用、用完就能扩、扩完就能传"。</p>
+<p>本讲的三条主线：</p>
+<p>第一、8 个常用子代理角色——按"读 / 跑 / 写"三类拆、每个角色有明确的工具白名单、触发场景、输出格式；速查表让你 30 秒选对子代理。</p>
+<p>第二、选型决策树——4 步决策（任务改不改状态?→ 单读/可执行/可写；输出大不大?→ 单子代理 vs 流水线；可不可并行?→ 单跑 vs 多跑；要不要审批?→ ask 机制）、从任务特征反推子代理类型。</p>
+<p>第三、从个人技巧到团队资产——3 种沉淀方式（入 git 共享 / 内部 NPM 包 / GitHub 仓库）+ 3 个长期机制（版本管理 / 质量审计 / 使用统计）、让子代理从"个人一次性脚本"变成"团队可持续资产"。</p>
+<p>学完本讲、你应该能在 30 秒内为新任务选对子代理、能用决策树向团队成员解释"为什么用这个"、能用模板库把团队的子代理沉淀成可复用的资产、能规划 SubAgent 在多模态/Agent 协议/MCP 集成上的演进路径。</p>
+</div>
+<h2 class="section-anchor">📖 详细内容</h2>
+<h3>SubAgent 系列全景图回顾：8 个常用角色速查</h3>
+<p>第 4 讲到第 8 讲用了 5 讲把 SubAgent 讲透——核心概念、3 类单兵实战、多子代理协同。本节用 8 个常用子代理角色做速查回顾、按"读 / 跑 / 写"三类组织：</p>
+<p><strong>只读类（3 个、Read/Grep/Glob 为主、无副作用）</strong></p>
+<p>1. code-reviewer（代码审查）——触发：用户改完代码后。输出：Critical / Warning / Suggestion 三档分级清单。</p>
+<p>2. security-auditor（安全审计）——触发：合并 main 前 / 依赖升级后。输出：每条带 CVE 编号 / OWASP 分类的漏洞清单。</p>
+<p>3. doc-explorer（文档侦察）——触发：用户问"这段代码什么意思" / "这个 API 怎么用"。输出：定位 + 5 行上下文。</p>
+<p><strong>可执行类（2 个、Bash 工具配 permission 白名单）</strong></p>
+<p>4. test-runner（跑测试）——触发："跑测试" / "verify" / "ci"。输出：Passed / Failed / Flaky / Coverage 四字段摘要。</p>
+<p>5. diag-runner（诊断跑）——触发："为什么慢" / "线上报错" / "远程 ssh 排查"。输出：瓶颈定位 + 修复建议。</p>
+<p><strong>可写类（3 个、Edit/Write 配 ask 机制 + file_path 白名单）</strong></p>
+<p>6. pr-drafter(PR 草稿）——触发："写个 commit" / "draft PR"。输出：.claude/drafts/ 下的 commit-msg.txt 和 pr-description.md、不直接 commit/push。</p>
+<p>7. doc-writer（文档写）——触发："更新文档" / "sync docs"。输出：docs/ + *.md 文件的更新、绝不碰 src/。</p>
+<p>8. test-writer（测试写）——触发："补测试" / "加 case"。输出：tests/ 下的新测试、commit 前必须人 review。</p>
+<p>8 个角色覆盖了 Claude Code 工程化里 80% 的"重复性高、有明确边界、可并行/可串行"的任务。每个角色的细节（工具白名单 / system prompt / 触发词）在前 5 讲里都讲过、本节只给速查、目的是帮你"30 秒选对"。</p>
+<p>8 个角色之外、你可能还会遇到"自定义子代理"——比如 migration-expert（本项目数据库迁移专家）、legacy-archaeologist（读老代码的考古学家）、i18n-localizer（多语言本地化专家）。这些是"项目特化"的子代理、放在 project-level、模板在实战代码段里给。</p>
+<table>
+<thead><tr>
+<th>角色</th>
+<th>类别</th>
+<th>工具</th>
+<th>触发场景</th>
+<th>输出</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>code-reviewer</td>
+<td>只读</td>
+<td>Read/Grep/Glob/Bash</td>
+<td>改完代码后、commit 前</td>
+<td>Critical/Warning/Suggestion 清单</td>
+</tr>
+<tr>
+<td>security-auditor</td>
+<td>只读</td>
+<td>Read/Grep/Glob</td>
+<td>合并 main 前、依赖升级后</td>
+<td>带 CVE/OWASP 分类的漏洞清单</td>
+</tr>
+<tr>
+<td>doc-explorer</td>
+<td>只读</td>
+<td>Grep/Glob/Read</td>
+<td>"这段代码什么意思"</td>
+<td>定位 + 5 行上下文</td>
+</tr>
+<tr>
+<td>test-runner</td>
+<td>可执行</td>
+<td>Bash（白名单）/Read/Grep</td>
+<td>"跑测试" / "verify"</td>
+<td>Passed/Failed/Flaky/Coverage</td>
+</tr>
+<tr>
+<td>diag-runner</td>
+<td>可执行</td>
+<td>Bash(ssh/psql/curl GET)/Read</td>
+<td>"为什么慢" / "线上报错"</td>
+<td>瓶颈定位 + 修复建议</td>
+</tr>
+<tr>
+<td>pr-drafter</td>
+<td>可写</td>
+<td>Bash/Read/Grep/Edit/Write</td>
+<td>"写个 commit" / "draft PR"</td>
+<td>.claude/drafts/ 下的草稿</td>
+</tr>
+<tr>
+<td>doc-writer</td>
+<td>可写</td>
+<td>Read/Grep/Glob/Edit/Write</td>
+<td>"更新文档" / "sync docs"</td>
+<td>docs/ + *.md 的更新</td>
+</tr>
+<tr>
+<td>test-writer</td>
+<td>可写</td>
+<td>Read/Grep/Glob/Edit/Write/Bash</td>
+<td>"补测试" / "加 case"</td>
+<td>tests/ 下的新测试</td>
+</tr>
+</tbody></table>
+<h3>选型决策树：从任务特征反推子代理</h3>
+<p>新人最常问的问题："我手头这个任务该用哪个子代理?"——决策树是答案。4 步决策、从任务特征反推到子代理类型：</p>
+<p><strong>第 1 步：任务改不改状态?</strong></p>
+<p>不改状态（只读/只跑命令不写） → 进入"读 / 跑"分支。改状态（要写文件） → 进入"写"分支、且必须配 ask 机制。</p>
+<p><strong>第 2 步：输出大不大?</strong></p>
+<p>输出大（测试报告 / 全项目搜索） → 用单子代理隔离上下文（主对话不污染）。输出小（几句话能说完） → 直接在主对话里做、不用子代理。</p>
+<p><strong>第 3 步：可不可并行?</strong></p>
+<p>可并行（3 个独立探索） → 用并行模式 + 多子代理。不可并行（强依赖、链式） → 用流水线模式、各段一个子代理。</p>
+<p><strong>第 4 步：要不要审批?</strong></p>
+<p>要（改代码 / 改配置 / 推 git) → ask 机制 + file_path 白名单。不要（只读 / 只跑白名单命令） → 自动放行。</p>
+<p>4 步决策后、你就能从 8 个常用角色里选 1 个（或者决定"自定义一个"）。决策树的可视化版本在实战代码段里、贴在墙上 30 秒做一次选型。</p>
+<div class="flow-diagram">
+  <div class="flow-actor">
+    <div class="flow-actor-label">用户新任务</div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">选型决策树（4 步）</div>
+    <ol style="margin:4px 0;padding-left:1.4em;font-size:13px">
+      <li>Q1：改不改状态？</li>
+      <li>Q2：输出大不大？</li>
+      <li>Q3：可不可并行？</li>
+      <li>Q4：要不要审批？</li>
+    </ol>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box">
+    <div class="flow-box-title">从 8 角色选 1 / 或决定"自定义"</div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box">
+    <div class="flow-box-title">使用子代理 → 输出</div>
+  </div>
+  <div class="flow-arrow"><span class="flow-arrow-label">反馈：子代理好不好用？</span></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">问题诊断 → 调整</div>
+    <ul>
+      <li>漂移（实际 ≠ 预期）→ 修 system prompt</li>
+      <li>太复杂 → 拆分</li>
+      <li>太简单 → 合并</li>
+      <li>新场景出现 → 自定义</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box">
+    <div class="flow-box-title">沉淀到模板库</div>
+  </div>
+  <div class="flow-arrow-fork"></div>
+  <div class="flow-row flow-row-3 flow-row-forked" style="max-width:520px;width:100%">
+    <div class="flow-box"><div class="flow-box-title">入 git</div><div class="flow-box-sub">项目内</div></div>
+    <div class="flow-box"><div class="flow-box-title">内部 NPM</div><div class="flow-box-sub">公司内</div></div>
+    <div class="flow-box"><div class="flow-box-title">开源 GitHub</div><div class="flow-box-sub">跨公司</div></div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box">
+    <div class="flow-box-title">持续运营</div>
+    <div class="flow-box-sub">版本管理 + 质量审计 + 使用统计</div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-actor flow-actor-final">
+    <div class="flow-actor-label">演进路径</div>
+    <div class="flow-actor-desc">多模态 / Agent 协议 / MCP 集成</div>
+  </div>
+</div>
+<h3>子代理模板库沉淀：从"个人技巧"到"团队资产"</h3>
+<p>子代理的工程价值不止"用起来方便"、更在"传得下去"。一个团队 5 个工程师、每个人都自己重写 1 份 code-reviewer——5 份几乎一样但又略有不同、code review 标准不统一、效率浪费。</p>
+<p>把"个人技巧"沉淀成"团队资产"有 3 种方式、各有适用场景：</p>
+<p><strong>方式 1：入 git 共享（最简单）</strong></p>
+<p>把 .claude/agents/ 整个目录提交到项目的 git 仓库、所有协作者 clone 后自动继承。这是"项目特化"子代理的天然沉淀方式、门槛低（只需要 git add + commit)、维护方便（PR review 即可）。</p>
+<p>缺点：仅限本项目、跨项目需要复制。</p>
+<p><strong>方式 2：内部 NPM 包（中等）</strong></p>
+<p>把通用子代理（比如 general-code-reviewer / general-explorer）封装成 NPM 包、公司内部私有 registry、各项目 `npm install @your-org/claude-agents` 即可使用。优点：跨项目复用、版本管理（NPM 自带 semver）、可发布审计日志。缺点：门槛高（需要 registry 账号 + 维护 README)、小型团队可能 overkill。</p>
+<p><strong>方式 3:GitHub 仓库（开源共享）</strong></p>
+<p>把通用子代理开源到 GitHub（类似 awesome-claude-agents / claude-code-best-practice 等社区仓库）、社区贡献 + 团队使用。优点：零基础设施负担、社区反馈、跨团队/跨公司复用。缺点：维护成本（issue / PR / 文档）、且公司内部规范不适合开源。</p>
+<p>3 种方式的选型心法：项目内通用 → 入 git；公司内通用 → 内部 NPM 包；跨公司通用 → 开源 GitHub。</p>
+<p>子代理文件的 4 要素（name / description 触发器 / tools 白名单 / system prompt 三段式）在实战代码里给完整模板、新人照着填就行、不用每次都"想一遍结构"。</p>
+<table>
+<thead><tr>
+<th>沉淀方式</th>
+<th>门槛</th>
+<th>适用场景</th>
+<th>版本管理</th>
+<th>维护成本</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>入 git 共享</td>
+<td>低（git add + commit)</td>
+<td>项目内通用</td>
+<td>git tag(semver)</td>
+<td>低（PR review 即可）</td>
+</tr>
+<tr>
+<td>内部 NPM 包</td>
+<td>中（需要 registry 账号）</td>
+<td>公司内通用</td>
+<td>NPM 自带</td>
+<td>中（README + changelog)</td>
+</tr>
+<tr>
+<td>GitHub 仓库</td>
+<td>高（社区维护）</td>
+<td>跨公司通用</td>
+<td>git tag + release</td>
+<td>高（issue/PR/文档）</td>
+</tr>
+</tbody></table>
+<h3>跨项目复用：user-level vs project-level 的边界</h3>
+<p>第 4 讲讲过 user-level（用户级、~ / .claude/agents/）和 project-level（项目级、./.claude/agents/）的区别。本节讲"什么放哪、怎么组织"。</p>
+<p><strong>user-level 放什么</strong></p>
+<p>通用、不依赖项目专有信息的子代理：general-code-reviewer（任何项目能审查）/ general-explorer（任何项目能搜）/ general-doc-writer（任何项目能写文档）。这些子代理的 description 里没有项目专有名词、跨项目能用。</p>
+<p><strong>project-level 放什么</strong></p>
+<p>项目特化、需要项目知识才能发挥作用的子代理：order-domain-expert（只有订单项目能懂）/ migration-expert（本项目迁移规范）/ legacy-archaeologist（本项目老代码考古）。这些子代理的 description 里出现项目专有名词、跨项目用不了（但放进项目 git 仓库、新成员 clone 后自动获得、这是"项目知识传递"的隐藏价值）。</p>
+<p><strong>.claude/agents/ 目录的 3 种组织方式</strong></p>
+<p>按角色组织：</p>
+<p>.claude/agents/reviewers/(code-reviewer / security-auditor / perf-reviewer).claude/agents/runners/(test-runner / diag-runner / build-runner).claude/agents/writers/(pr-drafter / doc-writer / test-writer)</p>
+<p>按阶段组织：</p>
+<p>.claude/agents/dev/(dev-time 工具：explorer / debugger).claude/agents/ci/(CI 工具：test-runner / linter-runner).claude/agents/release/(release 工具：pr-drafter / changelog-writer)</p>
+<p>按技术栈组织：</p>
+<p>.claude/agents/python/(python-linter / python-test-runner / python-doc-generator).claude/agents/react/(react-reviewer / react-test-runner / react-doc-writer)</p>
+<p>3 种方式各有适用场景：团队角色分工明确 → 按角色；项目有清晰的 dev/ci/release 阶段 → 按阶段；多技术栈项目 → 按技术栈。新手从"按角色"开始、熟练后再按团队实际情况调整。</p>
+<h3>SubAgent 工程化治理：3 个长期机制</h3>
+<p>子代理从"个人技巧"到"团队资产"需要 3 个长期机制保障可持续性：</p>
+<p><strong>机制 1：子代理版本管理</strong></p>
+<p>子代理文件进 git、用 git tag 打 semver 版本（比如 v1.0.0 / v1.1.0 / v2.0.0）。每次子代理的 system prompt 重大变更 → minor version 升；工具白名单变更 → major version 升（因为有兼容性风险）；微调（只改 description)→ patch version 升。</p>
+<p>为什么需要：团队里有人用了 v1.0.0 的子代理、有人用了 v1.1.0、行为不一致 → 产出不一致。版本管理让"哪个项目用的哪个版本"清晰可追溯。</p>
+<p><strong>机制 2：子代理质量审计</strong></p>
+<p>每月跑一次"子代理行为对照表"（在实战代码段里给模板）、把每个子代理的实际行为（从 Audit 日志提取）和预期行为（子代理 system prompt 里规定的）对照、看是否漂移。比如：code-reviewer 原本说"输出 Critical/Warning/Suggestion"、实际跑出来发现 30% 的报告漏了 Suggestion 段——这就是漂移、要修 system prompt。</p>
+<p><strong>机制 3：子代理使用统计</strong></p>
+<p>用 Audit 日志统计：哪个子代理调用最多?哪个最少?哪个失败率最高?这些数据驱动"子代理治理"——调用的多 = 价值高、持续投入优化；调用的少 = 可能没解决真问题、考虑合并或废弃；失败率高 = 子代理设计有问题、要重写。</p>
+<p>3 个机制叠加、子代理从"写完就放着"变成"持续运营"。这是从"项目"到"产品"的关键一步。</p>
+<h3>未来演进：多模态 / Agent 协议 / MCP 集成</h3>
+<p>SubAgent 在 Anthropic 的路线图上还在快速演化。3 个方向值得关注：</p>
+<p><strong>方向 1：多模态子代理</strong></p>
+<p>当下子代理的工具白名单主要是文本类（Read/Grep/Glob/Bash/Edit/Write)、未来会原生支持多模态工具（Image / Video / Audio）。比如：image-explorer（读图找 UI 元素）/ video-transcriber（读视频生成字幕）/ audio-summarizer（读音频生成摘要）。这会大幅扩展"看"的边界——子代理从"看代码"变成"看一切"。</p>
+<p><strong>方向 2:Agent 协议</strong></p>
+<p>当下子代理是 Claude Code 内部的"私有"概念、其他 IDE / 工具（比如 Cursor / Cline / Aider）有各自的子代理实现、互不兼容。Agent 协议（类似 MCP / Agent Protocol）是行业标准化的尝试——子代理描述、触发器、工具白名单用统一格式定义、跨工具/跨 IDE 互操作。今天的 .md 文件未来可能变成 .agent.json / .agent.yaml、被任何支持 Agent 协议的工具识别。</p>
+<p><strong>方向 3:MCP 集成</strong></p>
+<p>MCP(Model Context Protocol）是 Anthropic 推的"工具集成协议"、让子代理能调用外部工具（数据库 / 内部 API / SaaS）。当下子代理的 tools 字段是 Claude Code 内置工具、Bash 是"万能瑞士军刀"（但 permission 难配）。未来 MCP 集成后、子代理能直接调 `mcp://database/query` 而不是 `Bash: psql -c "..."`,permission 配在 MCP server 端、更精细。</p>
+<p>3 个方向都还在演化、但 SubAgent 作为"AI 团队协作单元"的核心思想会持续——多模态、协议化、集成化是放大这个思想价值的手段。本节的目的不是预测未来、而是让你在设计子代理时考虑"演进路径"、不锁死在某个工具/某个协议上。</p>
+<h2 class="section-anchor">🛠️ 实战代码</h2>
+<p><strong>📄 第 9 讲配套：子代理选型决策树（可视化 ASCII 图）</strong></p>
+<pre><code class="lang-flow"><code>用户任务
+  |
+  Q1: 任务改不改状态?
+  |-- 不改状态(只读/只跑) ---&gt; Q2
+  |     |-- 改状态(要写) ----&gt; 可写类 + ask 机制
+  |
+  Q2: 输出大不大?
+  |-- 大(测试报告/全项目搜索) ---&gt; 用子代理隔离上下文
+  |     |-- 小(几句话) ------------&gt; 直接在主对话做
+  |
+  Q3: 可不可并行?
+  |-- 可并行(3 个独立探索) ---&gt; 并行模式 + 多子代理
+  |     |-- 不可并行(强依赖链) - &gt; 流水线模式,各段一子代理
+  |
+  Q4: 要不要审批?
+  |-- 要(改代码/改配置/推 git) -&gt; ask + file_path 白名单
+  |     |-- 不要(只读/只跑白名单) -&gt; 自动放行
+  |
+  v
+从 8 角色里选 1:
+  只读 3: code-reviewer / security-auditor / doc-explorer
+  可执行 2: test-runner / diag-runner
+  可写 3: pr-drafter / doc-writer / test-writer</code></pre>
+<p><strong>📄 第 9 讲配套：完整的 8 角色最小可用 .md 模板库</strong></p>
+<pre><code class="lang-markdown"># ===== 只读类 =====
+
+# .claude/agents/code-reviewer.md
+---
+name: code-reviewer
+description: Proactively review code changes for quality and security after I modify code, before commit.
+tools: Read, Grep, Glob, Bash
+model: sonnet
+---
+[详细 prompt 见第 5 讲]
+
+# .claude/agents/security-auditor.md
+---
+name: security-auditor
+description: Audit code for security vulnerabilities (SQLi, XSS, SSRF, secrets) before merging to main.
+tools: Read, Grep, Glob
+model: opus
+---
+[详细 prompt 见第 5 讲的"4 个真实审查场景"段]
+
+# .claude/agents/doc-explorer.md
+---
+name: doc-explorer
+description: Find files and code locations when I ask "where is X" / "find all Y".
+tools: Grep, Glob, Read
+model: haiku
+---
+[详细 prompt 见第 4 讲的 explorer 模板]</code></pre>
+<pre><code class="lang-markdown"># ===== 可执行类 =====
+
+# .claude/agents/test-runner.md
+---
+name: test-runner
+description: Run tests when I say "test it" / "跑测试" / "verify".
+tools: Bash, Read, Grep
+model: haiku
+---
+[详细 prompt 见第 6 讲的完整版,含 permission deny 列表]
+
+# .claude/agents/diag-runner.md
+---
+name: diag-runner
+description: Diagnose slowness / errors / production issues when I say "why is it slow" / "线上报错".
+tools: Bash, Read, Grep
+model: sonnet
+---
+You are a diagnostic runner. SSH to prod, read logs, profile code, report bottlenecks.
+Allowed: ssh, psql -c "SELECT", curl (GET only), top, htop, iostat, vmstat, strace.
+Forbidden: rm, mv, git push, any write operation.</code></pre>
+<pre><code class="lang-markdown"># ===== 可写类(全部配 ask 机制) =====
+
+# .claude/agents/pr-drafter.md
+---
+name: pr-drafter
+description: Draft commit message and PR description from my staged changes.
+tools: Bash, Read, Grep, Edit, Write
+model: sonnet
+---
+[详细 prompt 见第 7 讲的完整版,只写 .claude/drafts/]
+
+# .claude/agents/doc-writer.md
+---
+name: doc-writer
+description: Update README, generate API docs, sync CHANGELOG.
+tools: Read, Grep, Glob, Edit, Write
+model: haiku
+---
+[详细 prompt 见第 7 讲的完整版,只写 docs/ + *.md]
+
+# .claude/agents/test-writer.md
+---
+name: test-writer
+description: Add tests, fix flaky tests, increase coverage.
+tools: Read, Grep, Glob, Edit, Write, Bash
+model: sonnet
+---
+You are a test writer. Add tests to tests/ directory. Run pytest --co to see existing tests.
+Before any commit, the human MUST review your test code (Git Hook enforces this).
+Allowed paths: tests/**, conftest.py
+Forbidden: src/**, migrations/**, config/**</code></pre>
+<p><strong>📄 第 9 讲配套：.claude/agents/ 目录 3 种组织范例</strong></p>
+<pre><code class="lang-bash"># 方式 1:按角色组织
+.claude/agents/
+├── reviewers/
+│   ├── code-reviewer.md
+│   ├── security-auditor.md
+│   └── perf-reviewer.md
+├── runners/
+│   ├── test-runner.md
+│   ├── diag-runner.md
+│   └── build-runner.md
+└── writers/
+    ├── pr-drafter.md
+    ├── doc-writer.md
+    └── test-writer.md
+
+# 方式 2:按阶段组织
+.claude/agents/
+├── dev/
+│   ├── explorer.md
+│   ├── debugger.md
+│   └── code-reviewer.md
+├── ci/
+│   ├── test-runner.md
+│   ├── linter-runner.md
+│   └── coverage-runner.md
+└── release/
+    ├── pr-drafter.md
+    ├── changelog-writer.md
+    └── version-syncer.md
+
+# 方式 3:按技术栈组织
+.claude/agents/
+├── python/
+│   ├── python-linter.md
+│   ├── python-test-runner.md
+│   └── python-doc-generator.md
+├── react/
+│   ├── react-reviewer.md
+│   ├── react-test-runner.md
+│   └── react-doc-writer.md
+└── infra/
+    ├── terraform-reviewer.md
+    ├── ansible-runner.md
+    └── k8s-diag.md</code></pre>
+<p><strong>📄 第 9 讲配套：子代理行为对照表（审计用） + Audit 日志配置</strong></p>
+<pre><code class="lang-markdown"># 子代理行为对照表(每月跑一次审计)
+# .claude/audits/&lt;year&gt;-&lt;month&gt;-subagent-audit.md
+
+| 子代理 | 预期行为(system prompt 规定) | 实际行为(从 audit.log 统计) | 漂移? | 修复动作 |
+|--------|--------------------------|------------------------|-------|---------|
+| code-reviewer | 输出 3 档:Critical/Warning/Suggestion | 30% 报告漏 Suggestion | ✗ | 强化 system prompt,加"必须输出三档" |
+| security-auditor | 每条带 CVE/OWASP | 5% 报告无分类 | 边缘 | minor:加 default 分类 |
+| test-runner | 4 字段:Passed/Failed/Flaky/Coverage | 100% 符合 | 无 | - |
+| pr-drafter | 写 .claude/drafts/ 草稿 | 3% 越权写 src/ | ✗ | major:加 permission deny |
+| doc-writer | 只写 docs/ + *.md | 100% 符合 | 无 | - |
+| ... | ... | ... | ... | ... |
+
+统计方法:
+```bash
+# 调用次数
+jq -r '.tool' .claude/audit.log | sort | uniq -c
+
+# 失败率
+jq -r 'select(.user_decision == "deny") | .tool' .claude/audit.log | sort | uniq -c
+```</code></pre>
+<pre><code class="lang-bash"># Audit 日志 Hook(从第 7 讲复用,这里给完整版)
+# .claude/hooks/audit-subagent.sh
+#!/usr/bin/env bash
+TOOL_NAME="$1"
+SUBAGENT_NAME="$2"
+FILE_PATH="$3"
+USER_DECISION="$4"
+DIFF_SIZE="$5"
+TIMESTAMP=$(date -Iseconds)
+
+# 记录所有子代理的工具调用
+if [ -n "$SUBAGENT_NAME" ]; then
+  echo "$TIMESTAMP | $SUBAGENT_NAME | $TOOL_NAME | $FILE_PATH | diff_size=$DIFF_SIZE | $USER_DECISION" \
+    &gt;&gt; .claude/audit.log
+fi
+exit 0</code></pre>
+<h2 class="section-anchor">⚠️ 常见坑</h2>
+<div class="callout warn">
+<strong>⚠️ 写了 10 个子代理但没人用（模板没沉淀、各自重写）</strong>
+<p>最常见的"SubAgent 失败模式"：团队里某个人花 1 周精心写了 5 个子代理、但因为没沉淀（没入 git / 没发 NPM / 没人知道）、其他人继续自己重写。3 个月后 5 个人的子代理各写一份、标准不统一。修正：子代理写完立即入 git(.claude/agents/ 目录）,README 写明"用法 + 触发词"、团队 stand-up 演示一次。判断标准：你团队里是不是每个人都自己写过 code-reviewer?如果是、就是没沉淀。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 子代理"长成野生的"（没人维护、行为漂移）</strong>
+<p>子代理写完当时很完美、3 个月后没人维护。LLM 模型更新了、Claude Code 工具集变了、项目代码风格变了、子代理的行为悄悄漂移——它现在输出的报告和当初定义的不一样。修正：每月跑一次"子代理行为对照表"（本节实战代码里给模板）、从 Audit 日志提取实际行为、和 system prompt 规定的预期行为对照。漂移 → 修 system prompt；行为不再需要 → 合并/废弃。判断标准：子代理文件最后修改时间是不是 6 个月前?如果是、该审计了。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 跨项目复制时硬编码项目名（应该用占位符）</strong>
+<p>新人最常犯的"复用失效"错误：从 A 项目复制一份子代理到 B 项目、但子代理的 description / system prompt 里硬编码了 A 项目的名字（"OrderFlow 订单系统的代码审查员"）。结果 B 项目用起来完全不对——子代理不知道自己在 B 项目、还以为是 A 项目。修正：子代理模板里用占位符 `{{PROJECT_NAME}}` / `{{LANGUAGE}}` / `{{FRAMEWORK}}`、跨项目复制时批量替换。或者：把"项目名"做成变量、从 CLAUDE.md 里读（CLAUDE.md 已经声明了项目名）。判断标准：子代理的 system prompt 里搜得到具体项目名?如果是、改成占位符。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 没有 quality gate：子代理可以"白盒测试"、但没有持续监控（出问题了才被发现）</strong>
+<p>子代理"测试通过"不代表"生产可用"。一个 code-reviewer 在测试集上 100% 准确、但生产里 AI 模型更新后它开始漏掉 Suggestion 段、3 个月才被发现。修正：配 quality gate——CI 里跑"子代理行为对照表"（每月一次）、任何漂移 > 10% 触发告警。Audit 日志统计失败率、失败率 > 5% 触发告警。判断标准：你的子代理有没有 quality gate（自动化的、持续监控的）?如果没有、补上——这是从"项目"到"产品"的最后一步。</p>
+</div>
+<h2 class="section-anchor">💡 一句话备忘</h2>
+<blockquote>SubAgent 的工程价值不在"单个多强"、而在"团队多齐":8 角色速查 + 决策树 + 模板库 + 3 个长期机制、4 件事把"个人技巧"变成"团队资产"、为后续 Skills / Commands / Hooks 章节铺好"代理层"的地基。</blockquote>
+<hr>
+<p class="breadcrumb">← 回到 <a href="#top">本讲网页顶部</a></p>
+</main>
+<script>
+  (function () {
+    var STORAGE_KEY = "***";
+    var root = document.documentElement;
+    var btn  = document.getElementById("themeToggle");
+    var icon = document.getElementById("themeIcon");
+    var lbl  = document.getElementById("themeLabel");
+    function apply(theme) {
+      root.setAttribute("data-theme", theme);
+      if (theme === "dark") {
+        icon.innerHTML = "&#9728;&#65039;";
+        lbl.textContent  = "亮色";
+      } else {
+        icon.innerHTML = "&#127769;";
+        lbl.textContent  = "暗色";
+      }
+    }
+    var saved = null;
+    try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    if (saved === "light" || saved === "dark") {
+      apply(saved);
+    } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      apply("dark");
+    } else {
+      apply("light");
+    }
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") || "light";
+      var next = cur === "dark" ? "light" : "dark";
+      apply(next);
+      try { localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>
