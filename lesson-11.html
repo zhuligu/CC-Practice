@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 11 讲 · 令行禁止 · 任务型 Skills 实战</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fff; --fg: #222; --muted: #555; --link: #1a73e8;
+    --code-bg: #f4f4f4; --code-fg: inherit;
+    --pre-bg: #1e1e1e; --pre-fg: #eaeaea;
+    --border: #ddd; --th-bg: #f5f5f5; --zebra: #fafafa;
+    --hover-row: #e8f0fe; --hover-th: #eef2f7;
+    --blockquote-bg: #fafafa; --blockquote-border: #ddd;
+    --hr: #eee;
+    --toggle-bg: #f5f5f5; --toggle-fg: #333; --toggle-border: #ddd;
+    --tag-bg: #eef4ff; --tag-fg: #1a73e8;
+    --callout-bg: #fffbe6; --callout-border: #fadb14;
+    --warn-bg: #fff1f0; --warn-border: #ff4d4f;
+    --ok-bg: #f6ffed; --ok-border: #52c41a;
+    --code-block-bg: #f8f9fa;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1115; --fg: #e6e6e6; --muted: #9aa0a6; --link: #8ab4f8;
+    --code-bg: #1e1f24; --code-fg: #e6e6e6;
+    --pre-bg: #1a1d23; --pre-fg: #e6e6e6;
+    --border: #303136; --th-bg: #1c1f25; --zebra: #16181d;
+    --hover-row: #1f2733; --hover-th: #262c36;
+    --blockquote-bg: #181a20; --blockquote-border: #303136;
+    --hr: #2a2d33;
+    --toggle-bg: #1c1f25; --toggle-fg: #e6e6e6; --toggle-border: #303136;
+    --tag-bg: #1a2540; --tag-fg: #8ab4f8;
+    --callout-bg: #2a261a; --callout-border: #b89333;
+    --warn-bg: #2a1a1a; --warn-border: #a84545;
+    --ok-bg: #1a261a; --ok-border: #4a8a4a;
+    --code-block-bg: #16181d;
+  }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 "PingFang SC", "Microsoft YaHei", "Helvetica Neue",
+                 Arial, sans-serif;
+    font-size: 15px; line-height: 1.7;
+    transition: background-color .2s ease, color .2s ease;
+  }
+  main {
+    max-width: 1100px;
+    width: calc(100% - 32px);
+    margin: 0 auto;
+    padding: 24px 0 64px 0;
+    box-sizing: border-box;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    line-height: 1.3; margin: 1.5em 0 .6em;
+  }
+  h1 { font-size: 1.9em; border-bottom: 2px solid var(--hr); padding-bottom: .3em; }
+  h2 { font-size: 1.45em; border-bottom: 1px solid var(--hr); padding-bottom: .25em; margin-top: 2em; }
+  h3 { font-size: 1.18em; color: var(--link); margin-top: 1.5em; }
+  h4 { font-size: 1.05em; margin-top: 1.2em; color: var(--fg); font-weight: 600; }
+  p, ul, ol, blockquote, pre, table { margin: .7em 0; }
+  ul, ol { padding-left: 1.6em; }
+  li { margin: .3em 0; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  blockquote {
+    margin: .8em 0; padding: .6em 1em;
+    border-left: 4px solid var(--blockquote-border);
+    color: var(--muted); background: var(--blockquote-bg);
+  }
+  .callout {
+    background: var(--callout-bg);
+    border-left: 4px solid var(--callout-border);
+    padding: 12px 16px; margin: 1.2em 0; border-radius: 4px;
+  }
+  .callout.warn { background: var(--warn-bg); border-left-color: var(--warn-border); }
+  .callout.ok   { background: var(--ok-bg);   border-left-color: var(--ok-border); }
+  code {
+    font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: .9em; background: var(--code-bg); color: var(--code-fg);
+    padding: 1px 5px; border-radius: 3px;
+  }
+  pre {
+    background: var(--pre-bg); color: var(--pre-fg);
+    padding: 14px 16px; border-radius: 6px;
+    overflow-x: auto; font-size: 13px; line-height: 1.55;
+    margin: 1em 0;
+  }
+  pre code { background: transparent; padding: 0; color: inherit; }
+  pre.lang-flow {
+    background: var(--code-block-bg); color: var(--fg);
+    border: 1px solid var(--border);
+  }
+  :root[data-theme="dark"] pre.lang-flow {
+    background: #0a0b0d; color: #d4d4d4;
+  }
+  table {
+    width: 100% !important; border-collapse: collapse;
+    table-layout: auto; margin: 1em 0;
+    font-size: 14px; display: table;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left; vertical-align: top;
+    transition: background-color .15s ease;
+  }
+  th { background: var(--th-bg); font-weight: 600; }
+  tbody tr:nth-child(even) td { background: var(--zebra); }
+  tbody tr:hover td, tbody tr:hover th { background: var(--hover-row) !important; }
+  thead th:hover { background: var(--hover-th) !important; }
+  :root[data-theme="dark"] tbody tr:hover td,
+  :root[data-theme="dark"] tbody tr:hover th,
+  :root[data-theme="dark"] thead th:hover { color: #fff; }
+  hr { border: none; border-top: 1px solid var(--hr); margin: 2em 0; }
+  img { max-width: 100%; height: auto; }
+
+  .tag {
+    display: inline-block; padding: 2px 8px; margin-right: 6px;
+    background: var(--tag-bg); color: var(--tag-fg);
+    border-radius: 12px; font-size: 12px; font-weight: 500;
+  }
+  .breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 1em; }
+  .breadcrumb a { color: var(--muted); }
+  .breadcrumb a:hover { color: var(--link); }
+
+  .theme-toggle {
+    position: fixed; top: 12px; right: 12px; z-index: 9999;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: var(--toggle-bg); color: var(--toggle-fg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 6px; font-size: 13px; font-family: inherit;
+    cursor: pointer; user-select: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    transition: background-color .2s ease, transform .1s ease;
+  }
+  .theme-toggle:hover { background: var(--hover-row); }
+  .theme-toggle:active { transform: scale(.97); }
+  .theme-toggle .icon { font-size: 15px; line-height: 1; }
+
+  .lesson-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, #1a73e8, #6f42c1);
+    color: #fff; font-size: 24px; font-weight: 700;
+    margin-right: 14px; vertical-align: middle;
+  }
+
+  .section-anchor { scroll-margin-top: 60px; }
+</style>
+<link rel="stylesheet" href="assets/flow.css">
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="切换暗色模式">
+  <span class="icon" id="themeIcon">&#127769;</span>
+  <span id="themeLabel">暗色</span>
+</button>
+<main>
+<div class="breadcrumb">课程导航： « <a href="lesson-10.html">第 10 讲</a>  ·  <a href="lesson-12.html">第 12 讲</a> »</div>
+<h1><span class="lesson-badge">11</span>第 11 讲 · 令行禁止 · 任务型 Skills 实战</h1>
+<p>
+  <span class="tag">正课</span>
+  <span class="tag">第 11 / 33 讲</span>
+  <span class="tag">Claude Code 工程化实战</span>
+  <span class="tag">Skills 系列 · 任务型</span>
+</p>
+<div class="callout ok">
+<strong>📌 本讲摘要</strong>
+<p>第 10 讲讲了 Skills 的"自动发现"机制（description 匹配 → LLM 加载）。本讲讲"反向操作"——怎么让 Skill "禁止模型自动调用"、只允许用户主动调（类似 Command 的"令行禁止"）。核心是 <code>disable-model-invocation: true</code> 这个 frontmatter 字段：加了它、Skill 就退化成"团队命令",LLM 看不到、不会自动加载、只有用户输入 <code>/&lt;skill-name&gt;</code> 才触发。</p>
+<p>本讲的三条主线：</p>
+<p>第一、<code>disable-model-invocation: true</code> 是什么?——Skills 的"反向开关"、让 Skill 退化成"用户主动调的命令",LLM 看不到、占 0 token、不自动加载。</p>
+<p>第二、为什么需要"禁止自动调用"?——3 类应用场景（团队 SOP / 危险操作 / 调试工具）、共性是"必须严格按步骤走、不能 LLM 自由发挥"。</p>
+<p>第三、vs Command 的边界——两者效果几乎一样（都是用户主动调）；区别在配置管理粒度——Skill 走 <code>.claude/skills/</code>（可打包、可分发）,Command 走 <code>.claude/commands/</code>；团队统一用 Skill 更便于管理。</p>
+<p>学完本讲、你应该能用 <code>disable-model-invocation: true</code> 写出 4 个标准团队命令（/review / /commit / /deploy / /sync-env)、能给 3 个危险操作（/rollback / /db-migrate / /purge-cache）配"双保险"(disable 字段 + Hook 二次拦截）、能判断什么场景用 disable-model-invocation Skill、什么场景用真 Command。</p>
+</div>
+<h2 class="section-anchor">📖 详细内容</h2>
+<h3>disable-model-invocation: true 是什么?</h3>
+<p>第 10 讲我们说 Skills 的核心是"自动发现"——Claude 在推理时看 description 匹配用户的话、自动加载 SKILL.md。这对大多数能力是好事、但对某些场景是坏事。</p>
+<p>典型反例：你的项目有个 Skill "deploy-prod",description 写"Deploy to production. Use when user says 'deploy' / '部署'."——这本来挺好。但有天用户在主对话里随口说"今天 deploy 顺利吗?"（在讨论昨天的部署）,Claude 看到 "deploy" 关键词就匹配、自动加载 deploy-prod 的 SKILL.md、开始问"是否要部署?"——结果是用户被打断、deploy 行为被误触发。</p>
+<p>更糟的是"危险操作"场景：rollback（回滚到上一版本）/ db-migrate（数据库迁移）/ purge-cache（清空缓存）——这些能力绝对不能 LLM 自动触发、必须用户显式调起。这就是 <code>disable-model-invocation: true</code> 的设计初衷。</p>
+<p>加了 <code>disable-model-invocation: true</code> 的 Skill 会有 3 个变化：</p>
+<p>1. <strong>LLM 看不到</strong>——Claude 在推理时不会看到这个 Skill 的 description、关键词匹配也不触发。</p>
+<p>2. <strong>占 0 token</strong>——frontmatter 也不加载、完全从 Claude 的"可见能力列表"中隐藏。</p>
+<p>3. <strong>用户主动调才触发</strong>——用户输入 <code>/deploy</code> 或 <code>/rollback</code>,Claude Code 才把 SKILL.md 全文加载、严格按步骤执行。</p>
+<p>这就是"令行禁止"——LLM 没有"自主判断何时调用"的权力、只有用户显式命令才能执行。这种 Skill 退化成"团队命令"、行为完全可预测。</p>
+<h3>为什么需要"禁止自动调用"?3 类应用场景</h3>
+<p><code>disable-model-invocation: true</code> 不是"对所有 Skill 都要加"的银弹、只在 3 类场景下有意义：</p>
+<p><strong>场景 1：团队 SOP（必须严格按步骤走）</strong></p>
+<p>团队的 code review 流程是 5 步：跑测试 → 静态分析 → 安全审计 → 文档同步 → 报告生成。每一步都有明确顺序、明确产出、明确负责人。这种流程不能让 LLM 自由发挥——LLM 可能"省略某步"或"调换顺序"或"漏掉关键检查"。</p>
+<p>配 <code>disable-model-invocation: true</code> 后、用户输入 <code>/review</code> 才触发、Claude 严格按 5 步走、每步产出固定格式。这就把"团队 SOP"固化成 Skill 模板、任何团队成员触发 <code>/review</code> 都是同样 5 步同样产出、标准化。</p>
+<p><strong>场景 2：危险操作（LLM 误触 = 灾难）</strong></p>
+<p>部署到生产 / 回滚到上一版本 / 数据库迁移 / 清空缓存——这些操作一旦执行就不可逆（或者说回滚成本巨大）。如果 LLM 看到 "deploy" / "rollback" 关键词就自动加载、可能在用户随便说"今天 deploy 顺利吗"时、误触发"开始部署"流程。</p>
+<p>这类 Skill 必须配 <code>disable-model-invocation: true</code>——LLM 看不到、不会误触、只有用户显式 <code>/deploy</code> / <code>/rollback</code> 才执行。这是"双保险"的第一层（第二层是 Hook 二次拦截、在第 6 讲配的 deny 列表基础上、再加特定命令的拦截）。</p>
+<p><strong>场景 3：调试工具（日常不该启用、只排查时用）</strong></p>
+<p>有些 Skill 是"排查问题时才用"的工具：debug-mode（开启详细日志）/ verbose（打印所有中间结果）/ trace-network（追踪网络请求）。这些能力日常不该启用（会污染日志 / 拖慢速度）、只在排查时才需要。</p>
+<p>配 <code>disable-model-invocation: true</code> 让 Claude 永远不知道"我还有 debug-mode 这个工具"、用户排查时才主动 <code>/debug-mode</code> 启用。这避免了"LLM 在普通对话里顺手开启了 debug 模式"。</p>
+<p>3 类场景的共性："必须严格按步骤 / 绝不能 LLM 自由发挥 / 行为必须可预测"。判断标准：这件事如果 LLM 误触了会出大问题吗?会的话、加 <code>disable-model-invocation: true</code>。</p>
+<table>
+<thead><tr>
+<th>应用场景</th>
+<th>危险等级</th>
+<th>触发频率</th>
+<th>适合 disable 程度</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>团队 SOP(review/commit)</td>
+<td>低（不可逆性弱）</td>
+<td>高（每天多次）</td>
+<td>可选（看团队偏好）</td>
+</tr>
+<tr>
+<td>危险操作（deploy/rollback)</td>
+<td>高（不可逆性）</td>
+<td>低（每周几次）</td>
+<td>必须 disable</td>
+</tr>
+<tr>
+<td>调试工具（debug/verbose)</td>
+<td>中（影响日志/性能）</td>
+<td>极低（排查时用）</td>
+<td>必须 disable</td>
+</tr>
+</tbody></table>
+<h3>团队 SOP 实战：4 个标准命令</h3>
+<p>4 个最常见的"团队命令"SOP 是：/review（审查流程）/ /commit(commit 流程）/ /deploy（部署流程）/ /sync-env（环境同步）。每个都有"严格步骤"、配 <code>disable-model-invocation: true</code> 后、触发方式变成"用户主动调、严格按步骤"。</p>
+<p><strong>/review:5 步审查流程</strong></p>
+<p>步骤 1：跑测试（必须全过、失败则停止）。步骤 2：静态分析（ruff + mypy）。步骤 3：安全审计（skills/security-audit）。步骤 4：文档同步（检查 src/ 改了但 docs/ 没改的情况）。步骤 5：报告生成（Markdown 报告 + commit 检查清单）。</p>
+<p>每步的"硬约束"：任何一步失败就停、不继续。报告格式固定、任何人触发 /review 都得到一样的产出。</p>
+<p><strong>/commit:commit 流程</strong></p>
+<p>步骤 1:git status 看未提交改动。步骤 2:git diff 看具体改了什么。步骤 3：跑测试（必须全过）。步骤 4：跑 pr-drafter skill 生成 commit message 草稿（写到 .claude/drafts/commit-msg.txt）。步骤 5：用户确认 commit message（不直接 git commit）。步骤 6：用户自己 git commit。</p>
+<p>硬约束：Claude 永远不自己 git commit、只产草稿让人确认。</p>
+<p><strong>/deploy：部署流程</strong></p>
+<p>步骤 1：确认当前分支是 main 且最新。步骤 2：确认所有测试在 CI 上通过。步骤 3：确认 CHANGELOG.md 已更新（用 sync-changelog skill）。步骤 4:tag 当前版本（从 package.json 读）。步骤 5：推送 tag（触发 CI 部署流水线）。步骤 6：通知团队（Slack 通知）。</p>
+<p>硬约束：每步都询问用户确认、不自动继续。</p>
+<p><strong>/sync-env：环境同步</strong></p>
+<p>步骤 1：本地环境 vs 远端环境对比（dev/staging/prod）。步骤 2：列出差异（配置 / 依赖 / 数据库 schema）。步骤 3：对每项差异给出"是否需要同步"的建议。步骤 4：用户确认后逐项同步（用第 6 讲的 permission 白名单、只允许白名单命令）。</p>
+<p>4 个 SOP 的共同设计原则：</p>
+<p>1. 步骤数控制在 3-7 步（太少 SOP 价值不大、太多用户记不住）。</p>
+<p>2. 每步有明确产出（报告 / 文件 / 状态变更）。</p>
+<p>3. 硬约束必须执行（"失败就停" / "不自动 git commit" / "每步问用户"）。</p>
+<p>4. SKILL.md 控制在 100-200 行（用户主动调时一次性加载、不能太长）。</p>
+<h3>危险操作实战：必须"令行禁止"的能力</h3>
+<p>危险操作 Skill 的"双保险"设计：第一层是 <code>disable-model-invocation: true</code>(LLM 看不到、不会误触）；第二层是 Hook 二次拦截（即使有其他方式触发、HW 也会拦下）。两层叠加、几乎不可能误执行。</p>
+<p><strong>/rollback：回滚到上一版本</strong></p>
+<p>触发：用户输入 <code>/rollback [commit-hash 或 version-tag]</code>。流程：确认当前部署版本 → 拉取目标版本 → 跑数据库迁移回滚（如有） → 重新部署 → 健康检查 → 通知团队。</p>
+<p>双保险：<code>disable-model-invocation: true</code> 阻止 LLM 误触；PreToolUse Hook 拦截 `git reset --hard` / `kubectl rollout undo` 等危险命令、即使有其他路径触发也拦下。</p>
+<p><strong>/db-migrate：数据库迁移</strong></p>
+<p>触发：用户输入 <code>/db-migrate [env]</code>,env = dev / staging / prod。流程：确认当前 schema 版本 → 跑 `alembic upgrade head`（生产前先 dry-run)→ 数据完整性检查 → 通知团队。</p>
+<p>双保险：<code>disable-model-invocation: true</code> 阻止误触；Hook 拦截 `alembic downgrade`（意外回滚）/ `DROP TABLE` / `TRUNCATE` 等命令。</p>
+<p><strong>/purge-cache：清空缓存</strong></p>
+<p>触发：用户输入 <code>/purge-cache [scope]</code>,scope = redis / cdn / both。流程：确认当前缓存命中率 → 软清（渐进过期）→ 硬清（强制删除）→ 健康检查 → 监控告警阈值。</p>
+<p>双保险：<code>disable-model-invocation: true</code> 阻止误触；Hook 拦截 `redis-cli FLUSHALL` / `curl -X DELETE ...cdn...` 等命令。</p>
+<p>3 个危险操作 Skill 的共同特征：</p>
+<p>1. 都有"不可逆"或"回滚成本巨大"的属性。</p>
+<p>2. 都有"显式参数"([env] / [scope] / [version])、防止误用。</p>
+<p>3. 都有"健康检查 + 监控告警"兜底、出问题能第一时间发现。</p>
+<p>4. 都配双保险（LLM 看不到 + Hook 拦命令）、即使 LLM 误触、Hook 也会拦截。</p>
+<h3>vs Command 的边界：什么时候用 disable-model-invocation Skill、什么时候用真 Command</h3>
+<p>新人的常见困惑："<code>disable-model-invocation: true</code> 的 Skill 效果和 Command 不是一样吗?都用户主动调、都 LLM 看不到、都不自动加载——那为什么不全用 Command?"</p>
+<p>答案是"配置管理粒度"的区别：</p>
+<p><strong>用 disable-model-invocation Skill 的场景</strong></p>
+<p>需要"渐进式披露"——SKILL.md 里有快速参考 / 详细步骤 / 边界 case 多层内容、需要时整体加载、不要时零成本。Skill 走 <code>.claude/skills/&lt;name&gt;/SKILL.md</code> 目录结构、可以放 references/ 子目录做深层引用。</p>
+<p>需要"打包分发"——Skill 是工程资产、可以做成 NPM 包或 GitHub repo 跨项目复用。Command 在这一点上更"扁平"、没有目录结构、跨项目复用需要复制整个文件。</p>
+<p>需要"和普通 Skill 一起管理"——项目里同时有自动发现的 Skill + 禁止自动调用的 Skill、两者放 <code>.claude/skills/</code> 统一管理、组织清晰。Command 走单独 <code>.claude/commands/</code>、分散。</p>
+<p><strong>用真 Command 的场景</strong></p>
+<p>极简命令——就一个固定动作（比如 /clear 清屏、/help 看帮助、/init 初始化项目）。这种 1-2 行的命令用 Command 更轻。</p>
+<p>需要"参数解析"——Command 支持 <code>$ARGUMENTS</code> 变量、Skill 没有这个机制。如果命令需要解析复杂参数（比如 /deploy --env=prod --version=1.2.3)、用 Command 更合适。</p>
+<p>团队对 Skills vs Commands 有强约定——如果团队历史上都是用 Command、新加的禁止自动调用能力也用 Command 保持一致。</p>
+<p>实操建议：能 Skill 就 Skill、只在 Skill 表达不了（参数解析）时才用 Command。两者并存不冲突、可以 <code>.claude/skills/</code> 放 80% 的能力、<code>.claude/commands/</code> 放 20% 的极简命令。</p>
+<table>
+<thead><tr>
+<th>维度</th>
+<th>普通 Skill</th>
+<th>disable-model-invocation Skill</th>
+<th>Command</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>LLM 是否可见</td>
+<td>是（description 全量可见）</td>
+<td>否（占 0 token)</td>
+<td>否（走 commands 目录）</td>
+</tr>
+<tr>
+<td>触发方式</td>
+<td>LLM 自动 + 用户 /&lt;name&gt;</td>
+<td>仅用户 /&lt;name&gt;</td>
+<td>仅用户 /&lt;name&gt;</td>
+</tr>
+<tr>
+<td>加载时机</td>
+<td>description 匹配时</td>
+<td>用户输入命令时</td>
+<td>用户输入命令时</td>
+</tr>
+<tr>
+<td>目录结构</td>
+<td>.claude/skills/&lt;name&gt;/SKILL.md</td>
+<td>.claude/skills/&lt;name&gt;/SKILL.md</td>
+<td>.claude/commands/&lt;name&gt;.md</td>
+</tr>
+<tr>
+<td>渐进式披露</td>
+<td>支持（可放 references/)</td>
+<td>支持（可放 references/)</td>
+<td>不支持（单文件）</td>
+</tr>
+<tr>
+<td>参数解析</td>
+<td>不支持</td>
+<td>不支持</td>
+<td>支持（$ARGUMENTS)</td>
+</tr>
+</tbody></table>
+<h3>Skills 的"渐进披露"在命令场景的特殊处理</h3>
+<p><code>disable-model-invocation: true</code> 的 Skill 加载成本进一步降低——LLM 完全看不到（连 frontmatter 都不加载）、占 0 token。但用户主动调 <code>/&lt;name&gt;</code> 时、SKILL.md 全文一次性加载、所以仍然要控制 SKILL.md 长度。</p>
+<p>控制策略：</p>
+<p>1. SKILL.md 控制在 100-200 行（用户主动调时一次性加载、不能太长）。</p>
+<p>2. 详细文档放 references/ 子目录、SKILL.md 用"详见 references/xxx.md"引用。</p>
+<p>3. 命令的"核心步骤"放 SKILL.md 主体、"边界 case + 反例"放 references。</p>
+<p>这一条和普通 Skill 一致、只是"加载时机"不同——普通 Skill 是 description 匹配时加载、disable-model-invocation Skill 是用户输入 <code>/&lt;name&gt;</code> 时加载。</p>
+<p>特殊优化：disable-model-invocation Skill 可以写得"重"一些（用户主动调时加载、内容详尽是好事）、不像普通 Skill 必须"轻"以减少自动加载的 token 成本。但仍要控制总长度（200-300 行内）、用户主动调也不希望等太久。</p>
+<h2 class="section-anchor">🛠️ 实战代码</h2>
+<p><strong>📄 第 11 讲配套：4 个标准团队命令 SKILL.md（完整模板）</strong></p>
+<pre><code class="lang-markdown">---
+# .claude/skills/review/SKILL.md
+name: review
+description: NOT-USED-BY-MODEL (禁止 LLM 自动调用,只在 /review 时触发)
+disable-model-invocation: true
+allowed-tools: Bash, Read, Grep, Edit
+---
+# /review:团队 5 步审查流程
+
+## 流程
+1. 跑测试(必须全过,失败则停止报告)
+2. 静态分析(ruff check + mypy src)
+3. 安全审计(调 security-auditor skill)
+4. 文档同步(检查 src/ 改了但 docs/ 没改)
+5. 报告生成(写到 .claude/reports/review-&lt;date&gt;.md)
+
+## 硬约束
+- 任一步失败 → 停止,不继续
+- 不跳过任何步骤
+- 报告格式严格按模板
+
+## 报告模板
+```markdown
+# Review: &lt;branch&gt;
+- Test: PASS/FAIL
+- Lint: PASS/FAIL
+- Security: PASS/FAIL (Critical: N, Warning: N)
+- Docs: SYNC/OUT-OF-SYNC
+- Verdict: APPROVE / REQUEST_CHANGES
+```</code></pre>
+<pre><code class="lang-markdown">---
+# .claude/skills/commit/SKILL.md
+name: commit
+description: NOT-USED-BY-MODEL
+disable-model-invocation: true
+allowed-tools: Bash, Read, Grep
+---
+# /commit:commit 流程
+
+## 流程
+1. git status(看未提交)
+2. git diff(看具体改动)
+3. 跑测试(必须全过,否则终止)
+4. 调 pr-drafter skill 生成 commit message 草稿(写 .claude/drafts/commit-msg.txt)
+5. 展示草稿给用户,**不直接 git commit**
+6. 用户确认后,用户自己 `git commit -F .claude/drafts/commit-msg.txt`
+
+## 硬约束
+- Claude 永远不自己 git commit
+- 测试不过 → 终止,不允许 commit
+- commit message 必须符合 Conventional Commits</code></pre>
+<pre><code class="lang-markdown">---
+# .claude/skills/deploy/SKILL.md
+name: deploy
+description: NOT-USED-BY-MODEL
+disable-model-invocation: true
+allowed-tools: Bash, Read, Grep
+---
+# /deploy:部署流程(只能手动触发)
+
+## 前置检查(必须全通过)
+- [ ] 当前分支是 main
+- [ ] CI 全部通过(查 GitHub Actions)
+- [ ] CHANGELOG.md 已更新
+- [ ] 当前版本号 &gt; 上一版本号
+
+## 流程
+1. 读 package.json / pyproject.toml 拿当前版本号
+2. git tag &lt;version&gt;(本地打 tag)
+3. git push origin &lt;version&gt;(推送 tag,触发 CI 部署)
+4. 监控部署状态(`kubectl get pods -n prod` 或类似命令)
+5. 通知团队(Slack webhook / 邮件)
+
+## 硬约束
+- 每步询问用户确认,不自动继续
+- 任何前置检查失败 → 终止
+- 部署失败 → 立即通知 + 暂停后续操作</code></pre>
+<pre><code class="lang-markdown">---
+# .claude/skills/sync-env/SKILL.md
+name: sync-env
+description: NOT-USED-BY-MODEL
+disable-model-invocation: true
+allowed-tools: Bash, Read, Grep
+---
+# /sync-env:环境同步流程
+
+## 流程
+1. 对比本地 vs 远端环境(dev / staging / prod)
+2. 列出差异(配置 .env / 依赖 requirements.txt / DB schema)
+3. 对每项差异给出"是否需要同步"的建议
+4. 用户确认后,逐项同步(用第 6 讲的 permission 白名单)
+
+## 硬约束
+- 不自动同步,每项询问用户
+- prod 环境的同步必须二次确认 + 通知团队
+- 同步后必须跑一次健康检查</code></pre>
+<p><strong>📄 第 11 讲配套：disable-model-invocation 字段 3 种取值的对比</strong></p>
+<pre><code class="lang-markdown"># === 取值 1:disable-model-invocation: true ===
+---
+name: deploy
+description: Deploy to production
+disable-model-invocation: true   # ✅ LLM 完全看不到,只有用户 /deploy 触发
+---
+
+# === 取值 2:disable-model-invocation: false ===
+---
+name: sync-changelog
+description: Update CHANGELOG.md from git commits. Use when user says "更新 changelog".
+disable-model-invocation: false  # ✅ 显式 false(等同于不写),LLM 自动发现
+---
+
+# === 取值 3:缺省(不写) ===
+---
+name: sync-changelog
+description: Update CHANGELOG.md from git commits. Use when user says "更新 changelog".
+# 不写 disable-model-invocation 字段 = 默认 false = LLM 自动发现
+---
+
+# 行为对比:
+#   true   → LLM 看不到,占 0 token,用户 /&lt;name&gt; 才触发
+#   false  → LLM 自动发现,description 匹配时加载
+#   缺省   → 同 false</code></pre>
+<p><strong>📄 第 11 讲配套：危险操作 Skill 的双保险配置（配 disable + Hook 二次拦截）</strong></p>
+<pre><code class="lang-markdown">---
+# .claude/skills/rollback/SKILL.md
+name: rollback
+description: NOT-USED-BY-MODEL
+disable-model-invocation: true   # 第一层保险:LLM 看不到
+allowed-tools: Bash, Read
+---
+# /rollback:回滚到上一版本
+
+## 流程
+1. 确认当前部署版本(`kubectl get deployment -n prod`)
+2. 拉取目标版本(用户指定的 commit/tag)
+3. 跑数据库迁移回滚(如有 alembic 迁移)
+4. 重新部署(`kubectl rollout undo` 或 `helm rollback`)
+5. 健康检查(`curl /health` + 看监控)
+6. 通知团队
+
+## 硬约束
+- 每次只回滚一个版本,不批量
+- 失败立即停止 + 通知</code></pre>
+<pre><code class="lang-bash"># .claude/hooks/deny-extra-dangerous.sh
+# 第二层保险:HW 拦截危险命令(即使 SKILL disable 失效,HW 也兜底)
+
+#!/usr/bin/env bash
+COMMAND="$1"
+
+# 拦截 git reset --hard(回滚工作区)
+if echo "$COMMAND" | grep -qE 'git\s+reset\s+--hard'; then
+  echo "❌ 拒绝:git reset --hard 被禁止(用 /rollback skill)"
+  exit 2
+fi
+
+# 拦截 alembic downgrade(数据库回滚)
+if echo "$COMMAND" | grep -qE 'alembic\s+downgrade'; then
+  echo "❌ 拒绝:alembic downgrade 被禁止(用 /db-migrate rollback)"
+  exit 2
+fi
+
+# 拦截 redis-cli FLUSHALL(清空缓存)
+if echo "$COMMAND" | grep -qE 'redis-cli\s+FLUSHALL'; then
+  echo "❌ 拒绝:redis FLUSHALL 被禁止(用 /purge-cache skill)"
+  exit 2
+fi
+
+# 拦截 kubectl rollout undo(默认走 /rollback)
+if echo "$COMMAND" | grep -qE 'kubectl\s+rollout\s+undo'; then
+  echo "❌ 拒绝:kubectl rollout undo 被禁止(用 /rollback skill)"
+  exit 2
+fi
+
+exit 0</code></pre>
+<pre><code class="lang-json">// .claude/settings.json
+// 把双保险 HW 配到 PreToolUse 钩子里
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {"type": "command", "command": "bash .claude/hooks/deny-extra-dangerous.sh"},
+          {"type": "command", "command": "bash .claude/hooks/deny-pipe-exec.sh"}
+        ]
+      }
+    ]
+  }
+}</code></pre>
+<p><strong>📄 第 11 讲配套：团队命令集的 .claude/skills/ 目录组织（按团队 / 按阶段 / 按风险等级）</strong></p>
+<pre><code class="lang-bash"># 方式 1:按团队角色组织
+.claude/skills/
+├── dev/                          # 开发阶段命令
+│   ├── review/SKILL.md           # /review
+│   ├── commit/SKILL.md           # /commit
+│   └── pr/SKILL.md               # /pr(开 PR)
+├── ci/                           # CI 阶段命令
+│   ├── test/SKILL.md             # /test
+│   ├── lint/SKILL.md             # /lint
+│   └── coverage/SKILL.md         # /coverage
+└── release/                      # 发布阶段命令
+    ├── deploy/SKILL.md           # /deploy
+    ├── rollback/SKILL.md         # /rollback
+    └── tag/SKILL.md              # /tag
+
+# 方式 2:按风险等级组织
+.claude/skills/
+├── safe/                         # 低风险(可让 LLM 自动发现或主动调)
+│   ├── review/SKILL.md
+│   ├── commit/SKILL.md
+│   └── test/SKILL.md
+├── medium/                       # 中风险(可 LLM 自动发现,执行前 ask)
+│   ├── sync-env/SKILL.md
+│   └── sync-deps/SKILL.md
+└── dangerous/                    # 高风险(必须 disable-model-invocation + Hook)
+    ├── deploy/SKILL.md           # /deploy
+    ├── rollback/SKILL.md         # /rollback
+    ├── db-migrate/SKILL.md       # /db-migrate
+    └── purge-cache/SKILL.md      # /purge-cache
+
+# 方式 3:按功能模块组织(适合多技术栈)
+.claude/skills/
+├── backend/
+│   ├── db-migrate/SKILL.md
+│   └── api-test/SKILL.md
+├── frontend/
+│   ├── build/SKILL.md
+│   └── e2e-test/SKILL.md
+└── infra/
+    ├── deploy/SKILL.md
+    └── rollback/SKILL.md</code></pre>
+<h2 class="section-anchor">⚠️ 常见坑</h2>
+<div class="callout warn">
+<strong>⚠️ 把"日常高频"的操作也加 disable-model-invocation（用户每次都得手输命令、反而累）</strong>
+<p>常见的"过度防御"：把所有 Skill 都加 <code>disable-model-invocation: true</code>,"安全是安全了、但用户每次都得输 /test / /commit / /lint、反而累。disable 字段是为"危险 + 低频"场景设计的：危险操作必须 disable(LLM 误触 = 灾难）；高频操作别 disable(LLM 自动调用 = 节省用户输入）。判断标准：这件事 LLM 自动触发会出大问题吗?会的话、disable；不会的话、别 disable。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 危险操作 Skill 只加了 disable 字段、没配 Hook 二次拦截（单层防御不够）</strong>
+<p>危险的"假安全"误判：给 deploy / rollback / db-migrate 加了 <code>disable-model-invocation: true</code>、以为就安全了。但 disable 字段是"LLM 推理层"的防御——如果有人绕开 LLM 推理、直接调起 Skill（比如 CLI 直接传参数 / CI 流水线自动调 / 别的 Skill 嵌套调）,disable 就失效了。必须加第二层 HW 防御——PreToolUse Hook 拦截危险命令（即使 SKILL disable 失效、HW 兜底）。双保险叠加、几乎不可能误执行。判断标准：你的危险操作 Skill 配了 HW 兜底吗?没配、补上。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 团队命令没版本管理（不同人用的步骤不一致）</strong>
+<p>团队 /review 流程应该是 5 步、但每个人的 SKILL.md 文件可能略有不同——A 同事加了一步"通知 reviewer",B 同事加了"跑 linter",C 同事漏了"安全审计"。结果团队里 /review 行为不一致、review 质量参差。修正：团队命令进 git + 配 PR review + 用 semver 打 tag——任何修改必须 PR 评审、谁也不能私自改。判断标准：你的团队命令 SKILL.md 是"个人"还是"团队资产"?如果是"个人"、赶紧入 git + 配 PR review。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ SKILL.md 正文 1000+ 行（用户主动调时一次性加载、token 爆炸）</strong>
+<p>"渐进式披露失效"的反面：以为 disable-model-invocation Skill 是用户主动调、可以写得详细点、塞 1000+ 行进去。结果用户输入 /deploy 触发、1000 行一次性加载到上下文、token 爆炸。修正：即使 disable Skill,SKILL.md 仍控制在 200 行内、详细文档放 references/。判断标准：SKILL.md &gt; 300 行就该拆。</p>
+</div>
+<h2 class="section-anchor">💡 一句话备忘</h2>
+<blockquote><code>disable-model-invocation: true</code> 是 Skills 的"反向开关"——把"自动发现"退化成"用户主动调"、让 SOP / 危险操作 / 调试工具 3 类场景从"LLM 自由发挥"变成"令行禁止"、再加 Hook 兜底就形成了"双保险"。</blockquote>
+<hr>
+<p class="breadcrumb">← 回到 <a href="#top">本讲网页顶部</a></p>
+</main>
+<script>
+  (function () {
+    var STORAGE_KEY = "***";
+    var root = document.documentElement;
+    var btn  = document.getElementById("themeToggle");
+    var icon = document.getElementById("themeIcon");
+    var lbl  = document.getElementById("themeLabel");
+    function apply(theme) {
+      root.setAttribute("data-theme", theme);
+      if (theme === "dark") {
+        icon.innerHTML = "&#9728;&#65039;";
+        lbl.textContent  = "亮色";
+      } else {
+        icon.innerHTML = "&#127769;";
+        lbl.textContent  = "暗色";
+      }
+    }
+    var saved = null;
+    try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    if (saved === "light" || saved === "dark") {
+      apply(saved);
+    } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      apply("dark");
+    } else {
+      apply("light");
+    }
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") || "light";
+      var next = cur === "dark" ? "light" : "dark";
+      apply(next);
+      try { localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>
