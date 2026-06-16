@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 12 讲 · 循序渐进 · 渐进式披露架构设计</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fff; --fg: #222; --muted: #555; --link: #1a73e8;
+    --code-bg: #f4f4f4; --code-fg: inherit;
+    --pre-bg: #1e1e1e; --pre-fg: #eaeaea;
+    --border: #ddd; --th-bg: #f5f5f5; --zebra: #fafafa;
+    --hover-row: #e8f0fe; --hover-th: #eef2f7;
+    --blockquote-bg: #fafafa; --blockquote-border: #ddd;
+    --hr: #eee;
+    --toggle-bg: #f5f5f5; --toggle-fg: #333; --toggle-border: #ddd;
+    --tag-bg: #eef4ff; --tag-fg: #1a73e8;
+    --callout-bg: #fffbe6; --callout-border: #fadb14;
+    --warn-bg: #fff1f0; --warn-border: #ff4d4f;
+    --ok-bg: #f6ffed; --ok-border: #52c41a;
+    --code-block-bg: #f8f9fa;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1115; --fg: #e6e6e6; --muted: #9aa0a6; --link: #8ab4f8;
+    --code-bg: #1e1f24; --code-fg: #e6e6e6;
+    --pre-bg: #1a1d23; --pre-fg: #e6e6e6;
+    --border: #303136; --th-bg: #1c1f25; --zebra: #16181d;
+    --hover-row: #1f2733; --hover-th: #262c36;
+    --blockquote-bg: #181a20; --blockquote-border: #303136;
+    --hr: #2a2d33;
+    --toggle-bg: #1c1f25; --toggle-fg: #e6e6e6; --toggle-border: #303136;
+    --tag-bg: #1a2540; --tag-fg: #8ab4f8;
+    --callout-bg: #2a261a; --callout-border: #b89333;
+    --warn-bg: #2a1a1a; --warn-border: #a84545;
+    --ok-bg: #1a261a; --ok-border: #4a8a4a;
+    --code-block-bg: #16181d;
+  }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 "PingFang SC", "Microsoft YaHei", "Helvetica Neue",
+                 Arial, sans-serif;
+    font-size: 15px; line-height: 1.7;
+    transition: background-color .2s ease, color .2s ease;
+  }
+  main {
+    max-width: 1100px;
+    width: calc(100% - 32px);
+    margin: 0 auto;
+    padding: 24px 0 64px 0;
+    box-sizing: border-box;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    line-height: 1.3; margin: 1.5em 0 .6em;
+  }
+  h1 { font-size: 1.9em; border-bottom: 2px solid var(--hr); padding-bottom: .3em; }
+  h2 { font-size: 1.45em; border-bottom: 1px solid var(--hr); padding-bottom: .25em; margin-top: 2em; }
+  h3 { font-size: 1.18em; color: var(--link); margin-top: 1.5em; }
+  h4 { font-size: 1.05em; margin-top: 1.2em; color: var(--fg); font-weight: 600; }
+  p, ul, ol, blockquote, pre, table { margin: .7em 0; }
+  ul, ol { padding-left: 1.6em; }
+  li { margin: .3em 0; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  blockquote {
+    margin: .8em 0; padding: .6em 1em;
+    border-left: 4px solid var(--blockquote-border);
+    color: var(--muted); background: var(--blockquote-bg);
+  }
+  .callout {
+    background: var(--callout-bg);
+    border-left: 4px solid var(--callout-border);
+    padding: 12px 16px; margin: 1.2em 0; border-radius: 4px;
+  }
+  .callout.warn { background: var(--warn-bg); border-left-color: var(--warn-border); }
+  .callout.ok   { background: var(--ok-bg);   border-left-color: var(--ok-border); }
+  code {
+    font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: .9em; background: var(--code-bg); color: var(--code-fg);
+    padding: 1px 5px; border-radius: 3px;
+  }
+  pre {
+    background: var(--pre-bg); color: var(--pre-fg);
+    padding: 14px 16px; border-radius: 6px;
+    overflow-x: auto; font-size: 13px; line-height: 1.55;
+    margin: 1em 0;
+  }
+  pre code { background: transparent; padding: 0; color: inherit; }
+  pre.lang-flow {
+    background: var(--code-block-bg); color: var(--fg);
+    border: 1px solid var(--border);
+  }
+  :root[data-theme="dark"] pre.lang-flow {
+    background: #0a0b0d; color: #d4d4d4;
+  }
+  table {
+    width: 100% !important; border-collapse: collapse;
+    table-layout: auto; margin: 1em 0;
+    font-size: 14px; display: table;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left; vertical-align: top;
+    transition: background-color .15s ease;
+  }
+  th { background: var(--th-bg); font-weight: 600; }
+  tbody tr:nth-child(even) td { background: var(--zebra); }
+  tbody tr:hover td, tbody tr:hover th { background: var(--hover-row) !important; }
+  thead th:hover { background: var(--hover-th) !important; }
+  :root[data-theme="dark"] tbody tr:hover td,
+  :root[data-theme="dark"] tbody tr:hover th,
+  :root[data-theme="dark"] thead th:hover { color: #fff; }
+  hr { border: none; border-top: 1px solid var(--hr); margin: 2em 0; }
+  img { max-width: 100%; height: auto; }
+
+  .tag {
+    display: inline-block; padding: 2px 8px; margin-right: 6px;
+    background: var(--tag-bg); color: var(--tag-fg);
+    border-radius: 12px; font-size: 12px; font-weight: 500;
+  }
+  .breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 1em; }
+  .breadcrumb a { color: var(--muted); }
+  .breadcrumb a:hover { color: var(--link); }
+
+  .theme-toggle {
+    position: fixed; top: 12px; right: 12px; z-index: 9999;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: var(--toggle-bg); color: var(--toggle-fg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 6px; font-size: 13px; font-family: inherit;
+    cursor: pointer; user-select: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    transition: background-color .2s ease, transform .1s ease;
+  }
+  .theme-toggle:hover { background: var(--hover-row); }
+  .theme-toggle:active { transform: scale(.97); }
+  .theme-toggle .icon { font-size: 15px; line-height: 1; }
+
+  .lesson-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, #1a73e8, #6f42c1);
+    color: #fff; font-size: 24px; font-weight: 700;
+    margin-right: 14px; vertical-align: middle;
+  }
+
+  .section-anchor { scroll-margin-top: 60px; }
+</style>
+<link rel="stylesheet" href="assets/flow.css">
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="切换暗色模式">
+  <span class="icon" id="themeIcon">&#127769;</span>
+  <span id="themeLabel">暗色</span>
+</button>
+<main>
+<div class="breadcrumb">课程导航： « <a href="lesson-11.html">第 11 讲</a>  ·  <a href="lesson-13.html">第 13 讲</a> »</div>
+<h1><span class="lesson-badge">12</span>第 12 讲 · 循序渐进 · 渐进式披露架构设计</h1>
+<p>
+  <span class="tag">正课</span>
+  <span class="tag">第 12 / 33 讲</span>
+  <span class="tag">Claude Code 工程化实战</span>
+  <span class="tag">Skills 系列 · 架构设计</span>
+</p>
+<div class="callout ok">
+<strong>📌 本讲摘要</strong>
+<p>第 10 讲讲了 Skills 的 3 层渐进式披露骨架（frontmatter / SKILL.md 正文 / references/)、本讲深入到"为什么是 3 层而不是 1 层或 5 层"——这是 Skills 的"token 经济性"核心命题。本讲用一个真实项目"财务分析 Skill"贯穿：目录页 + 章节 + 附录 3 层架构、如何把 token 利用率从 12% 提升到 95%+（节省 98% 的无效 token）。核心命题是"怎么分层、怎么索引、怎么按需"、让 Skill 加载成本从全量 30K 降到按需 0.5K。</p>
+<p>本讲的三条主线：</p>
+<p>第一、为什么是 3 层?——1 层全量是"上下文爆炸"(30K 一次性加载、99% 是无效信息）;5 层细分是"索引成本反而高"（维护成本 &gt; token 收益）;3 层是 LLM 推理 + 人类工程 的甜区。</p>
+<p>第二、3 层各自的职责边界——目录页（frontmatter,5-10 行、启动时全量加载）/ 章节（SKILL.md 正文、200 行内、触发时整体加载）/ 附录（references/、按需加载）。</p>
+<p>第三、Token 经济性的 3 个度量指标——加载率 / 命中率 / 维护成本；3 个指标综合评估分层质量。</p>
+<p>学完本讲、你应该能用 3 层架构设计任意规模的 Skill（财务分析 / 代码审查 / 文档生成都能套用）、能给每层定清晰的职责边界、能用 3 个度量指标评估现有 Skill 的分层质量、能避免"伪 3 层实 1 层"的常见陷阱。</p>
+</div>
+<h2 class="section-anchor">📖 详细内容</h2>
+<h3>为什么是 3 层?不是 1 层也不是 5 层</h3>
+<p>新人最常问："Skills 的 3 层渐进式披露是约定俗成、还是有工程依据?"——有、3 层是"LLM 推理成本 + 人类维护成本"的甜区。少一层不够用、多一层反而累。</p>
+<p><strong>反面 1:1 层全量（不分层）</strong></p>
+<p>把所有内容塞一个文件、30K+ tokens,Claude 启动时一次性加载。结果：每次对话都"背着"30K 的内容、99% 是不需要的。后果——上下文迅速占满、Claude 注意力分散、关键内容反而被淹没。</p>
+<p>财务分析的 1 层全量：把资产负债表 + 利润表 + 现金流 + 财务比率 + 行业基准 + 案例分析 + API 文档全塞进 SKILL.md,30K tokens。每次 Claude 启动、不管用户问什么、都先加载这 30K。结果——用户问"分析 Q3 现金流",Claude 实际只需要现金流的 0.5K、但被迫看 30K 找 0.5K、效率极低。</p>
+<p><strong>反面 2:5 层细分（过度分层）</strong></p>
+<p>把 SKILL.md 拆成 5 个小文件（每个 100 行以内）、再分 frontmatter / summary / main / detail / appendix。结果——加载文件数 5+ 倍增、Claude 推理时不知道"该读哪几层"、反而要去读所有文件来推断、token 成本更高。维护成本也暴增——改一个东西要同步改 5 个文件。</p>
+<p>财务分析的 5 层细分：frontmatter（目录）/ summary(1 段总结）/ main（主题列表）/ detail（详细步骤）/ appendix(API 参考）/ examples（例子）/ troubleshooting（排错）。结果——7 个文件、每个 50-200 行、Claude 要"扫读"7 个才知道完整能力。维护成本高（token 收益不大）、不可行。</p>
+<p><strong>甜区：3 层</strong></p>
+<p>3 层是 LLM 推理 + 人类工程 的最优——LLM 只需要"看到目录 → 决定读哪章节 → 章节内可能引用附录"3 步推理；人类维护也只需要"维护 frontmatter / SKILL.md / references/ 3 个层面"。少一层不够、多一层累。</p>
+<p>这就像书的结构：目录（薄、一翻就能看到全书结构）+ 章节（中等、核心内容）+ 附录（厚、详细参考）。读者（LLM）先看目录决定读哪章、读章节内可能跳到附录、3 步到位。书的结构几千年来就是 3 层——Skill 的 3 层是同一套设计哲学。</p>
+<h3>第 1 层：目录页（frontmatter）的设计原则</h3>
+<p>目录页是 Skill 的"门面"——Claude 启动时全量加载、每个 Skill 都看到。这层的核心约束："薄 + 准 + 不变"。</p>
+<p>设计原则 1:<strong>薄</strong>——每个 Skill 的 frontmatter 控制在 5-10 行。超过 10 行、就是 frontmatter 承载了"章节内容"、分层失败。</p>
+<p>设计原则 2:<strong>准</strong>——description 必须写"何时触发"而不是"做什么"——和 SubAgent / 普通 Skill 的 description 是同一个规则（第 10 讲详细讲过）。description 是 LLM 推理的"索引键"、写错 = 触发率 = 0。</p>
+<p>设计原则 3:<strong>不变</strong>——目录页尽量少改动。改一次 = 影响所有 Claude 启动 = 风险大。稳定的内容放目录（身份 / 工具 / 触发场景）、变化的内容放章节（具体步骤 / 边界 case）。</p>
+<p>反面：把"详细步骤 / 边界 case"也塞进 frontmatter、比如 description 写 200 字、把"做什么 + 怎么做 + 边界"全包了。结果：每个 Skill 的 frontmatter 占 300 tokens,10 个 Skill 就是 3K token、占上下文大头。修正：frontmatter 只写"何时触发" + 工具 + 必要元数据、详细步骤放 SKILL.md 正文。</p>
+<p>目录页的 4 个标准字段：</p>
+<p>1. <strong>name</strong>——Skill 唯一标识、小写连字符、反映能力。</p>
+<p>2. <strong>description</strong>——何时触发 + 触发词、1-2 句话。</p>
+<p>3. <strong>allowed-tools</strong>——可读 / 可写 / 可执行、白名单形式。</p>
+<p>4. <strong>license</strong>（可选）——MIT / Apache / Proprietary。</p>
+<p>4 个字段总行数控制在 5-10 行、description 占 2-3 行、其他各 1 行。</p>
+<h3>第 2 层：章节（SKILL.md 正文）的索引结构</h3>
+<p>章节是 Skill 的"主体"——description 匹配时整段加载、200 行以内。这层的核心约束："结构化 + 可扫读 + 完整闭环"。</p>
+<p>设计原则 1:<strong>结构化</strong>——章节必须分 3 个二级标题：快速参考 / 详细步骤 / 边界 case + 反例。每个标题下放"该主题的所有要点"、不要"按时间线 / 叙事顺序"组织（LLM 不读故事）。</p>
+<p>设计原则 2:<strong>可扫读</strong>——Claude 加载章节后、需要在 1-2 秒内"扫读"找到需要的内容。所以章节必须用列表 + 二级标题 + 表格、而不是长段落。</p>
+<p>设计原则 3:<strong>完整闭环</strong>——章节是该 Skill 的"自包含操作手册"。读章节 + 附录就能完成任务、不要假设"读者会看其他文件"。</p>
+<p>章节的 3 段式结构：</p>
+<p>1. <strong>快速参考（5-10 行）</strong>——操作清单、给 Claude 一眼看出"我该做什么"。</p>
+<p>2. <strong>详细步骤（30-50 行）</strong>——把快速参考的每一步展开、加参数、命令、错误处理。</p>
+<p>3. <strong>边界 case + 反例（50-100 行）</strong>——常见坑、边界情况、典型反例。这是 Claude 遇到"规则没说清楚"的情况时的兜底参考。</p>
+<p>3 段加起来 100-200 行最佳。超过 300 行、就把"边界 case + 反例"拆到 references/。</p>
+<p>章节的职责边界：章节是"该 Skill 的主要工作流"、不是"该 Skill 的所有可能操作"。所有可能操作 + 深度文档放 references/。这是"主入口 + 详细文档"的常见工程模式。</p>
+<h3>第 3 层：附录（references/）的按需加载</h3>
+<p>附录是 Skill 的"百科全书"——按需加载、几千行都不嫌多。这层的核心约束："独立 + 易找 + 单一职责"。</p>
+<p>设计原则 1:<strong>独立</strong>——每份附录文件自包含、读完就能用、不依赖其他附录文件（可以引用但不耦合）。</p>
+<p>设计原则 2:<strong>易找</strong>——文件名清晰、Claude 一搜就能定位。命名规范：小写连字符 / 反映内容 / 和章节标题呼应。</p>
+<p>设计原则 3:<strong>单一职责</strong>——一份附录只讲一个主题、不要"现金流的深度 + 利润表的深度"塞同一份文件。</p>
+<p>附录的常见内容类型：</p>
+<p>1. <strong>深度文档</strong>——章节的"完整版"、比如章节只写"读 git log"、附录写"git log 的所有参数详解"。</p>
+<p>2. <strong>API 参考</strong>——调用的工具 / 库 / 服务的完整 API 文档。</p>
+<p>3. <strong>边界 case 完整版</strong>——章节放"高频边界"、附录放"全量边界"（章节装不下）。</p>
+<p>4. <strong>反例合集</strong>——常见错误 + 错误示范 + 修正方法。</p>
+<p>5. <strong>参考资料</strong>——外部链接 / 引用 / 背景知识。</p>
+<p>附录的命名规范建议：</p>
+<p>• 财务分析 Skill:references/balance-sheet.md / references/income-statement.md / references/cash-flow.md / references/financial-ratios.md / references/industry-benchmarks.md</p>
+<p>• 命名一致性：全小写 / 全连字符 / 不用下划线 / 不用空格 / 不用中文（LLM 对英文路径识别更稳）。</p>
+<p>附录的引用方式：在 SKILL.md 正文里用"详见 [references/cash-flow.md](references/cash-flow.md)"的链接方式引用。Claude 实际需要时再读。</p>
+<table>
+<thead><tr>
+<th>维度</th>
+<th>1 层全量</th>
+<th>3 层（甜区）</th>
+<th>5 层细分</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>加载成本</td>
+<td>30K（全量）</td>
+<td>4K（按需）</td>
+<td>7K（扫读多个文件）</td>
+</tr>
+<tr>
+<td>命中率</td>
+<td>1.6%(99% 浪费）</td>
+<td>80%（甜区）</td>
+<td>60%(LLM 找不准）</td>
+</tr>
+<tr>
+<td>维护成本</td>
+<td>1（改一处）</td>
+<td>1-2（章节 + 附录）</td>
+<td>4+（多文件同步）</td>
+</tr>
+<tr>
+<td>推理友好度</td>
+<td>差（噪声大）</td>
+<td>好（目录 → 章节 → 附录 3 步）</td>
+<td>差（LLM 不知读哪几层）</td>
+</tr>
+<tr>
+<td>适用规模</td>
+<td>极小 Skill(&lt;5K)</td>
+<td>中大型 Skill(5K-50K)</td>
+<td>理论可行但实际累</td>
+</tr>
+</tbody></table>
+<h3>财务分析 Skill 实战：3 层架构的具体落点</h3>
+<p>用一个真实项目"财务分析 Skill"把 3 层架构落到具体文件。</p>
+<p><strong>项目背景</strong></p>
+<p>用户的需求：Claude 能帮财务分析师看公司财报、包括资产负债表 / 利润表 / 现金流 / 财务比率 / 行业基准。Skill 触发词："分析财报" / "看 Q3 财务" / "财务比率" / "行业对比"。</p>
+<p><strong>1 层全量的问题（对比基线）</strong></p>
+<p>把所有内容塞 SKILL.md,30K tokens：资产负债表章节（5K)+ 利润表章节（5K)+ 现金流章节（5K)+ 财务比率章节（5K)+ 行业基准章节（5K)+ 案例分析（3K)+ API 文档（2K）。</p>
+<p>用户问"分析 Q3 现金流",Claude 实际需要的是现金流章节（5K）中的某 0.5K。但被迫加载 30K 找 0.5K。加载率 30K / 30K = 100%（每次都加载这么多）、命中率 0.5K / 30K = 1.6%(99% 的内容没用上）。</p>
+<p><strong>3 层架构的方案</strong></p>
+<p>目录页：frontmatter 5-10 行、description 写"分析公司财报、包括资产负债表 / 利润表 / 现金流 / 财务比率 / 行业基准。Use when user says '分析财报' / '看 Q3 财务' / '财务比率' / '行业对比'."。</p>
+<p>章节：SKILL.md 正文 200 行、3 段式——快速参考（财务分析的 5 步流程）+ 详细步骤（每步的具体操作）+ 边界 case（常见财报问题 + 反例）。</p>
+<p>附录：5 份独立 references/ 文件——balance-sheet.md（深度、1.5K)/ income-statement.md(1.5K)/ cash-flow.md(2K)/ financial-ratios.md(1K)/ industry-benchmarks.md(1.5K）。</p>
+<p>用户问"分析 Q3 现金流",Claude 推理：1) 看到 description 匹配、加载 SKILL.md(2K);2) 看章节的快速参考、知道要"读现金流";3) 读 references/cash-flow.md(2K);4) 实际分析 + 返回。加载总量：2K + 2K = 4K（对比全量 30K、节省 87%）。</p>
+<p>用户问"对比 Q3 vs Q2 的财务比率",Claude 推理：1) 加载 SKILL.md(2K);2) 看章节知道要查财务比率；3) 读 references/financial-ratios.md(1K);4) 完成。加载总量：2K + 1K = 3K（节省 90%）。</p>
+<p><strong>3 层 vs 1 层的 token 经济性对比</strong></p>
+<p>平均每次对话加载量：1 层 30K,3 层 3K、节省 90%。命中率：1 层 1.6%,3 层 80%+（加载的 3K 实际都用上）。加载率：1 层 100%,3 层 10%（每次只加载需要的 10% 内容）。</p>
+<p>3 层架构的核心收益：加载量降 10 倍、命中率升 50 倍、加载率降 10 倍。</p>
+<div class="flow-diagram">
+  <div class="flow-actor">
+    <div class="flow-actor-label">Claude 启动</div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">加载所有 Skills 的 frontmatter（目录页）</div>
+    <div class="flow-box-sub" style="text-align:left">50 tokens / Skill · 所有 Skill 全量可见</div>
+  </div>
+  <div class="flow-arrow"><span class="flow-arrow-label">用户："分析 Q3 现金流"</span></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">Claude 推理：匹配 <code>financial-analysis</code> description？</div>
+    <div class="flow-box-sub" style="text-align:left">看到"分析" / "财务" / "现金流"关键词 → 匹配</div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">加载第 2 层：SKILL.md 章节</div>
+    <div class="flow-box-sub" style="text-align:left">2K tokens · 200 行内</div>
+  </div>
+  <div class="flow-arrow"><span class="flow-arrow-label">扫读：快速参考 + 详细步骤 + 边界 case</span></div>
+  <div class="flow-box">
+    <div class="flow-box-title">知道要读"现金流章节"</div>
+    <div class="flow-box-sub">→ references/cash-flow.md</div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">加载第 3 层：references/cash-flow.md</div>
+    <div class="flow-box-sub" style="text-align:left">2K tokens · 深度内容</div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-actor flow-actor-final">
+    <div class="flow-actor-label">完成分析 + 输出报告</div>
+    <div class="flow-actor-desc">总成本 4.05K · 对比全量 30K · 节省 86%</div>
+  </div>
+</div>
+<h3>Token 经济性的 3 个度量指标</h3>
+<p>3 层架构的质量靠 3 个度量指标评估、任一指标异常 = 架构有问题。</p>
+<p><strong>指标 1：加载率（每次实际加载 / 总大小）</strong></p>
+<p>加载率 = 单次对话实际加载 tokens / Skill 总大小。理想值 5%-15%（大部分内容不加载）。</p>
+<p>• 加载率 &gt; 30% → 分层粒度不够、3 层太"厚"——章节文件 1000+ 行、或附录文件太大。</p>
+<p>• 加载率 &lt; 2% → 分层粒度过细、5+ 层——LLM 找内容花的时间比加载还多。</p>
+<p>• 加载率 5-15% → 甜区、3 层架构正确。</p>
+<p>财务分析 Skill 加载率：3K / 12K = 25%、稍高（章节 2K 偏厚）。修正：把"详细步骤"再拆、正文只留 1K。</p>
+<p><strong>指标 2：命中率（加载内容中实际用到的占比）</strong></p>
+<p>命中率 = 加载内容中实际被引用的 tokens / 加载总量。理想值 80%+。</p>
+<p>• 命中率 &lt; 50% → 加载了但没用——LLM "扫读"完发现关键信息不在那里、白加载了。</p>
+<p>• 命中率 &gt; 95% → 加载内容"太对题"、可能分层不够细（其实可以更精准）。</p>
+<p>• 命中率 70-90% → 甜区。</p>
+<p>财务分析 Skill 命中率：加载 3K、实际用到 2.4K、命中率 80%——甜区。</p>
+<p><strong>指标 3：维护成本（新增/修改/删除一个内容点要改几个文件）</strong></p>
+<p>维护成本 = 单个内容点的修改要触达的文件数。理想值 1（改一处生效）。</p>
+<p>• 维护成本 &gt; 3 → 职责重叠（章节和附录都有同一信息、改一处忘一处）。</p>
+<p>• 维护成本 = 1 → 职责清晰、每个信息只在一个地方。</p>
+<p>• 维护成本 = 1 是甜区、但 2 也可以接受（章节 + 附录各一份、职责不同）。</p>
+<p>3 个指标综合判断：加载率 5-15% / 命中率 70-90% / 维护成本 1-2,3 个都在甜区 = 3 层架构正确。</p>
+<table>
+<thead><tr>
+<th>层</th>
+<th>内容</th>
+<th>加载时机</th>
+<th>典型大小</th>
+<th>职责</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>第 1 层</td>
+<td>frontmatter</td>
+<td>Claude 启动时全量</td>
+<td>50 tokens</td>
+<td>身份 + 触发器 + 工具白名单</td>
+</tr>
+<tr>
+<td>第 2 层</td>
+<td>SKILL.md 正文</td>
+<td>description 匹配时</td>
+<td>2K tokens(200 行内）</td>
+<td>主要工作流（快速参考 + 详细步骤 + 边界 case)</td>
+</tr>
+<tr>
+<td>第 3 层</td>
+<td>references/*.md</td>
+<td>Claude 实际需要时</td>
+<td>1.5K tokens/份</td>
+<td>深度文档 / API 参考 / 完整反例</td>
+</tr>
+</tbody></table>
+<h2 class="section-anchor">🛠️ 实战代码</h2>
+<p><strong>📄 第 12 讲配套：完整 3 层目录结构（.claude/skills/financial-analysis/)</strong></p>
+<pre><code class="lang-bash"># 财务分析 Skill 完整 3 层目录结构
+.claude/skills/financial-analysis/
+├── SKILL.md                       # 第 2 层:章节(200 行内,触发时加载)
+│   ├── frontmatter (5-10 行)      # 第 1 层:目录页(启动时加载)
+│   ├── 快速参考 (5-10 行)         # 章节第 1 段
+│   ├── 详细步骤 (30-50 行)        # 章节第 2 段
+│   └── 边界 case + 反例 (50-100)  # 章节第 3 段
+└── references/                    # 第 3 层:附录(按需加载)
+    ├── balance-sheet.md           # 资产负债表深度
+    ├── income-statement.md        # 利润表深度
+    ├── cash-flow.md               # 现金流深度
+    ├── financial-ratios.md        # 财务比率深度
+    └── industry-benchmarks.md     # 行业基准深度
+
+# 总大小 12K tokens(目录 50 + 章节 2K + 附录 7.5K)
+# 实际加载 3K(章节 2K + 1 份附录 1K)
+# 加载率 25% / 命中率 80% / 维护成本 1-2(都在甜区)</code></pre>
+<p><strong>📄 第 12 讲配套：财务分析 Skill 目录页 frontmatter(5-10 行）</strong></p>
+<pre><code class="lang-markdown">---
+name: financial-analysis
+description: Analyze company financial reports including balance sheet, income statement, cash flow, financial ratios, and industry benchmarks. Use when user says "分析财报" / "看 Q3 财务" / "财务比率" / "行业对比" / "financial analysis".
+license: MIT
+allowed-tools: Read, Bash
+---
+
+# 注:frontmatter 总共 5-10 行,description 占 2-3 行。
+# 详细操作步骤放 SKILL.md 正文,深度文档放 references/。
+# 目录页"薄 + 准 + 不变"——不承载具体步骤,只承载"何时触发"。
+
+# 反面示例(❌ description 写 200 字):
+# description: "Analyze company financial reports. First read balance sheet
+#   from src/finance/, then read income statement, then read cash flow,
+#   then compute ratios, then compare with industry benchmarks. Also
+#   handle edge cases like missing data, currency conversion, etc."
+# → 200 字,占 300 tokens。10 个 Skill = 3K token,占上下文大头。
+# → 触发细节应该放 SKILL.md 正文,不是 frontmatter。</code></pre>
+<p><strong>📄 第 12 讲配套：章节文件 SKILL.md 正文（快速参考 / 详细步骤 / 边界 case 三段式）</strong></p>
+<pre><code class="lang-markdown"># financial-analysis:公司财报分析
+
+## 快速参考(5 步)
+1. 确认分析对象(公司名 / 报告期)
+2. 读 4 份基础报表(资产负债表 / 利润表 / 现金流 / 所有者权益变动表)
+3. 计算 8 类财务比率(流动 / 偿债 / 营运 / 盈利)
+4. 对比行业基准(5 个行业)
+5. 输出分析报告(结构化 Markdown)
+
+## 详细步骤
+
+### 1. 确认分析对象
+- 公司名 + 报告期(Q1/Q2/Q3/Q4 或年报)
+- 数据来源(本地文件 / API / 第三方数据)
+- 分析目的(投资 / 信贷 / 内部决策)
+
+### 2. 读 4 份基础报表
+- 资产负债表:references/balance-sheet.md
+- 利润表:references/income-statement.md
+- 现金流:references/cash-flow.md
+- 所有者权益变动表:references/balance-sheet.md#equity
+
+### 3. 计算 8 类财务比率
+- 流动比率 / 速动比率 / 现金比率(短期偿债)
+- 资产负债率 / 利息保障倍数(长期偿债)
+- 应收账款周转率 / 存货周转率(营运)
+- 毛利率 / 净利率 / ROE / ROA(盈利)
+- 详见 references/financial-ratios.md
+
+### 4. 对比行业基准
+- 5 个行业(科技 / 制造 / 金融 / 消费 / 医疗)
+- 详见 references/industry-benchmarks.md
+
+### 5. 输出分析报告
+- 结构化 Markdown(执行摘要 / 财务健康 / 风险点 / 建议)
+- 写到 .claude/reports/financial-&lt;date&gt;.md
+
+## 边界 case
+- 缺数据(只拿到 3 份报表):标注"数据不全",用现有数据 + 提示
+- 跨币种(财报是 EUR,基准是 USD):先汇率换算(用 API)
+- 非标准财年(4 月 - 3 月):标注财年定义,避免误判
+- 集团 vs 子公司:分析对象是合并报表还是单体报表,要明确
+
+## 反例
+- ❌ 只看单期数据不做趋势分析(应该对比 3-5 期)
+- ❌ 只算比率不做行业对比(没有基准的比率没意义)
+- ❌ 抄报表数字不做解读(读者已经能看原始数据)
+- ❌ 忽略报表附注(很多关键信息在附注里,不在主表)</code></pre>
+<p><strong>📄 第 12 讲配套：附录 references/ 5 份文件清单（资产负债表深度 / 利润表深度 / 现金流深度 / 财务比率深度 / 行业基准深度）</strong></p>
+<pre><code class="lang-bash"># 5 份 references/ 文件的职责边界
+
+# 1. balance-sheet.md(1.5K tokens)
+# 资产负债表的深度内容:
+# - 每个科目的标准定义 + 常见误解
+# - 跨期对比的注意事项(会计政策变更)
+# - 隐性负债的识别方法(表外负债 / 或有事项)
+# - 配合财报附注的关键字段
+# 引用方式:SKILL.md 第 2 步写"读 references/balance-sheet.md"
+
+# 2. income-statement.md(1.5K tokens)
+# 利润表的深度内容:
+# - 收入确认的 5 种方法(总额 vs 净额)
+# - 非经常性损益的识别(避免被一次性收益误导)
+# - 毛利率波动的归因分析
+# - 所得税费用的有效税率分析
+
+# 3. cash-flow.md(2K tokens)
+# 现金流的深度内容(财务造假的"照妖镜"):
+# - 经营 / 投资 / 筹资 三类现金流的解读
+# - 经营现金流 vs 净利润的背离分析(警惕"纸面富贵")
+# - 自由现金流的计算(FCF = OCF - CapEx)
+# - 现金循环周期(CCC)对资金链的影响
+
+# 4. financial-ratios.md(1K tokens)
+# 8 类财务比率的完整定义 + 计算公式 + 解读方法:
+# - 流动比率 / 速动比率 / 现金比率
+# - 资产负债率 / 利息保障倍数
+# - 应收账款周转率 / 存货周转率
+# - 毛利率 / 净利率 / ROE / ROA
+# + 杜邦分析(ROE 拆解为 3 因子)
+
+# 5. industry-benchmarks.md(1.5K tokens)
+# 5 个行业的财务比率基准 + 解读方法:
+# - 科技(高 ROE / 低股息 / 高研发占比)
+# - 制造(中等 ROE / 中等股息 / 关注产能利用率)
+# - 金融(极高杠杆 / ROA 关键 / 拨备覆盖率)
+# - 消费(稳定 ROE / 高股息 / 关注渠道库存)
+# - 医疗(高研发 / 长周期 / 关注管线价值)
+
+# 文件命名规范:
+# - 全小写
+# - 全连字符(不用下划线 / 空格 / 中文)
+# - 和章节标题呼应(balance-sheet 和"读 4 份基础报表"对应)
+# - LLM 搜索友好(英文路径识别更稳)</code></pre>
+<h2 class="section-anchor">⚠️ 常见坑</h2>
+<div class="callout warn">
+<strong>⚠️ 章节文件写 1000+ 行（等同于"伪 3 层、实 1 层")</strong>
+<p>最隐蔽的分层失败陷阱：目录 + 章节 + 附录 3 个文件都建了、但章节文件 1000+ 行、把"该放附录"的深度内容也塞进去。结果——每次 Skill 触发、1000+ 行一次性加载、加载量 5-10 倍于 3 层方案。这等于"伪 3 层、实 1 层"。修正：章节控制在 200 行内、超过 300 行就该拆——把"详细文档 / API 参考 / 完整反例"移到 references/。判断标准：章节 &gt; 300 行 = 该拆了。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 目录页 description 写得太长（占太多 token 反而降加载率）</strong>
+<p>常见的"过载"错误：description 写 200-500 字、把"做什么 + 怎么做 + 触发词 + 边界"全包了。结果——每个 Skill 的 frontmatter 占 300-700 tokens,10 个 Skill = 3-7K tokens、占上下文 5-10%。加载率看起来"高"（每次都加载）、但命中率低（很多 detail Claude 用不上）。修正：description 控制在 1-2 句话、只写"何时触发 + 触发词"、细节放章节。判断标准：description &gt; 100 字 = 太长。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 附录命名混乱（balancesheet.md vs balance-sheet.md vs 资产负债表.md,Claude 找不到）</strong>
+<p>常见的"命名不一致"陷阱：5 份附录文件命名风格不统一——cashflow.md（无连字符）/ balance-sheet.md（有连字符）/ 资产负债表.md（中文）/ income.md（简写）/ profit-and-loss.md（别名）。结果——Claude 找文件时不知道该读哪个、经常"猜错"或"扫读多个文件才找到"。修正：统一命名规范——全小写 / 全连字符 / 不用下划线 / 不用空格 / 不用中文 / 名称和章节标题严格呼应。判断标准：5 份附录命名风格完全一致 = 正确。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 第 2 层和第 3 层职责重叠（边界 case 既在 SKILL.md 又在 references/、改一处忘一处）</strong>
+<p>最常见的"维护噩梦"：同一个"边界 case"既在 SKILL.md 的"边界 case"段写了、又在 references/edge-cases.md 里写了完整版。结果——某天发现"边界 case"描述需要更新、改了 SKILL.md 忘了 references/、两份内容不一致、Claude 推理时不知道该信哪个。修正：严格分层——SKILL.md 的"边界 case"段只放"高频 + 简短"的 case、完整版 + 全部 case 放 references/edge-cases.md,SKILL.md 用"详见 references/edge-cases.md"链接。判断标准：同一信息是否在 2+ 个地方出现?是、职责重叠、该拆。</p>
+</div>
+<h2 class="section-anchor">💡 一句话备忘</h2>
+<blockquote>Skills 的 3 层渐进式披露是"LLM 推理 + 人类维护"的甜区——目录页 50 tokens 全量加载做"触发器"、章节 2K 触发时加载做"主工作流"、附录按需加载做"深度文档"；加载率 13% + 命中率 80% + 维护成本 1-2 = 分层正确。</blockquote>
+<hr>
+<p class="breadcrumb">← 回到 <a href="#top">本讲网页顶部</a></p>
+</main>
+<script>
+  (function () {
+    var STORAGE_KEY = "***";
+    var root = document.documentElement;
+    var btn  = document.getElementById("themeToggle");
+    var icon = document.getElementById("themeIcon");
+    var lbl  = document.getElementById("themeLabel");
+    function apply(theme) {
+      root.setAttribute("data-theme", theme);
+      if (theme === "dark") {
+        icon.innerHTML = "&#9728;&#65039;";
+        lbl.textContent  = "亮色";
+      } else {
+        icon.innerHTML = "&#127769;";
+        lbl.textContent  = "暗色";
+      }
+    }
+    var saved = null;
+    try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    if (saved === "light" || saved === "dark") {
+      apply(saved);
+    } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      apply("dark");
+    } else {
+      apply("light");
+    }
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") || "light";
+      var next = cur === "dark" ? "light" : "dark";
+      apply(next);
+      try { localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,712 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 13 讲 · 浑然天成 · Skills 高级模式与 SubAgent 配合实战</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fff; --fg: #222; --muted: #555; --link: #1a73e8;
+    --code-bg: #f4f4f4; --code-fg: inherit;
+    --pre-bg: #1e1e1e; --pre-fg: #eaeaea;
+    --border: #ddd; --th-bg: #f5f5f5; --zebra: #fafafa;
+    --hover-row: #e8f0fe; --hover-th: #eef2f7;
+    --blockquote-bg: #fafafa; --blockquote-border: #ddd;
+    --hr: #eee;
+    --toggle-bg: #f5f5f5; --toggle-fg: #333; --toggle-border: #ddd;
+    --tag-bg: #eef4ff; --tag-fg: #1a73e8;
+    --callout-bg: #fffbe6; --callout-border: #fadb14;
+    --warn-bg: #fff1f0; --warn-border: #ff4d4f;
+    --ok-bg: #f6ffed; --ok-border: #52c41a;
+    --code-block-bg: #f8f9fa;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1115; --fg: #e6e6e6; --muted: #9aa0a6; --link: #8ab4f8;
+    --code-bg: #1e1f24; --code-fg: #e6e6e6;
+    --pre-bg: #1a1d23; --pre-fg: #e6e6e6;
+    --border: #303136; --th-bg: #1c1f25; --zebra: #16181d;
+    --hover-row: #1f2733; --hover-th: #262c36;
+    --blockquote-bg: #181a20; --blockquote-border: #303136;
+    --hr: #2a2d33;
+    --toggle-bg: #1c1f25; --toggle-fg: #e6e6e6; --toggle-border: #303136;
+    --tag-bg: #1a2540; --tag-fg: #8ab4f8;
+    --callout-bg: #2a261a; --callout-border: #b89333;
+    --warn-bg: #2a1a1a; --warn-border: #a84545;
+    --ok-bg: #1a261a; --ok-border: #4a8a4a;
+    --code-block-bg: #16181d;
+  }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 "PingFang SC", "Microsoft YaHei", "Helvetica Neue",
+                 Arial, sans-serif;
+    font-size: 15px; line-height: 1.7;
+    transition: background-color .2s ease, color .2s ease;
+  }
+  main {
+    max-width: 1100px;
+    width: calc(100% - 32px);
+    margin: 0 auto;
+    padding: 24px 0 64px 0;
+    box-sizing: border-box;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    line-height: 1.3; margin: 1.5em 0 .6em;
+  }
+  h1 { font-size: 1.9em; border-bottom: 2px solid var(--hr); padding-bottom: .3em; }
+  h2 { font-size: 1.45em; border-bottom: 1px solid var(--hr); padding-bottom: .25em; margin-top: 2em; }
+  h3 { font-size: 1.18em; color: var(--link); margin-top: 1.5em; }
+  h4 { font-size: 1.05em; margin-top: 1.2em; color: var(--fg); font-weight: 600; }
+  p, ul, ol, blockquote, pre, table { margin: .7em 0; }
+  ul, ol { padding-left: 1.6em; }
+  li { margin: .3em 0; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  blockquote {
+    margin: .8em 0; padding: .6em 1em;
+    border-left: 4px solid var(--blockquote-border);
+    color: var(--muted); background: var(--blockquote-bg);
+  }
+  .callout {
+    background: var(--callout-bg);
+    border-left: 4px solid var(--callout-border);
+    padding: 12px 16px; margin: 1.2em 0; border-radius: 4px;
+  }
+  .callout.warn { background: var(--warn-bg); border-left-color: var(--warn-border); }
+  .callout.ok   { background: var(--ok-bg);   border-left-color: var(--ok-border); }
+  code {
+    font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: .9em; background: var(--code-bg); color: var(--code-fg);
+    padding: 1px 5px; border-radius: 3px;
+  }
+  pre {
+    background: var(--pre-bg); color: var(--pre-fg);
+    padding: 14px 16px; border-radius: 6px;
+    overflow-x: auto; font-size: 13px; line-height: 1.55;
+    margin: 1em 0;
+  }
+  pre code { background: transparent; padding: 0; color: inherit; }
+  pre.lang-flow {
+    background: var(--code-block-bg); color: var(--fg);
+    border: 1px solid var(--border);
+  }
+  :root[data-theme="dark"] pre.lang-flow {
+    background: #0a0b0d; color: #d4d4d4;
+  }
+  table {
+    width: 100% !important; border-collapse: collapse;
+    table-layout: auto; margin: 1em 0;
+    font-size: 14px; display: table;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left; vertical-align: top;
+    transition: background-color .15s ease;
+  }
+  th { background: var(--th-bg); font-weight: 600; }
+  tbody tr:nth-child(even) td { background: var(--zebra); }
+  tbody tr:hover td, tbody tr:hover th { background: var(--hover-row) !important; }
+  thead th:hover { background: var(--hover-th) !important; }
+  :root[data-theme="dark"] tbody tr:hover td,
+  :root[data-theme="dark"] tbody tr:hover th,
+  :root[data-theme="dark"] thead th:hover { color: #fff; }
+  hr { border: none; border-top: 1px solid var(--hr); margin: 2em 0; }
+  img { max-width: 100%; height: auto; }
+
+  .tag {
+    display: inline-block; padding: 2px 8px; margin-right: 6px;
+    background: var(--tag-bg); color: var(--tag-fg);
+    border-radius: 12px; font-size: 12px; font-weight: 500;
+  }
+  .breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 1em; }
+  .breadcrumb a { color: var(--muted); }
+  .breadcrumb a:hover { color: var(--link); }
+
+  .theme-toggle {
+    position: fixed; top: 12px; right: 12px; z-index: 9999;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: var(--toggle-bg); color: var(--toggle-fg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 6px; font-size: 13px; font-family: inherit;
+    cursor: pointer; user-select: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    transition: background-color .2s ease, transform .1s ease;
+  }
+  .theme-toggle:hover { background: var(--hover-row); }
+  .theme-toggle:active { transform: scale(.97); }
+  .theme-toggle .icon { font-size: 15px; line-height: 1; }
+
+  .lesson-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, #1a73e8, #6f42c1);
+    color: #fff; font-size: 24px; font-weight: 700;
+    margin-right: 14px; vertical-align: middle;
+  }
+
+  .section-anchor { scroll-margin-top: 60px; }
+</style>
+<link rel="stylesheet" href="assets/flow.css">
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="切换暗色模式">
+  <span class="icon" id="themeIcon">&#127769;</span>
+  <span id="themeLabel">暗色</span>
+</button>
+<main>
+<div class="breadcrumb">课程导航： « <a href="lesson-12.html">第 12 讲</a>  ·  <a href="lesson-14.html">第 14 讲</a> »</div>
+<h1><span class="lesson-badge">13</span>第 13 讲 · 浑然天成 · Skills 高级模式与 SubAgent 配合实战</h1>
+<p>
+  <span class="tag">正课</span>
+  <span class="tag">第 13 / 33 讲</span>
+  <span class="tag">Claude Code 工程化实战</span>
+  <span class="tag">Skills + SubAgent + Commands</span>
+</p>
+<div class="callout ok">
+<strong>📌 本讲摘要</strong>
+<p>前 6 讲讲了 SubAgent 系列（第 4-9 讲）、第 10-12 讲讲了 Skills 系列。本讲进入"组合"——Skills + SubAgent + Commands 三件套不是孤立机制、而是可以联动的：Skills 给 SubAgent"喂能力"（作为上下文的一部分）,SubAgent 用 Skills 完成专项任务、Commands 触发整个流程。本讲讲 3 种组合模式（Skills 喂 SubAgent / SubAgent 内部用 Skills / 流水线组合）+ 2 个实战（代码审查专家 / 部署专家）、最后给出"先理解组合的全貌、再动手构建组件、最后组装成完整的专家"的工程方法论。</p>
+<p>本讲的三条主线：</p>
+<p>第一、组合的全貌——3 件套的 3 种关系（Skills 喂 SubAgent / SubAgent 内部用 Skills / 流水线组合）;3 种关系不是互斥、可以叠加形成专家系统。</p>
+<p>第二、3 种组合模式的工程实现——能力注入（把 Skill 全文作为 system prompt)/ 动态加载（SubAgent 流程中按需加载 Skill)/ 流水线（用 Command 触发一连串 Skill）。</p>
+<p>第三、2 个专家系统的组装实战——代码审查专家（Security-Audit + Style-Check + Test-Coverage 三个 Skill 喂给 Code-Reviewer SubAgent)/ 部署专家（Pre-Deploy-Check + Deploy + Rollback 三个 Skill 喂给 Deployer SubAgent、用 /release Command 触发整条流水线）。</p>
+<p>学完本讲、你应该能区分 3 种组合模式的工程实现、能给代码审查 / 部署 / 文档生成等场景组装专家系统、能避免 3 件套职责不清和上下文爆炸两个常见陷阱。</p>
+</div>
+<h2 class="section-anchor">📖 详细内容</h2>
+<h3>组合的全貌：3 件套的 3 种关系</h3>
+<p>第 10 讲我们说 Skills / SubAgent / Commands 是 Claude Code 的 3 种能力扩展机制。本讲的核心命题：这 3 者不是孤立的、而是可以联动的。理解 3 种关系、是设计专家系统的前提。</p>
+<p><strong>3 种关系的全景图</strong></p>
+<p>关系 1：Skills 喂 SubAgent（能力注入）——把 Skill 的 SKILL.md 全文作为 SubAgent 的 system prompt 的一部分。SubAgent 启动时、已经把 Skill 的能力内化了。</p>
+<p>关系 2：SubAgent 内部用 Skills（动态加载）——SubAgent 在执行过程中、根据任务需要、临时加载某个 Skill（用 description 匹配触发）。SubAgent 启动时不知道所有能力、按需扩展。</p>
+<p>关系 3：流水线组合（Skill 链）——用 Command 触发一连串 Skill 顺序执行。每个 Skill 跑自己的、Skill 之间用文件 / 状态 / 任务队列通信。</p>
+<p>3 种关系的核心区别在于能力的归属：</p>
+<p>• 关系 1（注入）——能力在 SubAgent 启动时就长在身上,SubAgent 拥有完整知识。</p>
+<p>• 关系 2（动态）——能力按需加载,SubAgent 体积小、能力按需扩展。</p>
+<p>• 关系 3（流水线）——能力在多个独立实体之间流转、每个实体只负责自己的一段。</p>
+<p><strong>3 种关系不是互斥、可以叠加</strong></p>
+<p>一个复杂的专家系统可以同时用 3 种关系。典型架构：</p>
+<p>1. 顶层用 Command 触发流水线（关系 3）。</p>
+<p>2. 流水线的某一步调起 SubAgent(SubAgent 内部用 Skill——关系 2）。</p>
+<p>3. SubAgent 启动时把核心 Skill 注入 system prompt（关系 1）。</p>
+<p>三层叠加形成专家系统——顶层 Command 触发 → SubAgent 隔离上下文 → Skill 注入能力 → 动态加载补足 → 流水线跨阶段。后面代码审查专家和部署专家两个实战都是这套架构。</p>
+<table>
+<thead><tr>
+<th>维度</th>
+<th>模式 1：Skill 注入</th>
+<th>模式 2：动态加载</th>
+<th>模式 3：流水线</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>能力归属</td>
+<td>SubAgent 启动时内化</td>
+<td>SubAgent 执行时按需</td>
+<td>多个 Skill 顺序流转</td>
+</tr>
+<tr>
+<td>System prompt 大小</td>
+<td>大（注入多）</td>
+<td>小（只描述触发）</td>
+<td>N/A(Command 触发）</td>
+</tr>
+<tr>
+<td>触发方式</td>
+<td>SubAgent 启动即用</td>
+<td>执行时 description 匹配</td>
+<td>用户 /&lt;command&gt;</td>
+</tr>
+<tr>
+<td>适用场景</td>
+<td>单角色 3 维审查</td>
+<td>多阶段按需能力</td>
+<td>固定步骤流水线</td>
+</tr>
+<tr>
+<td>灵活性</td>
+<td>低（写死）</td>
+<td>中（按需）</td>
+<td>低（标准化）</td>
+</tr>
+<tr>
+<td>复杂度</td>
+<td>低（单一 SubAgent)</td>
+<td>中（SubAgent + Skill 协调）</td>
+<td>高（多步协调）</td>
+</tr>
+</tbody></table>
+<h3>模式 1：Skills 喂 SubAgent（能力注入）</h3>
+<p>模式 1 的工程实现：把 Skill 的 SKILL.md 全文（或关键部分）作为 SubAgent 的 system prompt 的一部分、SubAgent 启动时就内化了这些能力。</p>
+<p><strong>实现方式</strong></p>
+<p>SubAgent 的 markdown 配置通常有 system prompt 字段。把 Skill 的核心内容写进 system prompt：</p>
+<pre><code class="lang-markdown">---
+name： code-reviewer
+description： Code review specialist that audits for security, style, and test coverage.
+tools： Read, Grep, Glob, Bash
+---
+# Code Reviewer
+## 你的能力
+你是代码审查专家。每次审查按以下 3 步走：
+### Step 1：Security Audit（注入自 security-audit Skill)
+[这里嵌入 security-audit Skill 的核心内容]
+- 检查 SQL 注入（原始 SQL 字符串拼接）
+- 检查 XSS（未转义的用户输入）
+- 检查 SSRF(URL 由用户控制）
+- 检查硬编码密钥（api_key = "xxx")
+- 检查危险命令（...| sh / chmod 777 / curl | bash)
+### Step 2：Style Check（注入自 style-check Skill)
+[嵌入 style-check Skill 的核心内容]
+- PEP 8 合规（line length &lt; 100、命名规范）
+- 函数长度 &lt; 50 行
+- 注释覆盖率 &gt; 30%
+### Step 3：Test Coverage（注入自 test-coverage Skill)
+[嵌入 test-coverage Skill 的核心内容]
+- 新增代码必须有对应测试
+- 行覆盖率 &gt; 80%
+- 边界 case 必须覆盖
+## 输出格式
+Markdown 报告、严格按 [Security | Style | Test] 3 段
+```</code></pre>
+<p>这个 code-reviewer SubAgent 启动时、已经把 3 个 Skill 的核心内容内化在 system prompt 里。它审查代码时、直接用这些规则、不需要动态加载。</p>
+<p><strong>适用场景</strong></p>
+<p>SubAgent 总是需要这个能力（每次启动都用）。比如 code-reviewer 每次审查都需要 security / style / test 3 个维度、这 3 个 Skill 注入到 system prompt 最合适。</p>
+<p><strong>代价</strong></p>
+<p>SubAgent 的 system prompt 会比较大（3 个 Skill 的核心内容加在一起）。如果 SubAgent 启动慢、说明注入过多——该考虑用模式 2（动态加载）替代。</p>
+<h3>模式 2：SubAgent 内部用 Skills（动态加载）</h3>
+<p>模式 2 的工程实现：SubAgent 启动时 system prompt 不包含 Skill 内容、在执行过程中根据任务需要、临时加载 Skill。</p>
+<p><strong>实现方式</strong></p>
+<p>SubAgent 的 system prompt 写"如果你需要 X 能力、加载 skill-name",Claude 在执行过程中按需触发。</p>
+<pre><code class="lang-markdown">---
+name： deployer
+description： Deployment specialist. Run pre-deploy checks, deploy, and handle rollback.
+tools： Read, Edit, Bash, Grep, Glob
+---
+# Deployer
+## 你的工作流
+### 阶段 1：Pre-Deploy Check（需要时加载 pre-deploy-check Skill)
+如果任务涉及"部署前检查"、触发 pre-deploy-check Skill 加载其完整工作流。
+### 阶段 2：Deploy（需要时加载 deploy Skill)
+如果任务涉及"执行部署"、触发 deploy Skill 加载其完整工作流。
+### 阶段 3：Rollback（需要时加载 rollback Skill)
+如果部署失败、触发 rollback Skill 加载其完整工作流。
+```</code></pre>
+<p>deployer 启动时 system prompt 较小（只描述何时触发哪个 Skill)、在执行过程中才按需加载 Skill 全文。好处：deployer 体积小、按需扩展、适用于能力多但每次只用一部分的场景。</p>
+<p><strong>适用场景</strong></p>
+<p>SubAgent 有很多潜在能力、但每次任务只用其中一两个。典型：deployer 平时只跑 deploy 阶段、失败时才需要 rollback Skill。</p>
+<p><strong>代价</strong></p>
+<p>依赖 description 写得准——如果某个 Skill 的 description 不准、deployer 可能不会触发它、导致漏做某步。修正：Skill 的 description 必须互斥且完备,deployer system prompt 里写如果...就加载...的触发条件必须清晰。</p>
+<h3>模式 3：流水线组合（Skill 链）</h3>
+<p>模式 3 的工程实现：用 Command 触发一连串 Skill 顺序执行。每个 Skill 跑自己的、Skill 之间用文件 / 状态通信。</p>
+<p><strong>实现方式</strong></p>
+<p>在 .claude/commands/release.md 定义流水线：</p>
+<pre><code class="lang-markdown">---
+description： Run full release pipeline. Executes sync-changelog, run-tests, build, deploy in sequence.
+---
+# /release：发布流水线
+## 流程
+1. 加载 sync-changelog Skill（更新 CHANGELOG.md)
+2. 加载 run-tests Skill（跑测试、失败则终止）
+3. 加载 build Skill（构建产物）
+4. 加载 deploy Skill（部署到生产）
+5. 加载 notify Skill（通知团队）
+## 错误处理
+任一 Skill 失败、流水线暂停、通知用户。
+```</code></pre>
+<p>用户输入 <code>/release</code>,Claude Code 顺序执行 5 个 Skill。每个 Skill 跑自己的（Skill 内部可能调 SubAgent / 用工具）,Skill 之间用文件 / 状态通信（比如 sync-changelog 把更新结果写到 CHANGELOG.md,deploy Skill 读 CHANGELOG.md 拿到版本号）。</p>
+<p><strong>适用场景</strong></p>
+<p>有一连串固定步骤、每步都有明确的输入输出、用户希望一个命令触发整条流水线。典型：发布流水线（CI 自动化场景）/ 审查流水线（用户主动审查场景）/ 数据分析流水线（分析师一连串 ETL）。</p>
+<p><strong>代价</strong></p>
+<p>流水线的灵活性差——如果中间某步需要跳过或重做、得改 Command 文件。所以流水线适合高度标准化的流程、不适合高度定制的流程。</p>
+<div class="flow-diagram">
+  <div class="flow-note" style="font-size:14px;font-weight:600;color:var(--link);font-style:normal;margin-bottom:10px">3 件套联动全景图</div>
+  <div class="flow-actor">
+    <div class="flow-actor-label">用户输入</div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box"><div class="flow-box-title">Command 触发</div><div class="flow-box-sub">/review · /release</div></div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box"><div class="flow-box-title">SubAgent 调起</div><div class="flow-box-sub">code-reviewer · deployer</div></div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box"><div class="flow-box-title">Skill 加载</div><div class="flow-box-sub">注入（模式 1）或动态加载（模式 2）</div></div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box"><div class="flow-box-title">Skill 执行</div><div class="flow-box-sub">读文件 · 跑测试 · 部署</div></div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box"><div class="flow-box-title">Skill 输出</div><div class="flow-box-sub">报告 · 状态文件</div></div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box"><div class="flow-box-title">SubAgent 综合</div><div class="flow-box-sub">整合多个 Skill 的输出</div></div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box"><div class="flow-box-title">Command 收尾</div><div class="flow-box-sub">通知 · 写报告</div></div>
+  <div class="flow-arrow"></div>
+  <div class="flow-actor flow-actor-final">
+    <div class="flow-actor-label">返回用户</div>
+  </div>
+</div>
+
+<h3>实战：代码审查专家的组装</h3>
+<p>第一个实战：用 3 件套组装代码审查专家。</p>
+<p><strong>角色清单</strong></p>
+<p>• 3 个 Skill：security-audit(SQL 注入 / XSS / SSRF / 硬编码密钥 / 危险命令）/ style-check(PEP 8 / 函数长度 / 注释覆盖）/ test-coverage（新增代码有测试 / 覆盖率 &gt; 80% / 边界 case)</p>
+<p>• 1 个 SubAgent：code-reviewer（代码审查专家、综合 3 个 Skill 的输出）</p>
+<p>• 1 个 Command：/review（用户主动触发、完整审查流程）</p>
+<p><strong>组合关系</strong></p>
+<p>用模式 1(Skills 喂 SubAgent)——把 3 个 Skill 的核心内容作为 code-reviewer 的 system prompt 的一部分。code-reviewer 启动时已经内化了 3 个维度的审查规则、审查时直接用。</p>
+<p><strong>触发流程</strong></p>
+<p>1. 用户输入 /review、触发 Command。</p>
+<p>2. Command 调起 code-reviewer SubAgent。</p>
+<p>3. code-reviewer 启动、system prompt 包含 3 个 Skill 的核心内容。</p>
+<p>4. code-reviewer 读 git diff、按 Security → Style → Test 3 段输出报告。</p>
+<p>5. 报告写 .claude/reports/review-&lt;date&gt;.md。</p>
+<p>整套系统用户 1 个命令、得到 1 份完整审查报告、中间不需要用户介入。</p>
+<p><strong>为什么不模式 2（动态加载）</strong></p>
+<p>code-reviewer 每次审查都需要 3 个维度、没有按需的场景。所以 3 个 Skill 注入到 system prompt 最合适、不用动态加载。如果用模式 2、反而每次要扫描 3 个 Skill description 再决定加载哪些、增加延迟。</p>
+<p><strong>为什么不模式 3（流水线）</strong></p>
+<p>代码审查是一个角色做一件事、不是多步流水线。流水线适合步骤之间有数据流转、审查没有——1 份代码、3 个维度、1 份报告、中间无状态。所以 SubAgent（模式 1 注入）更合适。</p>
+<h3>实战：部署专家的组装</h3>
+<p>第二个实战：用 3 件套组装部署专家。</p>
+<p><strong>角色清单</strong></p>
+<p>• 3 个 Skill：pre-deploy-check（部署前检查清单）/ deploy（执行部署、带 Hook 兜底）/ rollback（回滚到上一版本）</p>
+<p>• 1 个 SubAgent：deployer（部署专家、根据部署阶段加载不同 Skill)</p>
+<p>• 1 个 Command：/release（发布流水线、4 步：测试 → 构建 → 部署 → 通知）</p>
+<p><strong>组合关系</strong></p>
+<p>用模式 2(SubAgent 内部用 Skills)+ 模式 3（流水线）的组合——deployer 启动时 system prompt 较小、执行过程中按需加载 Skill;/release Command 触发整条流水线。</p>
+<p><strong>触发流程</strong></p>
+<p>1. 用户输入 /release、触发 Command。</p>
+<p>2. Command 跑流水线 4 步：加载 run-tests Skill → 加载 build Skill → 调起 deployer SubAgent → 加载 notify Skill。</p>
+<p>3. deployer 启动、根据部署前 → 部署 → 回滚 3 阶段动态加载对应 Skill：</p>
+<p>• 阶段 1（部署前）→ 加载 pre-deploy-check Skill。</p>
+<p>• 阶段 2（部署中）→ 加载 deploy Skill。</p>
+<p>• 阶段 3（失败回滚）→ 加载 rollback Skill。</p>
+<p>4. 每步的输出写状态文件 .claude/state/release.json、供下一步读取。</p>
+<p>5. 完成后、notify Skill 通知团队。</p>
+<p>整套系统用户 1 个 /release 命令、得到 1 个完整发布流程、中间不需要用户介入（除了危险操作的人工确认）。</p>
+<table>
+<thead><tr>
+<th>实战场景</th>
+<th>使用的模式</th>
+<th>Skill 清单</th>
+<th>SubAgent</th>
+<th>Command</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>代码审查专家</td>
+<td>模式 1（注入）</td>
+<td>3：security-audit / style-check / test-coverage</td>
+<td>code-reviewer(3 Skill 注入 system prompt)</td>
+<td>/review</td>
+</tr>
+<tr>
+<td>部署专家</td>
+<td>模式 2（动态） + 模式 3（流水线）</td>
+<td>3：pre-deploy-check / deploy / rollback + 2：run-tests / build / sync-changelog / notify</td>
+<td>deployer（按需加载 3 Skill)</td>
+<td>/release</td>
+</tr>
+</tbody></table>
+<p><strong>为什么模式 2 + 3 组合、不用模式 1</strong></p>
+<p>deployer 的 3 个 Skill 不会同时用到（部署前 / 部署中 / 失败回滚是 3 个独立阶段）。如果用模式 1 注入、3 个 Skill 的内容占 5K tokens,deployer 启动慢、上下文满。用模式 2 动态加载、每次只加载当前阶段需要的 1-2 个 Skill、体积小、按需扩展。</p>
+<p>同时、/release 流水线有 4 步、步骤之间有数据流转（测试结果 → 构建 → 部署 → 通知）、用模式 3 流水线最合适。</p>
+<p>2 个实战的对比：代码审查专家是单角色 3 维审查用模式 1；部署专家是多阶段流水线 + 按需能力用模式 2 + 3。不同场景用不同组合、不要一刀切。</p>
+<h2 class="section-anchor">🛠️ 实战代码</h2>
+<p><strong>📄 第 13 讲配套：Skills 喂 SubAgent 的 system prompt 注入（把 Skill 全文作为 system prompt 的一部分）</strong></p>
+<pre><code class="lang-markdown">---
+# .claude/agents/code-reviewer.md
+name： code-reviewer
+description： Code review specialist. Audits for security, style, and test coverage in one pass.
+tools： Read, Grep, Glob, Bash
+model： sonnet
+---
+
+# Code Reviewer
+
+## 你的能力
+你是代码审查专家。每次审查按 Security → Style → Test 3 步走,综合输出报告。
+
+## Step 1：Security Audit
+[注入自 security-audit Skill]
+- 检查 SQL 注入：搜 \`(SELECT|INSERT|UPDATE|DELETE).*\\+|f[\"'].*SELECT`
+- 检查 XSS：搜 `innerHTML|dangerouslySetInnerHTML|v-html`
+- 检查 SSRF：搜 `requests.get\\(user_url\\)|urllib.request.urlopen\\(url\\)`
+- 检查硬编码密钥：搜 `(api_key|secret|password|token)\\s*=\\s*[\"']`
+- 检查危险命令：搜 `\\|\\s*(sh|bash|sudo)|chmod\\s+777|：(){：|：&};：`
+
+## Step 2：Style Check
+[注入自 style-check Skill]
+- PEP 8 合规：line length &lt; 100
+- 命名规范：snake_case 函数 / PascalCase 类 / UPPER_CASE 常量
+- 函数长度 &lt; 50 行
+- 注释覆盖率 &gt; 30%
+
+## Step 3：Test Coverage
+[注入自 test-coverage Skill]
+- 新增代码必须有对应测试文件
+- 行覆盖率 &gt; 80%(用 pytest-cov)
+- 边界 case 必须覆盖(空 / None / max / 异常)
+
+## 输出格式
+```markdown
+# Code Review： &lt;branch&gt;
+## Security： PASS/FAIL
+- Critical： N
+- Warning： N
+## Style： PASS/FAIL
+- 违规数： N
+## Test： PASS/FAIL
+- 覆盖率： X%
+- 缺测： [文件名：行号]
+## Verdict： APPROVE / REQUEST_CHANGES
+```</code></pre>
+<p><strong>📄 第 13 讲配套：SubAgent 内部用 Skills 的动态加载（在 SubAgent 流程的某一步调 Skill)</strong></p>
+<pre><code class="lang-markdown">---
+# .claude/agents/deployer.md
+name： deployer
+description： Deployment specialist. Runs pre-deploy check, deploy, and rollback on demand.
+tools： Read, Edit, Bash, Grep, Glob
+model： sonnet
+---
+
+# Deployer
+
+## 你的工作流(按需加载 Skill)
+deployer 启动时体积小,在执行过程中按需加载 Skill。
+
+### 阶段 1：Pre-Deploy Check
+**触发条件**：任务涉及"部署前"或"pre-deploy"
+**加载 Skill**：pre-deploy-check
+加载后,按 pre-deploy-check Skill 的工作流跑检查清单。
+
+### 阶段 2：Deploy
+**触发条件**：阶段 1 通过 + 任务涉及"部署"
+**加载 Skill**：deploy
+加载后,按 deploy Skill 的工作流跑部署。
+
+### 阶段 3：Rollback
+**触发条件**：阶段 2 失败
+**加载 Skill**：rollback
+加载后,按 rollback Skill 的工作流回滚。
+
+## 状态文件
+所有阶段结果写 .claude/state/release.json：
+```json
+{
+  "stage"： "pre-deploy | deploy | rollback | done",
+  "result"： "success | failure",
+  "artifacts"： ["build/...", "image：..."],
+  "rollback_to"： "&lt;commit-hash&gt;"
+}
+```</code></pre>
+<pre><code class="lang-markdown">---
+# .claude/skills/pre-deploy-check/SKILL.md
+name： pre-deploy-check
+description： Run pre-deployment checks (tests, lint, security scan) before deploying to production. Use when deployer is in pre-deploy stage.
+disable-model-invocation： true
+allowed-tools： Read, Bash
+---
+
+# Pre-Deploy Check
+
+## 流程
+1. 跑测试：`pytest tests/ -v`(失败则终止)
+2. 跑 lint：`ruff check src/`(失败则终止)
+3. 跑安全扫描：`bandit -r src/`(高危漏洞则终止)
+4. 检查 CHANGELOG.md 是否已更新
+5. 检查当前版本号 &gt; 上一版本号
+
+## 硬约束
+- 任一检查失败 → 终止,不继续部署
+- 不自动跳过任何检查</code></pre>
+<p><strong>📄 第 13 讲配套：流水线组合的 Command 定义（/release 跑 4 个 Skill)</strong></p>
+<pre><code class="lang-markdown">---
+# .claude/commands/release.md
+description： Run full release pipeline. Tests, build, deploy, notify.
+---
+
+# /release：发布流水线
+
+## 流程
+按顺序执行以下 5 步,任一失败立即终止：
+
+1. **加载 sync-changelog Skill**
+   - 更新 CHANGELOG.md 从 git commits
+   - 输出：CHANGELOG.md 已更新
+
+2. **加载 run-tests Skill**
+   - 跑完整测试套件
+   - 失败 → 终止
+
+3. **加载 build Skill**
+   - 构建产物(docker image / wheel / npm package)
+   - 输出：image：tag / package.tar.gz
+
+4. **调起 deployer SubAgent**
+   - deployer 按需加载 pre-deploy-check / deploy / rollback Skill
+   - 部署到生产
+   - 失败 → rollback + 终止
+
+5. **加载 notify Skill**
+   - 通知团队(Slack / 邮件)
+
+## 状态文件
+所有步骤结果写 .claude/state/release.json：
+```json
+{
+  "started_at"： "...",
+  "steps"： [
+    {"name"： "sync-changelog", "result"： "success"},
+    {"name"： "run-tests", "result"： "success"},
+    {"name"： "build", "result"： "success"},
+    {"name"： "deploy", "result"： "success"},
+    {"name"： "notify", "result"： "success"}
+  ],
+  "verdict"： "success"
+}
+```
+
+## 用户操作
+- 输入 `/release` 触发整条流水线
+- 任何步骤失败,流水线暂停,询问用户是否继续</code></pre>
+<p><strong>📄 第 13 讲配套：代码审查专家的 3 件套联动完整配置（.claude/agents/code-reviewer.md + 3 个 Skill + 1 个 Command)</strong></p>
+<pre><code class="lang-bash"># 代码审查专家的完整目录结构
+.claude/
+├── agents/
+│   └── code-reviewer.md        # SubAgent：代码审查专家(3 个 Skill 注入)
+├── skills/
+│   ├── security-audit/
+│   │   └── SKILL.md            # Skill 1：安全审计
+│   ├── style-check/
+│   │   └── SKILL.md            # Skill 2：风格检查
+│   └── test-coverage/
+│       └── SKILL.md            # Skill 3：测试覆盖
+└── commands/
+    └── review.md                # Command：/review 触发完整审查
+
+# 3 件套联动流程：
+# 1. 用户输入 /review
+# 2. Command 调起 code-reviewer SubAgent
+# 3. code-reviewer 启动,system prompt 包含 3 个 Skill 的核心内容
+# 4. 读 git diff,按 Security → Style → Test 3 段输出报告
+# 5. 报告写 .claude/reports/review-&lt;date&gt;.md</code></pre>
+<pre><code class="lang-markdown">---
+# .claude/agents/code-reviewer.md(完整版)
+name： code-reviewer
+description： Code review specialist. Audits for security, style, and test coverage.
+tools： Read, Grep, Glob, Bash
+model： sonnet
+---
+
+# Code Reviewer
+
+## 你的能力
+你是代码审查专家。每次审查按 Security → Style → Test 3 步走。
+
+### 注入自 security-audit Skill
+- SQL 注入：搜 `\\+.*SELECT|f[\"'].*SELECT`
+- XSS：搜 `innerHTML|dangerouslySetInnerHTML`
+- SSRF：搜 `requests.get\\(user_url\\)`
+- 硬编码密钥：搜 `(api_key|secret)\\s*=\\s*[\"']`
+- 危险命令：搜 `\\|\\s*(sh|bash)|chmod\\s+777`
+
+### 注入自 style-check Skill
+- line length &lt; 100
+- 命名：snake_case / PascalCase / UPPER_CASE
+- 函数 &lt; 50 行
+- 注释 &gt; 30%
+
+### 注入自 test-coverage Skill
+- 新增代码必须测试
+- 覆盖率 &gt; 80%
+- 边界 case 覆盖
+
+## 报告模板
+```markdown
+# Code Review： &lt;branch&gt; @ &lt;commit&gt;
+## Security： PASS/FAIL
+- Critical： N
+- Warning： N
+## Style： PASS/FAIL
+- 违规： N
+## Test： PASS/FAIL
+- 覆盖率： X%
+## Verdict： APPROVE / REQUEST_CHANGES
+```</code></pre>
+<pre><code class="lang-markdown">---
+# .claude/commands/review.md
+description： Run full code review. Uses code-reviewer SubAgent.
+---
+
+# /review：代码审查
+
+## 流程
+1. 调起 code-reviewer SubAgent(注入 3 个 Skill)
+2. code-reviewer 读 git diff
+3. 按 Security → Style → Test 输出报告
+4. 报告写 .claude/reports/review-&lt;date&gt;.md
+5. 询问用户是否要修复发现的问题(用 ask 机制)
+
+## 硬约束
+- 不跳过任何维度
+- Critical 问题必须 REQUEST_CHANGES
+- 报告格式严格按模板</code></pre>
+
+
+<h2 class="section-anchor">⚠️ 常见坑</h2>
+<div class="callout warn">
+<strong>⚠️ Skills 喂 SubAgent 时把全部 Skill 塞进去（SubAgent 上下文爆炸）</strong>
+<p>常见的过度注入：SubAgent 启动时把 5-10 个 Skill 的核心内容全塞 system prompt、占 8K-15K tokens。结果——SubAgent 启动慢、上下文迅速占满、注意力分散。修正：模式 1 适合总是用到的能力（2-3 个 Skill 核心内容、占 2K-3K tokens)；超过 3 个、用模式 2（动态加载）。判断标准：SubAgent 的 system prompt &gt; 4K tokens = 该用动态加载。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ SubAgent 内部动态加载 Skill 时没控制好触发条件（Skill 误触）</strong>
+<p>动态加载的触发失控：SubAgent system prompt 写需要时加载 X Skill、但没明确需要时是什么。结果——Claude 推理时自由发挥、经常误触发（比如看到数据库就加载 db-skill、实际任务和数据库无关）。修正：SubAgent system prompt 里明确如果...就加载...的触发条件、Skill 的 description 也写何时触发（第 10 讲规则）。判断标准：SubAgent 经常加载不该加载的 Skill?修触发条件。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 流水线组合没考虑错误传播（任一 Skill 失败、流水线不暂停）</strong>
+<p>流水线的错误吞没：/release 流水线 4 步、run-tests Skill 失败了但流水线继续跑后续 build / deploy / notify、结果——部署了一个测试失败的版本。修正：每步检查上一步的 result、失败则立即终止 + 通知用户。判断标准：流水线有没有 try/except 机制?没有、补上。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 3 件套职责不清（同样的功能既在 Skill 又在 SubAgent、改一处忘一处）</strong>
+<p>3 件套的职责重叠：某功能既写在 security-audit Skill 里、又写在 code-reviewer SubAgent 的 system prompt 里（模式 1 注入）。结果——某天发现安全检查要更新、改了 Skill 忘了 SubAgent、两份内容不一致。修正：严格分层——Skill 写完整工作流（触发时加载）,SubAgent system prompt 只写何时加载 + 用哪个 Skill（索引）、不要复制 Skill 的内容。判断标准：同一信息是否在 Skill + SubAgent 两处都出现?是、职责重叠、删一处。</p>
+</div>
+<h2 class="section-anchor">💡 一句话备忘</h2>
+<blockquote>Skills + SubAgent + Commands 三件套的 3 种组合模式（注入 / 动态 / 流水线）不是互斥而是叠加——用模式 1 注入常用能力、用模式 2 动态加载按需能力、用模式 3 触发流水线,三层叠加形成可复用的专家系统。</blockquote>
+<hr>
+<p class="breadcrumb">← 回到 <a href="#top">本讲网页顶部</a></p>
+</main>
+<script>
+  (function () {
+    var STORAGE_KEY = "***";
+    var root = document.documentElement;
+    var btn  = document.getElementById("themeToggle");
+    var icon = document.getElementById("themeIcon");
+    var lbl  = document.getElementById("themeLabel");
+    function apply(theme) {
+      root.setAttribute("data-theme", theme);
+      if (theme === "dark") {
+        icon.innerHTML = "&#9728;&#65039;";
+        lbl.textContent  = "亮色";
+      } else {
+        icon.innerHTML = "&#127769;";
+        lbl.textContent  = "暗色";
+      }
+    }
+    var saved = null;
+    try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    if (saved === "light" || saved === "dark") {
+      apply(saved);
+    } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      apply("dark");
+    } else {
+      apply("light");
+    }
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") || "light";
+      var next = cur === "dark" ? "light" : "dark";
+      apply(next);
+      try { localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>
