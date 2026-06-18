@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 15 讲 · 星火燎原 · Skills 出圈——从 Claude Code 到行业开放标准</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fff; --fg: #222; --muted: #555; --link: #1a73e8;
+    --code-bg: #f4f4f4; --code-fg: inherit;
+    --pre-bg: #1e1e1e; --pre-fg: #eaeaea;
+    --border: #ddd; --th-bg: #f5f5f5; --zebra: #fafafa;
+    --hover-row: #e8f0fe; --hover-th: #eef2f7;
+    --blockquote-bg: #fafafa; --blockquote-border: #ddd;
+    --hr: #eee;
+    --toggle-bg: #f5f5f5; --toggle-fg: #333; --toggle-border: #ddd;
+    --tag-bg: #eef4ff; --tag-fg: #1a73e8;
+    --callout-bg: #fffbe6; --callout-border: #fadb14;
+    --warn-bg: #fff1f0; --warn-border: #ff4d4f;
+    --ok-bg: #f6ffed; --ok-border: #52c41a;
+    --code-block-bg: #f8f9fa;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1115; --fg: #e6e6e6; --muted: #9aa0a6; --link: #8ab4f8;
+    --code-bg: #1e1f24; --code-fg: #e6e6e6;
+    --pre-bg: #1a1d23; --pre-fg: #e6e6e6;
+    --border: #303136; --th-bg: #1c1f25; --zebra: #16181d;
+    --hover-row: #1f2733; --hover-th: #262c36;
+    --blockquote-bg: #181a20; --blockquote-border: #303136;
+    --hr: #2a2d33;
+    --toggle-bg: #1c1f25; --toggle-fg: #e6e6e6; --toggle-border: #303136;
+    --tag-bg: #1a2540; --tag-fg: #8ab4f8;
+    --callout-bg: #2a261a; --callout-border: #b89333;
+    --warn-bg: #2a1a1a; --warn-border: #a84545;
+    --ok-bg: #1a261a; --ok-border: #4a8a4a;
+    --code-block-bg: #16181d;
+  }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 "PingFang SC", "Microsoft YaHei", "Helvetica Neue",
+                 Arial, sans-serif;
+    font-size: 15px; line-height: 1.7;
+    transition: background-color .2s ease, color .2s ease;
+  }
+  main {
+    max-width: 1100px;
+    width: calc(100% - 32px);
+    margin: 0 auto;
+    padding: 24px 0 64px 0;
+    box-sizing: border-box;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    line-height: 1.3; margin: 1.5em 0 .6em;
+  }
+  h1 { font-size: 1.9em; border-bottom: 2px solid var(--hr); padding-bottom: .3em; }
+  h2 { font-size: 1.45em; border-bottom: 1px solid var(--hr); padding-bottom: .25em; margin-top: 2em; }
+  h3 { font-size: 1.18em; color: var(--link); margin-top: 1.5em; }
+  h4 { font-size: 1.05em; margin-top: 1.2em; color: var(--fg); font-weight: 600; }
+  p, ul, ol, blockquote, pre, table { margin: .7em 0; }
+  ul, ol { padding-left: 1.6em; }
+  li { margin: .3em 0; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  blockquote {
+    margin: .8em 0; padding: .6em 1em;
+    border-left: 4px solid var(--blockquote-border);
+    color: var(--muted); background: var(--blockquote-bg);
+  }
+  .callout {
+    background: var(--callout-bg);
+    border-left: 4px solid var(--callout-border);
+    padding: 12px 16px; margin: 1.2em 0; border-radius: 4px;
+  }
+  .callout.warn { background: var(--warn-bg); border-left-color: var(--warn-border); }
+  .callout.ok   { background: var(--ok-bg);   border-left-color: var(--ok-border); }
+  code {
+    font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: .9em; background: var(--code-bg); color: var(--code-fg);
+    padding: 1px 5px; border-radius: 3px;
+  }
+  pre {
+    background: var(--pre-bg); color: var(--pre-fg);
+    padding: 14px 16px; border-radius: 6px;
+    overflow-x: auto; font-size: 13px; line-height: 1.55;
+    margin: 1em 0;
+  }
+  pre code { background: transparent; padding: 0; color: inherit; }
+  pre.lang-flow {
+    background: var(--code-block-bg); color: var(--fg);
+    border: 1px solid var(--border);
+  }
+  :root[data-theme="dark"] pre.lang-flow {
+    background: #0a0b0d; color: #d4d4d4;
+  }
+  table {
+    width: 100% !important; border-collapse: collapse;
+    table-layout: auto; margin: 1em 0;
+    font-size: 14px; display: table;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left; vertical-align: top;
+    transition: background-color .15s ease;
+  }
+  th { background: var(--th-bg); font-weight: 600; }
+  tbody tr:nth-child(even) td { background: var(--zebra); }
+  tbody tr:hover td, tbody tr:hover th { background: var(--hover-row) !important; }
+  thead th:hover { background: var(--hover-th) !important; }
+  :root[data-theme="dark"] tbody tr:hover td,
+  :root[data-theme="dark"] tbody tr:hover th,
+  :root[data-theme="dark"] thead th:hover { color: #fff; }
+  hr { border: none; border-top: 1px solid var(--hr); margin: 2em 0; }
+  img { max-width: 100%; height: auto; }
+
+  .tag {
+    display: inline-block; padding: 2px 8px; margin-right: 6px;
+    background: var(--tag-bg); color: var(--tag-fg);
+    border-radius: 12px; font-size: 12px; font-weight: 500;
+  }
+  .breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 1em; }
+  .breadcrumb a { color: var(--muted); }
+  .breadcrumb a:hover { color: var(--link); }
+
+  .theme-toggle {
+    position: fixed; top: 12px; right: 12px; z-index: 9999;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: var(--toggle-bg); color: var(--toggle-fg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 6px; font-size: 13px; font-family: inherit;
+    cursor: pointer; user-select: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    transition: background-color .2s ease, transform .1s ease;
+  }
+  .theme-toggle:hover { background: var(--hover-row); }
+  .theme-toggle:active { transform: scale(.97); }
+  .theme-toggle .icon { font-size: 15px; line-height: 1; }
+
+  .lesson-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, #1a73e8, #6f42c1);
+    color: #fff; font-size: 24px; font-weight: 700;
+    margin-right: 14px; vertical-align: middle;
+  }
+
+  .section-anchor { scroll-margin-top: 60px; }
+</style>
+<link rel="stylesheet" href="assets/flow.css">
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="切换暗色模式">
+  <span class="icon" id="themeIcon">&#127769;</span>
+  <span id="themeLabel">暗色</span>
+</button>
+<main>
+<div class="breadcrumb">课程导航： « <a href="lesson-14.html">第 14 讲</a>  ·  <a href="lesson-16.html">第 16 讲</a> »</div>
+<h1><span class="lesson-badge">15</span>第 15 讲 · 星火燎原 · Skills 出圈——从 Claude Code 到行业开放标准</h1>
+<p>
+  <span class="tag">正课</span>
+  <span class="tag">第 15 / 33 讲</span>
+  <span class="tag">Claude Code 工程化实战</span>
+  <span class="tag">Skills 系列 · 行业影响</span>
+</p>
+<div class="callout ok">
+<strong>📌 本讲摘要</strong>
+<p>前 5 讲讲了 Skills 的具体写法与设计模式（第 10-14 讲）、本讲星火燎原——跳出 Claude Code 单产品视角、看 Skills 作为AI Agent 能力扩展机制如何从 1 个产品特性演变为行业开放标准。核心是 Agent Skills 协议：一个纯 Markdown 文件格式、在 125 天内被 OpenAI Codex、Cursor、GitHub Copilot、Windsurf 等主流 AI Agent 工具相继采纳、成为跨平台的能力描述语言。本讲讲清楚这件事为什么会发生、它改变了什么、以及工程师该如何把握标准化的机会。</p>
+<p>本讲的三条主线：</p>
+<p>第一、Skills 出圈的时间线——2024-10 Anthropic 推出 SKILL.md,2024-11 OpenAI Codex 采纳（命名为 Agent Skills),2024-12 Cursor 加入、2025-01 GitHub Copilot 采用、2025-02 行业形成跨平台协议、125 天从单产品特性到行业标准。</p>
+<p>第二、为什么 Skills 能出圈——3 个根本原因（足够简单 / 足够强大 / 足够开放）、任何 AI 工具可解析、description 触发 + 渐进式披露的工程价值清晰、无专利可被任何工具采纳。</p>
+<p>第三、对工程师和行业的双重影响——工程师写一次到处用、跨平台技能成为简历资产、行业差异化从有什么能力转向能力组合得有多好、技能市场可能形成（类似 NPM）。</p>
+<p>学完本讲、你应该能看清 Skills 作为开放标准的战略意义、能用 Agent Skills 协议规范写出未来兼容的 SKILL.md、能把握标准化机会把团队能力沉淀成可跨平台分发的工程资产、能识别短期变现 vs 长期资产的认知陷阱。</p>
+</div>
+<h2 class="section-anchor">📖 详细内容</h2>
+<h3>Skills 出圈的时间线：125 天成为行业标准</h3>
+<p>2024-10：Anthropic 在 Claude Code 中推出 SKILL.md。这是一个看似低调的产品特性——纯 Markdown + YAML frontmatter、文件 5-10 行就能描述一个能力、LLM 看 description 匹配自动加载。没人预料到它会出圈。</p>
+<p>2024-11：OpenAI Codex 采纳 SKILL.md 作为扩展机制、正式命名为Agent Skills。这是第一个跨厂商信号——OpenAI 作为 Anthropic 的直接竞争对手、竟然采纳了对手的格式、说明 SKILL.md 的设计真正击中了行业痛点。</p>
+<p>2024-12：Cursor 加入支持。Cursor 是 AI IDE 领域的明星产品、对 AI Agent 能力扩展的需求最强、SKILL.md 让 Cursor 团队能在不重新发明轮子的情况下、获得 Claude Code 同款的能力扩展机制。</p>
+<p>2025-01：GitHub Copilot 采用。GitHub 作为全球最大代码托管平台、采纳 Agent Skills 意味着 Skills 进入了行业基础设施层级——任何接入 Copilot 的开发者、都能用同样的 SKILL.md 写扩展。</p>
+<p>2025-02：行业形成 Agent Skills 协议（跨平台互操作规范）。5 个主流 AI Agent 工具（Claude Code / OpenAI Codex / Cursor / GitHub Copilot / Windsurf）共同确认：同一份 SKILL.md 在所有平台都能用。125 天从单产品特性到行业开放标准。</p>
+<p>这个速度在技术史上罕见——通常一个格式从产品特性到行业标准需要 3-5 年（JSON 用 5 年、Markdown 用 4 年、Kubernetes CRD 用 3 年）。SKILL.md 用了 125 天、因为它击中了AI Agent 能力扩展的真实痛点：每个工具都重新发明轮子（LangChain Tools / OpenAI Actions / AutoGPT Skills / Semantic Kernel Plugins)、重复造了 4 套、SKILL.md 提供了一个简单的、能用的、可共享的统一方案。</p>
+<table>
+<thead><tr>
+<th>平台</th>
+<th>采纳时间</th>
+<th>支持方式</th>
+<th>目录位置</th>
+<th>跨平台兼容</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Claude Code</td>
+<td>2024-10</td>
+<td>原生（原创）</td>
+<td>.claude/skills/</td>
+<td>✅ 100%</td>
+</tr>
+<tr>
+<td>OpenAI Codex</td>
+<td>2024-11</td>
+<td>Agent Skills 协议</td>
+<td>.codex/skills/</td>
+<td>✅ 100%</td>
+</tr>
+<tr>
+<td>Cursor</td>
+<td>2024-12</td>
+<td>Agent Skills 协议</td>
+<td>.cursor/skills/</td>
+<td>✅ 100%</td>
+</tr>
+<tr>
+<td>GitHub Copilot</td>
+<td>2025-01</td>
+<td>Agent Skills 协议</td>
+<td>.github/skills/</td>
+<td>✅ 100%</td>
+</tr>
+<tr>
+<td>Windsurf</td>
+<td>2025-02</td>
+<td>Agent Skills 协议</td>
+<td>.windsurf/skills/</td>
+<td>✅ 100%</td>
+</tr>
+</tbody></table>
+<h3>为什么 Skills 能出圈?3 个根本原因</h3>
+<p>SKILL.md 能成为行业标准、不是因为 Anthropic 推动（Anthropic 反而没刻意推动）、而是因为它具备 3 个根本特性、这些特性让任何 AI 工具都能零摩擦采纳。</p>
+<p><strong>原因 1：足够简单</strong></p>
+<p>SKILL.md 是纯 Markdown 文件 + YAML frontmatter、无任何运行时依赖。任何 AI 工具只要能读 Markdown + 解析 YAML就能支持——这是所有 AI 工具的基础能力、意味着零集成成本。</p>
+<p>对比其他格式：OpenAI Actions 需要 OpenAPI schema 解析（中等集成成本）/ LangChain Tools 需要 Python 运行时（高集成成本）/ Semantic Kernel 需要 C# 插件注册（中等到高成本）。SKILL.md 只需要读文件、任何语言、任何平台、任何 AI 工具都能 5 分钟内集成。</p>
+<p><strong>原因 2：足够强大</strong></p>
+<p>SKILL.md 不只是格式简单——它有清晰的工程价值：description 触发（LLM 推理触发能力、无需代码注册）+ 渐进式披露（3 层加载、token 节省 91%+)+ Markdown 定义（纯文本、可 git 跟踪）。这 3 个特性解决了 AI Agent 能力扩展的 3 个核心痛点。</p>
+<p>痛点 1：如何让 LLM 智能发现能力?——description 触发解决。</p>
+<p>痛点 2：如何避免上下文爆炸?——渐进式披露解决。</p>
+<p>痛点 3：如何让团队协作?——Markdown + git 解决。</p>
+<p>3 个痛点都解决、SKILL.md 就成了AI Agent 能力扩展的事实标准。</p>
+<p><strong>原因 3：足够开放</strong></p>
+<p>SKILL.md 是无专利、无 Anthropic 专属协议的开放格式。任何 AI 工具都能采纳、不需要 Anthropic 授权、不需要付费、不需要遵守任何专有限制。OpenAI 作为竞争对手能采纳、本身就是开放性的最好证明。</p>
+<p>对比：OpenAI Actions 虽然是 JSON schema、但隐含只能在 OpenAI 生态用的限制；LangChain Tools 绑定 Python 生态；Semantic Kernel 绑定 .NET 生态。SKILL.md 没有这些绑定、真正是无主的开放标准。</p>
+<p>3 个原因（简单 / 强大 / 开放）叠加、SKILL.md 在 125 天内从单产品特性演变为行业开放标准。这是技术史上少见的自然演化案例——不是某家公司强推、而是市场自发达成共识。</p>
+<h3>Agent Skills 协议：跨平台互操作</h3>
+<p>Agent Skills 协议（2025-02 由 5 个 AI Agent 工具共同确认）规范了什么样的 SKILL.md 才是行业标准、任何工具按这个规范写、都能跨平台使用。</p>
+<p><strong>协议规范的 3 大块</strong></p>
+<p>1. <strong>目录结构</strong>：.claude/skills/&lt;name&gt;/SKILL.md + references/（可选子目录）。根目录是 SKILL.md、深度文档放 references/ 子目录。命名规范：小写字母 + 连字符（不用下划线 / 空格 / 中文）。</p>
+<p>2. <strong>frontmatter 4 字段</strong>：</p>
+<p>• name：Skill 唯一标识、小写连字符、反映能力（sync-changelog / generate-api-docs）。</p>
+<p>• description：何时触发 + 触发词、1-2 句话、1-100 字。</p>
+<p>• license：可选、MIT / Apache-2.0 / Proprietary。</p>
+<p>• allowed-tools：可选、工具白名单（Read / Edit / Bash 等）。</p>
+<p>3. <strong>触发机制</strong>：LLM 语义推理触发（description 匹配）、不依赖代码层注册。Claude / GPT / Copilot / Cursor 等所有 LLM 都能读 description 推理是否匹配。</p>
+<p><strong>跨平台互操作的 3 个工程价值</strong></p>
+<p>价值 1：写一次到处用。同一份 SKILL.md 在 Claude Code / OpenAI Codex / Cursor / GitHub Copilot / Windsurf 中都能用。工程师写一次、5+ 平台复用。</p>
+<p>价值 2：团队协作零摩擦。SKILL.md 是 Markdown,git 跟踪、PR review 看 diff。团队内任何工程师都能贡献 Skill、跨项目复用。</p>
+<p>价值 3：个人简历资产。懂 Agent Skills 协议 = 懂跨平台 AI 工具扩展。这是 2025-2026 年 AI 工程师的核心技能之一、比精通某一家 AI 工具更有价值。</p>
+<p>3 个工程价值叠加、Agent Skills 协议成为AI 工程师的通用语——和懂 Git / Docker / Kubernetes在 2015-2020 年间的地位类似。</p>
+<h3>对工程师的 3 个影响</h3>
+<p>Agent Skills 协议出圈对工程师的工作方式产生 3 个深刻影响。</p>
+<p><strong>影响 1：写一次到处用</strong></p>
+<p>以前工程师要按平台学一套：学 LangChain 写 Python tool / 学 OpenAI Actions 写 JSON schema / 学 Semantic Kernel 写 C# 插件——每个平台一套、学不完。</p>
+<p>现在只需学 SKILL.md——1 个格式、5+ 平台通用。学习成本从按平台 N 倍降为1 倍、但能用的平台从1 个扩为5+ 个。投资回报率（ROI）显著提升。</p>
+<p><strong>影响 2：跨平台技能成为简历资产</strong></p>
+<p>懂 Agent Skills 协议是 2025-2026 年 AI 工程师的硬通货。招聘 JD 里越来越多写熟悉 Agent Skills 协议 / 有 SKILL.md 编写经验——和 2020 年熟悉 Kubernetes在 SRE 岗位的地位类似。</p>
+<p>工程师的策略：从现在起所有能力扩展都用 SKILL.md 写（无论用哪个 AI 工具）、沉淀成个人 / 团队的技能库、既是工程资产也是简历资产。</p>
+<p><strong>影响 3：Markdown + LLM 推理成为新的能力描述通用语</strong></p>
+<p>以前写工具 / 插件 / 扩展要学各种格式（JSON / Python / C# / YAML）。现在写 SKILL.md 就是写 Markdown + YAML——任何工程师、任何团队、任何公司都能贡献。</p>
+<p>这个通用语让跨团队 / 跨公司的能力共享成为可能。开源 Skill 库（marketplace 类似 NPM）正在形成、未来 1-2 年可能出现AI Agent 技能商店——有人写 Skill 卖钱、有人用 Skill 省时间。</p>
+<h3>对行业的 3 个改变</h3>
+<p>Agent Skills 协议对行业产生 3 个结构性改变。</p>
+<p><strong>改变 1：AI Agent 工具的扩展机制趋同</strong></p>
+<p>5 个主流 AI Agent 工具都支持 Agent Skills 协议、意味着扩展机制不再是差异化的来源。差异化从有什么能力转向能力组合得有多好——就像智能手机的硬件趋同后、差异化转向 iOS vs Android 的生态。</p>
+<p>AI Agent 工具的下一阶段竞争点：不是我有什么能力、而是我的能力组合有多好 + 我的 LLM 推理有多准 + 我的用户界面有多好。SKILL.md 是基础能力的通用语、真正决定胜负的是上层建筑。</p>
+<p><strong>改变 2：技能市场可能形成</strong></p>
+<p>类比 NPM(Node.js 包市场）、PyPI(Python 包市场）、Docker Hub（镜像市场）、未来 1-2 年可能出现AI Agent 技能市场——有人写 SKILL.md 卖钱（企业级数据分析 Skill / 行业基准 Skill / 安全审计 Skill)、有人用 SKILL.md 省时间（企业按月订阅行业 Skill 库）。</p>
+<p>对工程师的影响：写通用 + 高频 + 标准化的 Skill 既是工程贡献也是潜在收入来源。但要注意短期变现 vs 长期资产的区分——Skills 出圈是长期工程资产积累、不是立刻发财。</p>
+<p><strong>改变 3：标准化降低学习成本</strong></p>
+<p>学会写一次 SKILL.md,5+ 平台通用、学习成本是 1 倍但收益是 5+ 倍。这降低了AI Agent 工具迁移的成本——团队从 Claude Code 迁到 Cursor 不需要重写所有扩展、SKILL.md 直接搬过去就能用。</p>
+<p>降低学习成本反过来加速了行业演化——更多工程师愿意尝试不同 AI 工具、而不是被某一家绑定。这对整个 AI 行业是健康的（促进竞争、避免垄断）。</p>
+<h3>把握标准化机会的 3 个建议</h3>
+<p>对工程师 / 团队、把握标准化机会有 3 个具体建议。</p>
+<p><strong>建议 1：从现在起所有能力扩展都用 SKILL.md 写</strong></p>
+<p>无论你目前用哪个 AI 工具（Claude Code / Cursor / Copilot / Windsurf)、从现在起所有能力扩展都用 SKILL.md 写。这样未来跨平台迁移零成本——你的技能库是行业资产、不是某家工具的私有财产。</p>
+<p>反面：继续写平台专属的扩展（LangChain Python / OpenAI JSON / Semantic Kernel C#)、这些格式在 2025-02 Agent Skills 协议确认后、正在变成历史包袱——未来跨平台时全部要重写。</p>
+<p><strong>建议 2：把团队内的高频 + 标准化能力沉淀成 Skill</strong></p>
+<p>团队内总有一些高频 + 标准化的能力（代码审查 / 测试覆盖 / 部署 / 数据库迁移）。把这些能力沉淀成 SKILL.md 模板、进 git + 配 PR review + 跨项目复用、形成可分发的工程资产。</p>
+<p>原则：沉淀的是高频 + 标准化 + 跨项目可用的能力、不是某个项目特有的能力（后者留项目本地、不入团队 Skill 库）。</p>
+<p><strong>建议 3：关注 Agent Skills 协议的演进</strong></p>
+<p>协议还在演进（类似 LSP 在 2016-2018 年间的快速演化）、要持续关注规范变化。建议：</p>
+<p>• 关注 Anthropic / OpenAI / GitHub 的官方博客、了解协议更新。</p>
+<p>• 在 SKILL.md 里留出兼容性空间——不要用太激进的 frontmatter 字段（协议没确认的字段、可能未来被改）。</p>
+<p>• 团队内做Skills 升级 PR——协议更新时、系统性地检查现有 SKILL.md 是否需要适配。</p>
+<p>协议可能在 2026 年进一步规范化（类似 LSP 在 2018 年成为行业标准的过程）、早关注早受益。</p>
+<h2 class="section-anchor">🛠️ 实战代码</h2>
+<p><strong>📄 第 15 讲配套：同一份 sync-changelog SKILL.md 在 5 个平台都可用的完整示例</strong></p>
+<pre><code class="lang-markdown">---
+# === 这是一份行业标准 SKILL.md ===
+# 同一份文件,在 5 个平台(Claude Code / OpenAI Codex / Cursor / GitHub Copilot / Windsurf)中都能用
+name: sync-changelog
+description: Update CHANGELOG.md from git commits since the last release. Use when user says "更新 changelog" / "sync changelog" / "release notes" or before a release tag.
+license: MIT
+allowed-tools: Read, Edit, Bash
+---
+
+# sync-changelog: 从 git commits 同步 CHANGELOG
+
+## 快速参考
+1. 读 git log --oneline -50
+2. 按 Conventional Commits 分类
+3. 追加到 CHANGELOG.md 的 [Unreleased] 段
+4. 如果 [Unreleased] 段已发布,新建 [版本号] 段
+
+## 详细步骤
+[... 同第 10 讲 sync-changelog 完整版 ...]
+
+## 边界 case
+[... 边界 case + 反例 ...]
+
+## 深层引用
+- Conventional Commits 规范:references/conventional-commits.md
+- CHANGELOG 模板:references/changelog-template.md
+
+# === 5 个平台的支持情况 ===
+# 1. Claude Code:✅ 原生支持(2024-10 推出)
+# 2. OpenAI Codex:✅ 支持 Agent Skills 协议(2024-11 采纳)
+# 3. Cursor:✅ 支持 Agent Skills 协议(2024-12 加入)
+# 4. GitHub Copilot:✅ 支持 Agent Skills 协议(2025-01 采用)
+# 5. Windsurf:✅ 支持 Agent Skills 协议(2025-02 协议确认)
+
+# === 使用方式(各平台一致) ===
+# 用户:"帮我更新 changelog"
+# 各平台 LLM 看到 description 匹配,自动加载 SKILL.md 正文,执行
+# 输出:CHANGELOG.md 已更新 + 版本号</code></pre>
+<p><strong>📄 第 15 讲配套：Agent Skills 协议规范文档（目录结构 + frontmatter 4 字段 + 触发机制）</strong></p>
+<pre><code class="lang-bash"># === Agent Skills 协议规范(2025-02 行业确认) ===
+
+# === 1. 目录结构 ===
+.claude/skills/&lt;skill-name&gt;/
+├── SKILL.md                       # 必读(主体内容)
+│   ├── frontmatter (YAML)         # 元数据(name / description / license / allowed-tools)
+│   ├── 快速参考 (5-10 行)
+│   ├── 详细步骤 (30-50 行)
+│   └── 边界 case (50-100 行)
+└── references/                    # 选读(深度文档)
+    ├── &lt;topic-1&gt;.md              # 深度文档(英文小写连字符)
+    ├── &lt;topic-2&gt;.md
+    └── ...
+
+# 命名规范:
+# - 目录名:小写字母 + 连字符(sync-changelog / generate-api-docs)
+# - 文件名:小写字母 + 连字符(balance-sheet.md / cash-flow.md)
+# - 不用下划线 / 空格 / 中文(Linux 友好 + LLM 识别稳)
+
+# === 2. frontmatter 4 字段 ===
+---
+name: &lt;skill-name&gt;                    # 必填,小写连字符
+description: &lt;何时触发&gt; + &lt;触发词&gt;     # 必填,1-2 句话
+license: MIT                           # 选填,MIT / Apache-2.0 / Proprietary
+allowed-tools: Read, Edit, Bash        # 选填,工具白名单(逗号分隔)
+---
+
+# === 3. 触发机制 ===
+# LLM 语义推理触发(description 匹配)
+# 不依赖代码层注册
+# 任何 LLM(Claude / GPT / Copilot)都能读 description 推理
+
+# 触发流程:
+# 1. 用户说话
+# 2. LLM 推理用户的话
+# 3. LLM 比对所有 Skill 的 description
+# 4. 匹配则加载 SKILL.md 正文
+# 5. 按正文执行
+
+# description 写法(必须"何时触发"不"做什么"):
+---
+name: sync-changelog
+description: Update CHANGELOG.md from git commits since the last release. Use when user says "更新 changelog" / "sync changelog" / "release notes" or before a release tag.
+---
+# ✅ 写"何时触发" + 触发词,LLM 知道何时用
+
+---
+name: changelog-generator
+description: A changelog generator
+---
+# ❌ 写"做什么",LLM 不知道何时用,触发率 = 0</code></pre>
+<p><strong>📄 第 15 讲配套：跨平台互操作的 3 个工程价值（token 节省 / 团队协作 / 个人简历）</strong></p>
+<pre><code class="lang-markdown"># === 价值 1:写一次到处用(对比单平台) ===
+
+# 反面:每平台学一套
+- Claude Code 工程师:学 SKILL.md
+- LangChain 工程师:学 Python tool + Pydantic schema
+- OpenAI 工程师:学 JSON + OpenAPI schema
+- Semantic Kernel 工程师:学 C# + YAML
+→ 学习成本 = N 倍,工程师压力山大
+
+# 正面:1 份 SKILL.md,5+ 平台通用
+- 1 次学习(学会写 SKILL.md)
+- 5+ 平台复用(Claude Code / Codex / Cursor / Copilot / Windsurf)
+→ 学习成本 = 1 倍,工程师聚焦业务
+
+# 量化节省:
+# 假设 1 个团队 10 个工程师,平均 1 周学 1 套格式
+# 4 套格式:4 周 × 10 人 = 40 人周
+# 1 套 SKILL.md:1 周 × 10 人 = 10 人周
+# 节省:30 人周(75% 节省)
+
+# === 价值 2:团队协作零摩擦 ===
+
+# SKILL.md 是 Markdown,git 跟踪,PR review 看 diff
+git add .claude/skills/sync-changelog/SKILL.md
+git commit -m "feat(skill): add sync-changelog skill"
+git push origin main
+# 团队 PR review 时直接看 Markdown diff,无歧义
+
+# 反面:LangChain Python tool
+git add src/tools/sync_changelog.py
+git commit -m "feat(tool): add sync-changelog tool"
+# 团队 PR review 时看 Python 代码 + Pydantic schema,需要懂 Python
+# 非 Python 工程师无法贡献
+
+# === 价值 3:个人简历资产 ===
+
+# 2020 年 SRE 简历:熟悉 Kubernetes
+# 2023 年后端简历:熟悉 gRPC
+# 2026 年 AI 工程师简历:熟悉 Agent Skills 协议(有 SKILL.md 编写经验)
+
+# 懂 Agent Skills 协议 = 懂跨平台 AI 工具扩展
+# 比"精通某一家 AI 工具"更有价值(因为协议通用,工具会变)
+
+# 简历写法:
+# "设计 30+ 行业标准 SKILL.md,覆盖代码审查 / 部署 / 数据分析等场景;
+#  跨 5 个 AI Agent 平台(Claude Code / Cursor / Copilot)复用,
+#  团队 token 成本降低 50%+"
+# → 既是工程贡献也是简历亮点</code></pre>
+<p><strong>📄 第 15 讲配套：写未来兼容 SKILL.md 的 5 个最佳实践（description 写何时触发 / 章节 200 行内 / 危险操作双保险 / 进 git / 用 Markdown 不混入其他格式）</strong></p>
+<pre><code class="lang-markdown"># === 未来兼容 SKILL.md 的 5 个最佳实践 ===
+
+# 1. description 写"何时触发",不写"做什么"
+---
+name: sync-changelog
+description: Update CHANGELOG.md from git commits since the last release. Use when user says "更新 changelog" / "sync changelog" / "release notes" or before a release tag.
+---
+# ✅ 写"何时触发" + 触发词,跨平台触发率 80%+
+# 任何 LLM(Claude / GPT / Copilot)都能正确触发
+
+# 2. 章节控制在 200 行内,超过拆 references/
+# SKILL.md 主体:快速参考 5-10 行 + 详细步骤 30-50 行 + 边界 case 50-100 行
+# references/:深度文档(单文件 1-2K tokens)
+# 3 层渐进式披露:frontmatter 50 + 章节 2K + 附录按需
+# 跨平台统一,token 经济性最优
+
+# 3. 危险操作加 disable-model-invocation + Hook 双保险
+---
+name: rollback
+description: NOT-USED-BY-MODEL
+disable-model-invocation: true
+---
+# + .claude/hooks/deny-extra-dangerous.sh
+# 跨平台一致:LLM 看不到,只有用户主动 /rollback 触发
+
+# 4. 进 git + 配 PR review
+git init  # 如果 .claude/ 还没进 git
+git add .claude/skills/
+git commit -m "feat(skill): add skill library"
+# 任何修改 PR review,跨平台一致的协作方式
+
+# 5. 用纯 Markdown,不要混入其他格式
+# ✅ 纯 Markdown + YAML frontmatter
+---
+name: skill-name
+description: ...
+---
+# 正文纯 Markdown
+
+# ❌ 不要在 SKILL.md 里嵌入 JSON / Python / C# 代码块
+# 协议是"自然语言 + YAML",不是"代码嵌入"
+# 如果需要 JSON,放 references/*.json,SKILL.md 用链接引用
+
+# === 5 个实践的跨平台兼容性 ===
+# 实践 1-2:跨 5+ 平台触发 + 加载正常
+# 实践 3-4:跨平台一致的安全 + 协作
+# 实践 5:跨平台统一的格式(不被某家工具的私有格式污染)
+# → 5 个实践叠加,SKILL.md 在 2025-2027 年的协议演化中"长期稳定"</code></pre>
+<h2 class="section-anchor">⚠️ 常见坑</h2>
+<div class="callout warn">
+<strong>⚠️ 写了平台专属的 Skill（用 LangChain Python 或 OpenAI JSON、不通用）</strong>
+<p>最常见的标准化机会错过：用 LangChain 写 Python tool(@tool 装饰器）或 OpenAI Actions 写 JSON schema、这些格式在 2024-10 之前是主流、但 2025-02 Agent Skills 协议确认后、正在变成历史包袱——未来跨平台迁移时、这些 Python / JSON 格式全部要重写成 SKILL.md。修正：从 2025 年起、所有新写的能力扩展都用 SKILL.md。已存在的 Python / JSON 工具、看 ROI：如果跨平台复用价值高、改写成 SKILL.md；如果只是单平台使用、可以保留。判断标准：这个工具会被 2+ 个 AI 平台用吗?是 → 必须 SKILL.md；否 → 保留原格式也行。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 以为 Skills 出圈 = 立刻发财（实际是长期工程资产积累、不是短期变现）</strong>
+<p>短期变现的认知陷阱：看到技能市场可能形成就以为可以靠写 Skill 立刻赚钱。实际上 Skills 出圈是长期工程资产积累、不是立刻发财。原因：技能市场还在早期（2025-2026)、付费意愿 / 监管 / 平台分成机制都不成熟。现实路径：把 Skills 当作工程贡献 + 简历资产沉淀（长期 ROI 高）、而不是短期变现工具。修正：不要被 FOMO 驱动乱写 Skill 想着卖钱、先想清楚这个 Skill 在我的团队 / 项目里真的高频 + 标准化吗?——是、值得写；否、跳过。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 协议还在演进就锁死写法（要持续关注规范变化、留出兼容性空间）</strong>
+<p>锁死写法的风险：Agent Skills 协议还在演进（类似 LSP 在 2016-2018 年快速演化）、如果现在用了一些激进的写法（比如用协议没确认的 frontmatter 字段）、协议更新后可能不兼容。修正：用协议确认的标准字段（name / description / license / allowed-tools)、不用看起来好但未确认的字段。在 SKILL.md 里留出兼容性空间——避免用平台专属的扩展名 / 私有字段。判断标准：这个字段是协议确认的吗?是、可以用；否、慎用或加注释说明。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 把团队内部 Skill 写成硬编码（不沉淀成可复用的 SKILL.md 模板、无法跨项目复用）</strong>
+<p>硬编码陷阱：团队内每个项目的 Skill 各自写一份、内容 80% 重复（sync-changelog / test-coverage / security-audit 几乎一样）、但因为项目结构不同 / 命名规范不同、无法复用。修正：把团队内的高频 + 标准化能力沉淀成 SKILL.md 模板、进 git + 配 PR review + 跨项目复用。原则：沉淀的是高频 + 标准化 + 跨项目可用的能力、不是某个项目特有的能力（后者留项目本地）。判断标准：这个 Skill 在 3+ 项目里都有?是 → 必须沉淀成模板；否 → 留项目本地。</p>
+</div>
+<h2 class="section-anchor">💡 一句话备忘</h2>
+<blockquote>Skills 用 125 天从单产品特性演变为行业开放标准、核心是足够简单 + 足够强大 + 足够开放3 个特性叠加；把握标准化机会的策略是从现在起用 SKILL.md 写所有能力扩展、沉淀团队高频能力成可跨平台分发的工程资产、持续关注协议演进。</blockquote>
+<hr>
+<p class="breadcrumb">← 回到 <a href="#top">本讲网页顶部</a></p>
+</main>
+<script>
+  (function () {
+    var STORAGE_KEY = "***";
+    var root = document.documentElement;
+    var btn  = document.getElementById("themeToggle");
+    var icon = document.getElementById("themeIcon");
+    var lbl  = document.getElementById("themeLabel");
+    function apply(theme) {
+      root.setAttribute("data-theme", theme);
+      if (theme === "dark") {
+        icon.innerHTML = "&#9728;&#65039;";
+        lbl.textContent  = "亮色";
+      } else {
+        icon.innerHTML = "&#127769;";
+        lbl.textContent  = "暗色";
+      }
+    }
+    var saved = null;
+    try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    if (saved === "light" || saved === "dark") {
+      apply(saved);
+    } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      apply("dark");
+    } else {
+      apply("light");
+    }
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") || "light";
+      var next = cur === "dark" ? "light" : "dark";
+      apply(next);
+      try { localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>
