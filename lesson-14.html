@@ -1,0 +1,671 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 14 讲 · 登高望远 · Skills 架构定位与设计模式</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fff; --fg: #222; --muted: #555; --link: #1a73e8;
+    --code-bg: #f4f4f4; --code-fg: inherit;
+    --pre-bg: #1e1e1e; --pre-fg: #eaeaea;
+    --border: #ddd; --th-bg: #f5f5f5; --zebra: #fafafa;
+    --hover-row: #e8f0fe; --hover-th: #eef2f7;
+    --blockquote-bg: #fafafa; --blockquote-border: #ddd;
+    --hr: #eee;
+    --toggle-bg: #f5f5f5; --toggle-fg: #333; --toggle-border: #ddd;
+    --tag-bg: #eef4ff; --tag-fg: #1a73e8;
+    --callout-bg: #fffbe6; --callout-border: #fadb14;
+    --warn-bg: #fff1f0; --warn-border: #ff4d4f;
+    --ok-bg: #f6ffed; --ok-border: #52c41a;
+    --code-block-bg: #f8f9fa;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1115; --fg: #e6e6e6; --muted: #9aa0a6; --link: #8ab4f8;
+    --code-bg: #1e1f24; --code-fg: #e6e6e6;
+    --pre-bg: #1a1d23; --pre-fg: #e6e6e6;
+    --border: #303136; --th-bg: #1c1f25; --zebra: #16181d;
+    --hover-row: #1f2733; --hover-th: #262c36;
+    --blockquote-bg: #181a20; --blockquote-border: #303136;
+    --hr: #2a2d33;
+    --toggle-bg: #1c1f25; --toggle-fg: #e6e6e6; --toggle-border: #303136;
+    --tag-bg: #1a2540; --tag-fg: #8ab4f8;
+    --callout-bg: #2a261a; --callout-border: #b89333;
+    --warn-bg: #2a1a1a; --warn-border: #a84545;
+    --ok-bg: #1a261a; --ok-border: #4a8a4a;
+    --code-block-bg: #16181d;
+  }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 "PingFang SC", "Microsoft YaHei", "Helvetica Neue",
+                 Arial, sans-serif;
+    font-size: 15px; line-height: 1.7;
+    transition: background-color .2s ease, color .2s ease;
+  }
+  main {
+    max-width: 1100px;
+    width: calc(100% - 32px);
+    margin: 0 auto;
+    padding: 24px 0 64px 0;
+    box-sizing: border-box;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    line-height: 1.3; margin: 1.5em 0 .6em;
+  }
+  h1 { font-size: 1.9em; border-bottom: 2px solid var(--hr); padding-bottom: .3em; }
+  h2 { font-size: 1.45em; border-bottom: 1px solid var(--hr); padding-bottom: .25em; margin-top: 2em; }
+  h3 { font-size: 1.18em; color: var(--link); margin-top: 1.5em; }
+  h4 { font-size: 1.05em; margin-top: 1.2em; color: var(--fg); font-weight: 600; }
+  p, ul, ol, blockquote, pre, table { margin: .7em 0; }
+  ul, ol { padding-left: 1.6em; }
+  li { margin: .3em 0; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  blockquote {
+    margin: .8em 0; padding: .6em 1em;
+    border-left: 4px solid var(--blockquote-border);
+    color: var(--muted); background: var(--blockquote-bg);
+  }
+  .callout {
+    background: var(--callout-bg);
+    border-left: 4px solid var(--callout-border);
+    padding: 12px 16px; margin: 1.2em 0; border-radius: 4px;
+  }
+  .callout.warn { background: var(--warn-bg); border-left-color: var(--warn-border); }
+  .callout.ok   { background: var(--ok-bg);   border-left-color: var(--ok-border); }
+  code {
+    font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: .9em; background: var(--code-bg); color: var(--code-fg);
+    padding: 1px 5px; border-radius: 3px;
+  }
+  pre {
+    background: var(--pre-bg); color: var(--pre-fg);
+    padding: 14px 16px; border-radius: 6px;
+    overflow-x: auto; font-size: 13px; line-height: 1.55;
+    margin: 1em 0;
+  }
+  pre code { background: transparent; padding: 0; color: inherit; }
+  pre.lang-flow {
+    background: var(--code-block-bg); color: var(--fg);
+    border: 1px solid var(--border);
+  }
+  :root[data-theme="dark"] pre.lang-flow {
+    background: #0a0b0d; color: #d4d4d4;
+  }
+  table {
+    width: 100% !important; border-collapse: collapse;
+    table-layout: auto; margin: 1em 0;
+    font-size: 14px; display: table;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left; vertical-align: top;
+    transition: background-color .15s ease;
+  }
+  th { background: var(--th-bg); font-weight: 600; }
+  tbody tr:nth-child(even) td { background: var(--zebra); }
+  tbody tr:hover td, tbody tr:hover th { background: var(--hover-row) !important; }
+  thead th:hover { background: var(--hover-th) !important; }
+  :root[data-theme="dark"] tbody tr:hover td,
+  :root[data-theme="dark"] tbody tr:hover th,
+  :root[data-theme="dark"] thead th:hover { color: #fff; }
+  hr { border: none; border-top: 1px solid var(--hr); margin: 2em 0; }
+  img { max-width: 100%; height: auto; }
+
+  .tag {
+    display: inline-block; padding: 2px 8px; margin-right: 6px;
+    background: var(--tag-bg); color: var(--tag-fg);
+    border-radius: 12px; font-size: 12px; font-weight: 500;
+  }
+  .breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 1em; }
+  .breadcrumb a { color: var(--muted); }
+  .breadcrumb a:hover { color: var(--link); }
+
+  .theme-toggle {
+    position: fixed; top: 12px; right: 12px; z-index: 9999;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: var(--toggle-bg); color: var(--toggle-fg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 6px; font-size: 13px; font-family: inherit;
+    cursor: pointer; user-select: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    transition: background-color .2s ease, transform .1s ease;
+  }
+  .theme-toggle:hover { background: var(--hover-row); }
+  .theme-toggle:active { transform: scale(.97); }
+  .theme-toggle .icon { font-size: 15px; line-height: 1; }
+
+  .lesson-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, #1a73e8, #6f42c1);
+    color: #fff; font-size: 24px; font-weight: 700;
+    margin-right: 14px; vertical-align: middle;
+  }
+
+  .section-anchor { scroll-margin-top: 60px; }
+</style>
+<link rel="stylesheet" href="assets/flow.css">
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="切换暗色模式">
+  <span class="icon" id="themeIcon">&#127769;</span>
+  <span id="themeLabel">暗色</span>
+</button>
+<main>
+<div class="breadcrumb">课程导航： « <a href="lesson-13.html">第 13 讲</a>  ·  <a href="lesson-15.html">第 15 讲</a> »</div>
+<h1><span class="lesson-badge">14</span>第 14 讲 · 登高望远 · Skills 架构定位与设计模式</h1>
+<p>
+  <span class="tag">正课</span>
+  <span class="tag">第 14 / 33 讲</span>
+  <span class="tag">Claude Code 工程化实战</span>
+  <span class="tag">Skills 系列 · 全局视角</span>
+</p>
+<div class="callout ok">
+<strong>📌 本讲摘要</strong>
+<p>前 4 讲讲了 Skills 的具体写法（第 10 讲基础结构 / 第 11 讲任务型 / 第 12 讲渐进式披露 / 第 13 讲组合实战）、本讲登高望远——跳出 Claude Code 内部、看 Skills 在 AI Agent 生态中的位置（GPTs/Actions / LangChain/Tools / AutoGPT/Skills / Semantic Kernel/Skills)、理解 Claude Code Skills 的 3 大独特性（LLM 语义推理触发 / 渐进式披露 / Markdown 定义）、再用设计模式四象限（频率 × 风险）给所有 Skills 工程实践定坐标。</p>
+<p>本讲的三条主线：</p>
+<p>第一、Skills 在 AI Agent 生态中的位置——Claude Code Skills 介于用户主动(GPTs/Actions）和代码显式(LangChain/Tools）之间、独特在LLM 语义推理触发。</p>
+<p>第二、3 大独特性的工程意义——LLM 推理触发（不需要代码注册、description 匹配即可）/ 渐进式披露（3 层加载、token 节省 98%)/ Markdown 定义（纯文本、可 git 跟踪、无二进制）。</p>
+<p>第三、设计模式四象限——频率（高/低）× 风险（高/低）把 Skills 分 4 类、每类有推荐配置。</p>
+<p>学完本讲、你应该能跳出 Claude Code 内部、看到 Skills 在 AI Agent 生态中的差异化定位、能用设计模式四象限给任何 Skills 工程实践定坐标、能识别3 个不做什么和4 个长期习惯以避免常见反模式。</p>
+</div>
+<h2 class="section-anchor">📖 详细内容</h2>
+<h3>Skills 在 AI Agent 生态中的位置</h3>
+<p>第 10-13 讲我们都在 Claude Code 内部讲 Skills。本讲登高望远、跳出 Claude Code 内部、看 Skills 在整个 AI Agent 生态中的位置。理解生态、才能看清 Claude Code Skills 的独特设计选择。</p>
+<p><strong>4 类主流 AI Agent 能力扩展机制</strong></p>
+<p>1. <strong>GPTs/Actions(OpenAI)</strong>——用户主动选功能。每个 Action 是预先定义好的 HTTP API,GPT 在对话中看到用户的话、如果觉得需要就主动调用那个 Action。触发机制：用户主动说 / GPT 推理（混合）、但调用必须先在 GPT 后台注册过。配置方式：JSON + 后台 GUI。生态：OpenAI 闭源。</p>
+<p>2. <strong>LangChain/Tools</strong>——代码层显式调用。开发者用 Python 代码显式调 `tool.run()`,LLM 只能建议调用哪个 tool、实际是否调用由代码控制。触发机制：代码显式（开发者写死在代码里）。配置方式：Python 类 + schema。生态：LangChain 开源。</p>
+<p>3. <strong>AutoGPT/Skills</strong>——任务级触发。每个 Skill 是预先定义好的任务模板,AutoGPT 在跑任务时按模板执行。触发机制：任务触发（任务树中匹配）。配置方式：Python 文件。生态：AutoGPT 开源。</p>
+<p>4. <strong>Semantic Kernel/Skills</strong>（微软）——插件式注册。每个 Skill 是 .NET 类、通过 PluginManager 注册、LLM 在对话中按函数签名调用。触发机制：插件注册（类似 LangChain）。配置方式：C# 类 + YAML。生态：微软。</p>
+<p>4 类机制的核心区别在触发机制：</p>
+<p>• 用户主动（GPTs 用户层）——用户显式说用 X Action。</p>
+<p>• 代码显式（LangChain)——开发者写死调哪个 tool。</p>
+<p>• 任务触发（AutoGPT)——任务规划阶段决定调哪个 Skill。</p>
+<p>• 插件注册（Semantic Kernel)——LLM 通过函数签名识别调哪个 Skill。</p>
+<div class="flow-diagram">
+  <div class="flow-note" style="font-size:14px;font-weight:600;color:var(--link);font-style:normal;margin-bottom:10px">AI Agent 生态定位图（4 层）</div>
+
+  <div class="flow-box-lg" style="max-width:560px">
+    <div class="flow-box-title">L4 · 用户层（用对话指挥 AI）</div>
+    <div class="flow-box-sub" style="text-align:left">GPTs / Actions（用户主动选功能）</div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg" style="max-width:560px;border-color:var(--link)">
+    <div class="flow-box-title">L3 · AI 智能层（LLM 推理）</div>
+    <ul>
+      <li><strong>Claude Code Skills</strong>（LLM 语义推理触发）← 独特位置</li>
+      <li>AutoGPT / Skills（任务级触发）</li>
+      <li>Semantic Kernel（插件注册）</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg" style="max-width:560px">
+    <div class="flow-box-title">L2 · 工程能力层（代码层控制）</div>
+    <ul>
+      <li>SubAgent（主对话显式调起角色）</li>
+      <li>LangChain / Tools（代码层显式调用）</li>
+      <li>Hook（底层拦截机制）</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg" style="max-width:560px">
+    <div class="flow-box-title">L1 · 基础设施层（系统）</div>
+    <ul>
+      <li>Commands（用户主动命令）</li>
+      <li>File System / Network / API</li>
+    </ul>
+  </div>
+</div>
+<p><strong>Claude Code Skills 的位置</strong></p>
+<p>Claude Code Skills 介于用户主动和代码显式之间、独特在LLM 语义推理触发——Claude 看到用户的话、推理出该用哪个 Skill、不依赖代码层显式注册、也不依赖后台 GUI 配置。这种设计的代价：依赖 description 写得准、触发率不一定 100%。收益：零调用成本、配置轻量、纯文本可 git 跟踪。</p>
+<table>
+<thead><tr>
+<th>维度</th>
+<th>Claude Code Skills</th>
+<th>GPTs/Actions</th>
+<th>LangChain/Tools</th>
+<th>AutoGPT/Skills</th>
+<th>Semantic Kernel</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>触发机制</td>
+<td>LLM 推理（description)</td>
+<td>用户主动 + GPT 推理</td>
+<td>代码显式</td>
+<td>任务触发</td>
+<td>插件注册</td>
+</tr>
+<tr>
+<td>定义方式</td>
+<td>Markdown + YAML</td>
+<td>JSON + OpenAPI</td>
+<td>Python + Pydantic</td>
+<td>Python + YAML</td>
+<td>C# + YAML</td>
+</tr>
+<tr>
+<td>加载成本</td>
+<td>低（50-500 tokens)</td>
+<td>中</td>
+<td>高（全量 schema)</td>
+<td>中</td>
+<td>中</td>
+</tr>
+<tr>
+<td>可分发性</td>
+<td>高（git 跟踪）</td>
+<td>中（后台发布）</td>
+<td>低（Python 包）</td>
+<td>低（Python 包）</td>
+<td>中（NuGet)</td>
+</tr>
+<tr>
+<td>适用场景</td>
+<td>LLM 推理触发 / 团队 git 协作</td>
+<td>简单命令 / 闭源生态</td>
+<td>复杂链 / 代码控制</td>
+<td>自动 Agent / 任务规划</td>
+<td>插件化 / .NET 生态</td>
+</tr>
+</tbody></table>
+<h3>Claude Code Skills 的 3 大独特性</h3>
+<p>3 大独特性是 Claude Code Skills 与其他生态差异化的核心、也是工程设计选择的根因。</p>
+<p><strong>特性 1：LLM 语义推理触发</strong></p>
+<p>其他生态（除 GPTs 部分）需要代码层显式注册 / 后台配置才能让 LLM 调起某个能力。Claude Code Skills 不需要——你只要写一个 SKILL.md,frontmatter 的 description 写何时触发,Claude 在推理时自动匹配。零代码注册、零后台配置。</p>
+<p>代码体现：SKILL.md 的 description 字段是 LLM 推理的索引键、其他生态要么用 JSON schema(OpenAI Actions）、要么用 Python 类签名（LangChain）、要么用插件注册（Semantic Kernel）。Claude Code 的 description 触发是自然语言 + LLM 推理、不是结构化注册。</p>
+<p>工程意义：写新 Skill 极轻量——1 个 markdown 文件、5-10 行 frontmatter、描述清楚触发场景、就能用。不需要发包、不需要注册、不需要改 settings.json。</p>
+<p><strong>特性 2：渐进式披露（3 层加载、token 节省 98%)</strong></p>
+<p>其他生态多采用全量加载或按需全量加载——Skill 触发时把完整定义/能力加载到上下文、不管用不用得上。Claude Code Skills 采用 3 层渐进式披露——frontmatter 50 tokens（启动时全量）+ SKILL.md 2K tokens（触发时加载）+ references/ 按需加载。第 12 讲详细讲过这个架构。</p>
+<p>代码体现：.claude/skills/&lt;name&gt;/ 目录结构、SKILL.md 在根、references/ 子目录放深度内容、frontmatter 是 5-10 行的 YAML。其他生态没这个目录结构（OpenAI Actions 是单一 JSON,LangleChain 是 Python 文件）。</p>
+<p>工程意义：Skills 数量增加到 50 个也不爆上下文（每个 Skill 只占 50 tokens 启动成本、触发时才加载 2K）。这是 Claude Code Skills 能随便加的核心原因。</p>
+<p><strong>特性 3：Markdown 定义（纯文本、可 git 跟踪）</strong></p>
+<p>所有 Skills 都是纯 Markdown 文件——SKILL.md + references/*.md、没有二进制、没有编译产物、没有 lock 文件。直接 git 跟踪、直接 PR review、直接 diff。</p>
+<p>代码体现：其他生态要么用 JSON(OpenAI Actions)/ Python(LangChain)/ C#(Semantic Kernel)/ YAML(SK 插件）、都不是自然语言。Claude Code Skills 用纯 Markdown + YAML frontmatter、人可读、LLM 可读、git 可 diff。</p>
+<p>工程意义：团队协作零摩擦——任何工程师可以改 SKILL.md,PR review 时直接看 diff、不用编译、不用构建、不用发包。</p>
+<h3>设计模式四象限：频率 × 风险</h3>
+<p>工程实践需要分类学——把所有 Skills 实践按频率 × 风险两维度分 4 类、每类有推荐配置。这是 Skills 工程的决策树。</p>
+<p><strong>第 1 象限：高频低风险</strong></p>
+<p>典型场景：review（每次 commit 前）/ lint（每次保存）/ test（每次 push）。这些能力经常被触发、但即使误触也无大碍（只是多跑一次、不会改生产环境）。</p>
+<p>推荐配置：普通 Skill（无 disable-model-invocation / 无 Hook 兜底）,description 写何时触发、让 LLM 自动发现。LLM 看到 review / lint 关键词就加载、触发率 80%+ 即可。</p>
+<p><strong>第 2 象限：高频高风险</strong></p>
+<p>典型场景：deploy（每天多次但每次有后果）/ commit（每次 commit 都改 git 历史）。这些能力经常被触发、误触会有后果（部署到错误环境 / 错误的 commit message 进了主分支）。</p>
+<p>推荐配置：加 ask 机制——Skill 加载后不直接执行、而是先 ask 用户确认。Claude 建议用这个 Skill、但用户必须显式确认才执行。这是高频的折中：不阻止自动触发、但增加一道人工确认。</p>
+<p><strong>第 3 象限：低频低风险</strong></p>
+<p>典型场景：debug-mode（排查问题时用）/ verbose（打印详细日志）/ trace-network（网络调试）。这些能力很少被触发、即使误触也无大碍（只是日志变多）。</p>
+<p>推荐配置：普通 Skill（无 disable-model-invocation / 无 Hook 兜底）,description 可以写得广一点（允许 LLM 主动发现）。</p>
+<p><strong>第 4 象限：低频高风险</strong></p>
+<p>典型场景：rollback（回滚到上一版本）/ db-migrate（数据库迁移）/ purge-cache（清空缓存）/ force-push（强制推送）。这些能力很少被触发、但误触会有灾难性后果（数据丢失 / 生产环境被清空）。</p>
+<p>推荐配置：必须配 disable-model-invocation： true + Hook 二次拦截（双保险）。LLM 完全看不到、只有用户主动 /rollback / /db-migrate 才触发；即使有其他路径触发、HW 也拦下危险命令。第 11 讲详细讲过这种双保险配置。</p>
+<p>4 个象限的决策心法：</p>
+<p>1. 高频 → 优化触发率（LLM 主动发现、description 写准）。</p>
+<p>2. 低频 → 优化可见性（用户主动调、加 disable 字段）。</p>
+<p>3. 高风险 → 加 ask 机制或 disable 字段（防误触）。</p>
+<p>4. 低风险 → 普通配置即可（别过度防御）。</p>
+<p>避免两个极端：把所有 Skills 都加 disable 字段（用户每次都得手输命令、反而累）/ 把所有 Skills 都放任 LLM 自动触发（高风险操作误触 = 灾难）。</p>
+<table>
+<thead><tr>
+<th>象限</th>
+<th>频率</th>
+<th>风险</th>
+<th>典型场景</th>
+<th>推荐配置</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>第 1 象限</td>
+<td>高</td>
+<td>低</td>
+<td>review / lint / test</td>
+<td>普通 Skill,LLM 主动发现、description 写准</td>
+</tr>
+<tr>
+<td>第 2 象限</td>
+<td>高</td>
+<td>高</td>
+<td>deploy / commit</td>
+<td>普通 Skill + ask 机制、执行前人工确认</td>
+</tr>
+<tr>
+<td>第 3 象限</td>
+<td>低</td>
+<td>低</td>
+<td>debug-mode / verbose / trace-network</td>
+<td>普通 Skill,description 可以写广</td>
+</tr>
+<tr>
+<td>第 4 象限</td>
+<td>低</td>
+<td>高</td>
+<td>rollback / db-migrate / purge-cache / force-push</td>
+<td>必须 disable-model-invocation + Hook 双保险</td>
+</tr>
+</tbody></table>
+<h3>与 4 类生态系统的对比（5 维度）</h3>
+<p>把 Claude Code Skills 和 4 类主流 AI Agent 能力扩展机制做 5 维度对比、看清差异化。</p>
+<p><strong>维度 1：触发机制</strong></p>
+<p>• Claude Code Skills：LLM 语义推理（description 匹配）。</p>
+<p>• GPTs/Actions：用户主动 / GPT 推理混合（用户可选 Actions 列表）。</p>
+<p>• LangChain/Tools：代码显式（开发者写死）。</p>
+<p>• AutoGPT/Skills：任务触发（任务规划阶段决定）。</p>
+<p>• Semantic Kernel：插件注册（LLM 通过函数签名识别）。</p>
+<p><strong>维度 2：定义方式</strong></p>
+<p>• Claude Code Skills：纯 Markdown + YAML frontmatter。</p>
+<p>• GPTs/Actions：JSON + OpenAPI schema。</p>
+<p>• LangChain/Tools：Python 类 + Pydantic schema。</p>
+<p>• AutoGPT/Skills：Python 文件 + YAML 配置。</p>
+<p>• Semantic Kernel：C# 类 + YAML。</p>
+<p><strong>维度 3：加载成本</strong></p>
+<p>• Claude Code Skills：低（50-500 tokens、渐进式披露）。</p>
+<p>• GPTs/Actions：中（Action 定义 + OpenAPI 文档全量加载）。</p>
+<p>• LangChain/Tools：高（每个 tool 加载完整 schema + description）。</p>
+<p>• AutoGPT/Skills：中（任务规划时全量加载所有可用 Skill）。</p>
+<p>• Semantic Kernel：中（插件注册时全量加载函数签名）。</p>
+<p><strong>维度 4：可分发性</strong></p>
+<p>• Claude Code Skills：高（Markdown、可 git 跟踪、可 PR review）。</p>
+<p>• GPTs/Actions：中（需 OpenAI 后台发布、不能本地 fork）。</p>
+<p>• LangChain/Tools：低（Python 包、版本依赖重）。</p>
+<p>• AutoGPT/Skills：低（同上）。</p>
+<p>• Semantic Kernel：中（NuGet 包、版本依赖中等）。</p>
+<p><strong>维度 5：适用场景</strong></p>
+<p>• Claude Code Skills：LLM 推理触发 / 渐进式披露能力。</p>
+<p>• GPTs/Actions：简单命令（用户主动调）。</p>
+<p>• LangChain/Tools：复杂链（代码层控制）。</p>
+<p>• AutoGPT/Skills：自动 Agent（任务级规划）。</p>
+<p>• Semantic Kernel：插件化（.NET 生态）。</p>
+<p>5 维度对比后、Claude Code Skills 的差异化清晰：LLM 推理触发 + Markdown 定义 + 渐进式披露3 个独特性、适合需要 LLM 智能触发 + 团队 git 协作 + 大量 Skills 复用的场景。</p>
+<h3>Skills 的3 个不做什么</h3>
+<p>Skills 是 Claude Code 4 种扩展机制之一（Commands / SubAgent / Skills / Hook)、不是万能工具。3 个不做什么边界要清楚。</p>
+<p><strong>不做什么 1：Skills 不替代 SubAgent</strong></p>
+<p>SubAgent 隔离上下文——审查时主对话的噪声不会污染审查结果。Skill 共享主对话上下文——Skill 加载时、主对话的内容（用户隐私 / 中间状态）都被看到。</p>
+<p>什么时候用 SubAgent：需要独立上下文的任务（代码审查 / 数据分析 / 长时间跑的任务）。</p>
+<p>什么时候用 Skill：LLM 推理该用的能力（更新 changelog / 生成 API 文档）。</p>
+<p><strong>不做什么 2：Skills 不替代 Commands</strong></p>
+<p>Commands 用户主动调——用户显式说用 /&lt;name&gt;。Skill LLM 触发——LLM 看到 description 匹配自动加载。</p>
+<p>什么时候用 Command：需要显式用户意图（用户决定何时用哪个）。</p>
+<p>什么时候用 Skill：需要LLM 智能发现(LLM 决定何时用哪个）。</p>
+<p><strong>不做什么 3：Skills 不替代 Hook</strong></p>
+<p>Hook 是底层机制——PreToolUse / PostToolUse 拦截具体工具调用、完全可编程。Skill 是上层能力——描述做什么、由 LLM 推理决定是否调起。</p>
+<p>什么时候用 Hook：需要硬约束（危险命令拦截 / 自动备份 / 强制 lint）。</p>
+<p>什么时候用 Skill：需要智能触发(LLM 该用就用、不该用就不触发）。</p>
+<p>3 个不做什么的本质：4 种扩展机制有明确的职责边界——Commands（用户层）/ SubAgent（角色层）/ Skills（能力层）/ Hook（机制层）、各管一摊、不要混用。混用的代价是职责重叠 / 改一处忘一处 / 触发混乱。</p>
+<h3>Skills 工程实践的 4 个长期习惯</h3>
+<p>4 个长期习惯是 Skills 工程的最佳实践基线、任何团队/项目都应该坚持。</p>
+<p><strong>习惯 1：每个 Skill 都有 description</strong></p>
+<p>写何时触发不写做什么。description 是 LLM 推理的索引键、写错 = 触发率 = 0。第 10 讲详细讲过 description 的写法。</p>
+<p><strong>习惯 2：章节控制在 200 行内</strong></p>
+<p>超过 300 行就该拆 references/。SKILL.md 章节是主入口,references/ 是深度文档。3 层渐进式披露是 token 经济性的核心（第 12 讲）。</p>
+<p><strong>习惯 3：危险操作加 disable-model-invocation + Hook 双保险</strong></p>
+<p>任何低频高风险操作（rollback / db-migrate / force-push）必须配双保险（LLM 看不到 + Hook 拦截危险命令）。单层防御不够、双保险才能兜底（第 11 讲）。</p>
+<p><strong>习惯 4：进 git + 配 PR review</strong></p>
+<p>Skills 是工程资产、不是个人草稿。所有修改必须进 git、所有变更必须 PR review。这保证团队用的 Skills 是一致的、可追溯的、可回滚的。</p>
+<p>4 个习惯的检查清单（可作为 PR review 模板）：</p>
+<p>1. [ ] 每个 Skill 都有 description（写何时触发不是做什么）。</p>
+<p>2. [ ] SKILL.md 章节控制在 200 行内（超过 300 行拆 references/）。</p>
+<p>3. [ ] 危险操作加 disable-model-invocation： true + Hook 二次拦截。</p>
+<p>4. [ ] 进 git + 配 PR review（团队资产、不是个人草稿）。</p>
+<p>PR review 时按这个清单逐项检查、任何一项不合格打回。</p>
+<h2 class="section-anchor">🛠️ 实战代码</h2>
+<p><strong>📄 第 14 讲配套：4 类生态系统的 Skills 定义对比（Claude Code / GPTs / LangChain / AutoGPT)</strong></p>
+<pre><code class="lang-markdown"># === Claude Code Skills ===
+# 位置:.claude/skills/sync-changelog/SKILL.md
+---
+name: sync-changelog
+description: Update CHANGELOG.md from git commits. Use when user says "更新 changelog" / "release notes".
+allowed-tools: Read, Edit, Bash
+---
+# sync-changelog 主体内容...
+# 纯 Markdown + YAML,git 跟踪,LLM 推理触发
+
+# === GPTs/Actions(OpenAI) ===
+# 位置:OpenAI 后台 GUI + JSON schema
+{
+  "name": "sync_changelog",
+  "description": "Update CHANGELOG.md from git commits",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "since": {"type": "description": "commit hash"},
+      "version": {"type": "description": "target version"}
+    }
+  },
+  "api_endpoint": "https://api.example.com/sync-changelog"
+}
+# JSON + OpenAPI schema,后台配置,闭源生态
+
+# === LangChain/Tools(Python) ===
+# 位置:Python 文件
+from langchain.tools import BaseTool
+
+class SyncChangelogTool(BaseTool):
+    name = "sync_changelog"
+    description = "Update CHANGELOG.md from git commits"
+
+    def _run(self, since: str, version: str) -> str:
+        # 实际逻辑
+        return "CHANGELOG.md updated"
+# Python 类 + Pydantic schema,代码层显式调用
+
+# === AutoGPT/Skills ===
+# 位置:Python 文件 + YAML 配置
+# skills/sync_changelog.py
+from auto_gpt.skills import Skill
+
+class SyncChangelogSkill(Skill):
+    name = "sync_changelog"
+    description = "Update CHANGELOG.md from git commits"
+
+    def run(self, **kwargs):
+        # 实际逻辑
+        pass
+# Python 文件 + YAML 配置,任务级触发</code></pre>
+<p><strong>📄 第 14 讲配套：设计模式四象限的 Skills 决策表（4 个象限 × 典型场景 × 推荐配置）</strong></p>
+<pre><code class="lang-markdown"># 设计模式四象限:频率 × 风险
+
+【第 1 象限:高频低风险】
+  典型场景:
+    - review(每次 commit 前)
+    - lint(每次保存)
+    - test(每次 push)
+  推荐配置:
+    - 普通 Skill(无 disable / 无 Hook)
+    - description 写"何时触发",让 LLM 自动发现
+    - 触发率 80%+ 即可
+  示例:
+    ---
+    name: review
+    description: Run code review before commit. Use when user says "review" / "审查".
+    ---
+
+【第 2 象限:高频高风险】
+  典型场景:
+    - deploy(每天多次但每次有后果)
+    - commit(每次 commit 都改 git 历史)
+  推荐配置:
+    - 加 ask 机制(Skill 加载后 ask 用户确认才执行)
+    - description 可以写"何时触发"
+    - Claude "建议"用 Skill,用户必须显式确认
+  示例:
+    ---
+    name: deploy
+    description: Deploy to staging. Use when user says "deploy" / "部署".
+    # Skill 加载后,先 ask 用户确认环境 + 版本号
+    ---
+
+【第 3 象限:低频低风险】
+  典型场景:
+    - debug-mode(排查时用)
+    - verbose(打印详细日志)
+    - trace-network(网络调试)
+  推荐配置:
+    - 普通 Skill(无 disable / 无 Hook)
+    - description 可以写得"广"一点
+  示例:
+    ---
+    name: debug-mode
+    description: Enable verbose logging. Use when user says "debug" / "verbose" / "排查问题".
+    ---
+
+【第 4 象限:低频高风险】⚠️ 必须双保险
+  典型场景:
+    - rollback(回滚)
+    - db-migrate(数据库迁移)
+    - purge-cache(清缓存)
+    - force-push(强制推送)
+  推荐配置:
+    - 必须配 disable-model-invocation: true(LLM 看不到)
+    - 必须配 Hook 二次拦截危险命令
+    - 只有用户主动 /rollback / /db-migrate 才触发
+  示例:
+    ---
+    name: rollback
+    description: NOT-USED-BY-MODEL
+    disable-model-invocation: true
+    ---
+    # + .claude/hooks/deny-extra-dangerous.sh
+    # 拦截 git reset --hard / kubectl rollout undo 等</code></pre>
+<p><strong>📄 第 14 讲配套：Claude Code Skills 3 大独特性的代码体现（LLM 推理触发 / 渐进式披露 / Markdown 定义）</strong></p>
+<pre><code class="lang-markdown"># === 独特性 1:LLM 语义推理触发 ===
+# Claude Code Skills 的 description 是 LLM 推理的"索引键"
+# 不需要代码注册、不需要后台配置,纯自然语言
+
+# 正面:description 写"何时触发"
+---
+name: sync-changelog
+description: Update CHANGELOG.md from git commits. Use when user says "更新 changelog" / "release notes" / "CHANGELOG 同步".
+---
+
+# 反面:description 写"做什么"
+---
+name: changelog-generator
+description: A changelog generator
+# → LLM 不知道何时触发,触发率 = 0
+---
+
+# === 独特性 2:渐进式披露(3 层加载) ===
+.claude/skills/sync-changelog/
+├── SKILL.md                       # 第 2 层:章节(2K tokens,触发时加载)
+│   ├── frontmatter (50 tokens)    # 第 1 层:目录页(启动时全量)
+│   ├── 快速参考 (5-10 行)
+│   ├── 详细步骤 (30-50 行)
+│   └── 边界 case (50-100 行)
+└── references/                    # 第 3 层:附录(按需加载)
+    ├── conventional-commits.md    # 1K tokens
+    └── changelog-template.md      # 0.5K tokens
+
+# Token 成本:
+# - 启动时:50 tokens(frontmatter)
+# - 触发时:2K tokens(SKILL.md)
+# - 按需:0.5-1K tokens(references)
+# - 总计:2.55K(对比全量 30K,节省 91%)
+
+# === 独特性 3:Markdown 定义(纯文本) ===
+# 整个 Skills 体系就是 Markdown + YAML:
+# - SKILL.md:自然语言正文
+# - frontmatter:YAML 元数据
+# - references/*.md:深度文档
+
+# 没有 JSON / Python / C#,没有编译产物,没有 lock 文件
+# 直接 git 跟踪:
+git add .claude/skills/sync-changelog/
+git commit -m "feat(skill): add sync-changelog skill"
+git push origin main
+# 团队 PR review 时直接看 Markdown diff,无歧义</code></pre>
+<p><strong>📄 第 14 讲配套：Skills 工程实践的 4 个习惯检查清单（可作为 PR review 模板）</strong></p>
+<pre><code class="lang-markdown"># Skills PR Review 模板
+
+## 提交新 Skill / 修改现有 Skill
+
+### 习惯 1:每个 Skill 都有 description
+- [ ] description 写"何时触发",不写"做什么"
+- [ ] description 在 1-2 句话内(不超过 100 字)
+- [ ] 包含 2-3 个触发词(中英文都列)
+
+### 习惯 2:章节控制在 200 行内
+- [ ] SKILL.md 主体 &lt; 200 行
+- [ ] 超过 300 行 → 拆 references/
+- [ ] 3 段式结构(快速参考 / 详细步骤 / 边界 case)
+
+### 习惯 3:危险操作加双保险
+- [ ] 低频高风险操作(rollback / db-migrate / force-push)加 disable-model-invocation: true
+- [ ] 配套 Hook 拦截危险命令(.claude/hooks/deny-extra-dangerous.sh)
+- [ ] 测试:即使 LLM 误触发,HW 也能拦截
+
+### 习惯 4:进 git + 配 PR review
+- [ ] .claude/skills/&lt;name&gt;/SKILL.md 在 git 跟踪中
+- [ ] 任何修改都有 PR + reviewer
+- [ ] 团队 Skills 库统一管理(不私自改)
+
+### 反例检查(任何一项命中 → 打回)
+- ❌ description 写"做什么"而不是"何时触发"
+- ❌ SKILL.md 1000+ 行(违反渐进式披露)
+- ❌ 危险操作只有 disable 没有 Hook(单层防御)
+- ❌ Skills 没进 git(个人草稿,不是团队资产)</code></pre>
+
+
+
+<h2 class="section-anchor">⚠️ 常见坑</h2>
+<div class="callout warn">
+<strong>⚠️ 把 Skills 当万能工具（应该和 SubAgent / Commands / Hook 配合、各有边界）</strong>
+<p>新人最常见的过度依赖：以为 Skills 能做所有事、于是把所有能力都写成 Skill。结果——需要隔离上下文的审查任务用 Skill（上下文被污染）/ 需要用户主动的精确控制用 Skill(LLM 自由发挥、误触发）/ 需要硬约束的危险操作只用 Skill（没配 Hook 兜底）。修正：Skills 是 4 种扩展机制之一、各管一摊——Commands（用户层主动调）/ SubAgent（角色层隔离上下文）/ Skills（能力层 LLM 推理触发）/ Hook（机制层硬约束）。判断标准：这个任务属于哪一层?层对了、选对应机制；层错了、选哪个都不对。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 不写 description(LLM 无法触发、Skill 退化成死文档)</strong>
+<p>描述缺失的隐形坑：有些团队的 Skill 模板规定必须有 description、但实际写 SKILL.md 时只写了快速参考 / 详细步骤 / 边界 case三段、frontmatter 里的 description 字段是空的或写做什么(A changelog generator）。结果——LLM 不知道何时触发、Skill 永远不会被自动加载、退化成死文档（只在用户手动翻 SKILL.md 时才有用）。修正：description 必须写何时触发 + 触发词、1-2 句话、1-100 字。判断标准：LLM 看到 description 后能回答用户在什么情况下需要调起我?——能答、正确；答不了、打回。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 章节文件 1000+ 行（违反渐进式披露,token 爆炸）</strong>
+<p>伪 3 层、实 1 层的常见陷阱（第 12 讲详述）：目录 + 章节 + 附录 3 个文件都建了、但章节 SKILL.md 1000+ 行、把该放附录的深度内容也塞进去。结果——每次 Skill 触发、1000+ 行一次性加载、加载量 5-10 倍于 3 层方案。修正：章节控制在 200 行内、超过 300 行拆 references/。判断标准：SKILL.md &gt; 300 行 = 该拆了。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 危险操作没配双保险（disable-model-invocation + Hook 缺一不可）</strong>
+<p>单层防御的假安全：给 rollback / db-migrate / force-push 加了 disable-model-invocation： true、以为就安全了。但 disable 字段是LLM 推理层的防御——如果有人绕开 LLM 推理、直接调起 Skill(CLI 传参 / CI 流水线自动调 / 别的 Skill 嵌套调）,disable 就失效了。必须加第二层 Hook 防御——PreToolUse Hook 拦截危险命令。双保险叠加、几乎不可能误执行。判断标准：你的危险操作 Skill 配了 Hook 兜底吗?没配、补上。</p>
+</div>
+<h2 class="section-anchor">💡 一句话备忘</h2>
+<blockquote>Skills 在 AI Agent 生态中的独特位置是LLM 语义推理触发 + 渐进式披露 + Markdown 定义——3 大独特性叠加形成轻量 + 智能 + 可协作的差异化；4 个长期习惯（description / 章节行数 / 双保险 / git PR）是 Skills 工程的最佳实践基线。</blockquote>
+<hr>
+<p class="breadcrumb">← 回到 <a href="#top">本讲网页顶部</a></p>
+</main>
+<script>
+  (function () {
+    var STORAGE_KEY = "***";
+    var root = document.documentElement;
+    var btn  = document.getElementById("themeToggle");
+    var icon = document.getElementById("themeIcon");
+    var lbl  = document.getElementById("themeLabel");
+    function apply(theme) {
+      root.setAttribute("data-theme", theme);
+      if (theme === "dark") {
+        icon.innerHTML = "&#9728;&#65039;";
+        lbl.textContent  = "亮色";
+      } else {
+        icon.innerHTML = "&#127769;";
+        lbl.textContent  = "暗色";
+      }
+    }
+    var saved = null;
+    try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    if (saved === "light" || saved === "dark") {
+      apply(saved);
+    } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      apply("dark");
+    } else {
+      apply("light");
+    }
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") || "light";
+      var next = cur === "dark" ? "light" : "dark";
+      apply(next);
+      try { localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>
