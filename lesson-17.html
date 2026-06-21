@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 17 讲 · 防微杜渐 · Hooks 事件驱动自动化（上）</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fff; --fg: #222; --muted: #555; --link: #1a73e8;
+    --code-bg: #f4f4f4; --code-fg: inherit;
+    --pre-bg: #1e1e1e; --pre-fg: #eaeaea;
+    --border: #ddd; --th-bg: #f5f5f5; --zebra: #fafafa;
+    --hover-row: #e8f0fe; --hover-th: #eef2f7;
+    --blockquote-bg: #fafafa; --blockquote-border: #ddd;
+    --hr: #eee;
+    --toggle-bg: #f5f5f5; --toggle-fg: #333; --toggle-border: #ddd;
+    --tag-bg: #eef4ff; --tag-fg: #1a73e8;
+    --callout-bg: #fffbe6; --callout-border: #fadb14;
+    --warn-bg: #fff1f0; --warn-border: #ff4d4f;
+    --ok-bg: #f6ffed; --ok-border: #52c41a;
+    --code-block-bg: #f8f9fa;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1115; --fg: #e6e6e6; --muted: #9aa0a6; --link: #8ab4f8;
+    --code-bg: #1e1f24; --code-fg: #e6e6e6;
+    --pre-bg: #1a1d23; --pre-fg: #e6e6e6;
+    --border: #303136; --th-bg: #1c1f25; --zebra: #16181d;
+    --hover-row: #1f2733; --hover-th: #262c36;
+    --blockquote-bg: #181a20; --blockquote-border: #303136;
+    --hr: #2a2d33;
+    --toggle-bg: #1c1f25; --toggle-fg: #e6e6e6; --toggle-border: #303136;
+    --tag-bg: #1a2540; --tag-fg: #8ab4f8;
+    --callout-bg: #2a261a; --callout-border: #b89333;
+    --warn-bg: #2a1a1a; --warn-border: #a84545;
+    --ok-bg: #1a261a; --ok-border: #4a8a4a;
+    --code-block-bg: #16181d;
+  }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 "PingFang SC", "Microsoft YaHei", "Helvetica Neue",
+                 Arial, sans-serif;
+    font-size: 15px; line-height: 1.7;
+    transition: background-color .2s ease, color .2s ease;
+  }
+  main {
+    max-width: 1100px;
+    width: calc(100% - 32px);
+    margin: 0 auto;
+    padding: 24px 0 64px 0;
+    box-sizing: border-box;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    line-height: 1.3; margin: 1.5em 0 .6em;
+  }
+  h1 { font-size: 1.9em; border-bottom: 2px solid var(--hr); padding-bottom: .3em; }
+  h2 { font-size: 1.45em; border-bottom: 1px solid var(--hr); padding-bottom: .25em; margin-top: 2em; }
+  h3 { font-size: 1.18em; color: var(--link); margin-top: 1.5em; }
+  h4 { font-size: 1.05em; margin-top: 1.2em; color: var(--fg); font-weight: 600; }
+  p, ul, ol, blockquote, pre, table { margin: .7em 0; }
+  ul, ol { padding-left: 1.6em; }
+  li { margin: .3em 0; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  blockquote {
+    margin: .8em 0; padding: .6em 1em;
+    border-left: 4px solid var(--blockquote-border);
+    color: var(--muted); background: var(--blockquote-bg);
+  }
+  .callout {
+    background: var(--callout-bg);
+    border-left: 4px solid var(--callout-border);
+    padding: 12px 16px; margin: 1.2em 0; border-radius: 4px;
+  }
+  .callout.warn { background: var(--warn-bg); border-left-color: var(--warn-border); }
+  .callout.ok   { background: var(--ok-bg);   border-left-color: var(--ok-border); }
+  code {
+    font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: .9em; background: var(--code-bg); color: var(--code-fg);
+    padding: 1px 5px; border-radius: 3px;
+  }
+  pre {
+    background: var(--pre-bg); color: var(--pre-fg);
+    padding: 14px 16px; border-radius: 6px;
+    overflow-x: auto; font-size: 13px; line-height: 1.55;
+    margin: 1em 0;
+  }
+  pre code { background: transparent; padding: 0; color: inherit; }
+  pre.lang-flow {
+    background: var(--code-block-bg); color: var(--fg);
+    border: 1px solid var(--border);
+  }
+  :root[data-theme="dark"] pre.lang-flow {
+    background: #0a0b0d; color: #d4d4d4;
+  }
+  table {
+    width: 100% !important; border-collapse: collapse;
+    table-layout: auto; margin: 1em 0;
+    font-size: 14px; display: table;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left; vertical-align: top;
+    transition: background-color .15s ease;
+  }
+  th { background: var(--th-bg); font-weight: 600; }
+  tbody tr:nth-child(even) td { background: var(--zebra); }
+  tbody tr:hover td, tbody tr:hover th { background: var(--hover-row) !important; }
+  thead th:hover { background: var(--hover-th) !important; }
+  :root[data-theme="dark"] tbody tr:hover td,
+  :root[data-theme="dark"] tbody tr:hover th,
+  :root[data-theme="dark"] thead th:hover { color: #fff; }
+  hr { border: none; border-top: 1px solid var(--hr); margin: 2em 0; }
+  img { max-width: 100%; height: auto; }
+
+  .tag {
+    display: inline-block; padding: 2px 8px; margin-right: 6px;
+    background: var(--tag-bg); color: var(--tag-fg);
+    border-radius: 12px; font-size: 12px; font-weight: 500;
+  }
+  .breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 1em; }
+  .breadcrumb a { color: var(--muted); }
+  .breadcrumb a:hover { color: var(--link); }
+
+  .theme-toggle {
+    position: fixed; top: 12px; right: 12px; z-index: 9999;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: var(--toggle-bg); color: var(--toggle-fg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 6px; font-size: 13px; font-family: inherit;
+    cursor: pointer; user-select: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    transition: background-color .2s ease, transform .1s ease;
+  }
+  .theme-toggle:hover { background: var(--hover-row); }
+  .theme-toggle:active { transform: scale(.97); }
+  .theme-toggle .icon { font-size: 15px; line-height: 1; }
+
+  .lesson-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, #1a73e8, #6f42c1);
+    color: #fff; font-size: 24px; font-weight: 700;
+    margin-right: 14px; vertical-align: middle;
+  }
+
+  .section-anchor { scroll-margin-top: 60px; }
+</style>
+<link rel="stylesheet" href="assets/flow.css">
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="切换暗色模式">
+  <span class="icon" id="themeIcon">&#127769;</span>
+  <span id="themeLabel">暗色</span>
+</button>
+<main>
+<div class="breadcrumb">课程导航： « <a href="lesson-16.html">第 16 讲</a>  ·  <a href="lesson-18.html">第 18 讲</a> »</div>
+<h1><span class="lesson-badge">17</span>第 17 讲 · 防微杜渐 · Hooks 事件驱动自动化（上）</h1>
+<p>
+  <span class="tag">正课</span>
+  <span class="tag">第 17 / 33 讲</span>
+  <span class="tag">Claude Code 工程化实战</span>
+  <span class="tag">Hooks 系列开篇</span>
+</p>
+<div class="callout ok">
+<strong>📌 本讲摘要</strong>
+<p>前 16 讲讲了 SubAgent + Skills + Commands 三种能力扩展机制、本讲进入事件驱动——Hooks：在 Claude 执行工具前后插入自定义检查、做硬约束。核心是 4 类事件（PreToolUse 工具执行前 / PostToolUse 工具执行后 / Stop 主代理停止 / SubAgentStop 子代理停止）+ 两类应用（安全三件套：拦截 / 保护 / 审计；质量三件套：格式化 / Lint / 测试）。Hooks 是 4 种扩展机制中最底层的——它不描述做什么、而是在工具被调用的瞬间做检查。</p>
+<p>本讲的三条主线：</p>
+<p>第一、Hooks 是什么?4 类事件 + 触发时机——PreToolUse 工具执行前 exit 2 拒绝 / PostToolUse 工具执行后可修改输出 / Stop 主代理停止可强制继续 / SubAgentStop 子代理停止；配置在 .claude/settings.json 的 hooks 字段。</p>
+<p>第二、两类典型应用——安全三件套（拦截 / 保护 / 审计、纵深防御）+ 质量三件套（格式化 / Lint / 测试、代码质量门）。</p>
+<p>第三、Hooks vs Skills vs SubAgent 边界——Hooks 拦截（硬约束、瞬间拦截）/ Skills 描述（软规范、LLM 看 description)/ SubAgent 隔离（独立上下文）;3 者的工程定位：Hooks 是门卫,Skills 是能力,SubAgent 是角色。</p>
+<p>学完本讲、你应该能用 4 类 Hook 事件做安全拦截 / 质量门 / 审计日志、能在 .claude/settings.json 配出完整的 Hook 流水线（PreToolUse 拦危险 + PostToolUse 自动格式化 + Stop 检查未提交）、能区分 Hooks / Skills / SubAgent / Commands 4 种扩展机制的工程定位。</p>
+</div>
+<h2 class="section-anchor">📖 详细内容</h2>
+<h3>Hooks 是什么?4 类事件 + 触发时机</h3>
+<p>前 16 讲我们学了 SubAgent（独立上下文角色）/ Skills（自动发现能力）/ Commands（用户主动命令）3 种扩展机制。本讲进入第 4 种——Hooks、这是最底层的扩展机制、直接在工具被调用的瞬间做检查。</p>
+<p>Hooks 的核心思想：Claude Code 在执行工具（Bash / Read / Edit / Write / Grep / Glob）的关键时间点、触发事件、你可以在 .claude/settings.json 里配置 Hook 脚本、在事件触发时执行自定义逻辑（拦截 / 记录 / 修改输出）。</p>
+<div class="flow-diagram">
+  <div class="flow-note" style="font-size:14px;font-weight:600;color:var(--link);font-style:normal;margin-bottom:10px">Hooks 事件驱动流程</div>
+
+  <div class="flow-actor"><div class="flow-actor-label">Claude 启动</div></div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box"><div class="flow-box-title">用户说话</div></div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box"><div class="flow-box-title">Claude 推理，决定调起工具</div><div class="flow-box-sub">Bash / Read / Edit / Write 等</div></div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg" style="border-color:var(--warn-border)">
+    <div class="flow-box-title" style="color:var(--warn-border)">PreToolUse Hook 触发</div>
+    <ul>
+      <li><code>deny-pipe-exec.sh</code> 拦截 pipe 执行</li>
+      <li><code>deny-extra-dangerous.sh</code> 拦截危险</li>
+      <li><code>deny-edit-lockfile.sh</code> 拦 lockfile</li>
+    </ul>
+    <div class="flow-box-sub" style="text-align:left;margin-top:6px">退出码 0 = 放行 · 2 = 拒绝（返回原因给 Claude）</div>
+  </div>
+  <div class="flow-arrow"><span class="flow-arrow-label">放行</span></div>
+  <div class="flow-box"><div class="flow-box-title">工具实际执行</div><div class="flow-box-sub">Bash / Edit / Write</div></div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">PostToolUse Hook 触发</div>
+    <ul>
+      <li><code>auto-format.sh</code> 自动格式化</li>
+      <li><code>audit-log.sh</code> 记录到 .claude/audit</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box"><div class="flow-box-title">返回结果给 Claude，循环继续</div></div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box"><div class="flow-box-title">Claude 判断任务完成</div></div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg" style="border-color:var(--ok-border)">
+    <div class="flow-box-title" style="color:var(--ok-border)">Stop Hook 触发</div>
+    <ul>
+      <li><code>check-uncommitted.sh</code> 检查未提交</li>
+      <li><code>check-tests.sh</code> 检查测试通过</li>
+    </ul>
+    <div class="flow-box-sub" style="text-align:left;margin-top:6px">退出码 0 = 允许停止 · 2 = 强制 Claude 继续</div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-actor flow-actor-final"><div class="flow-actor-label">返回用户</div></div>
+</div>
+<p><strong>4 类 Hook 事件</strong></p>
+<p>事件 1：<strong>PreToolUse</strong>（工具执行前）——Claude 即将调起某个工具时触发、Hook 脚本可以检查工具参数 / 命令、决定是否放行。退出码 0 = 放行、退出码 2 = 拒绝（输出到 stderr 的内容会作为拒绝原因返回给 Claude）。典型用途：拦截危险命令（rm -rf / curl | sh）。</p>
+<p>事件 2：<strong>PostToolUse</strong>（工具执行后）——工具执行完成后触发、Hook 脚本可以读取工具输出 / 决定是否修改。退出码 0 = 通过、退出码 2 = 阻断（但工具已经执行）。典型用途：自动格式化（写完 Python 跑 ruff format)/ 审计日志（记录所有 Bash 命令）。</p>
+<p>事件 3：<strong>Stop</strong>（主代理停止）——主代理判断任务完成、准备停止时触发、Hook 脚本可以检查是否真的完成（未提交改动 / 测试未跑）。退出码 0 = 允许停止、退出码 2 = 强制继续（Claude 收到后继续执行）。典型用途：提醒未提交的改动。</p>
+<p>事件 4：<strong>SubAgentStop</strong>（子代理停止）——子代理完成时被触发、类似 Stop 但针对子代理。典型用途：子代理完成后自动汇总报告到主对话。</p>
+<p>4 类事件的出场顺序是 PreToolUse → 工具执行 → PostToolUse → （返回结果）→ 重复 → （主代理判断完成）→ Stop / SubAgentStop。</p>
+<p><strong>配置位置：.claude/settings.json 的 hooks 字段</strong></p>
+<p>所有 Hook 都配置在 .claude/settings.json 里、格式：</p>
+<pre><code class="lang-json">// .claude/settings.json 的 hooks 字段格式
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {"type": "command", "command": "bash .claude/hooks/deny-pipe-exec.sh"}
+        ]
+      }
+    ],
+    "PostToolUse": [...],
+    "Stop": [...],
+    "SubAgentStop": [...]
+  }
+}</code></pre>
+<p>matcher 字段指定哪个工具触发——比如"Bash"只对 Bash 工具触发、"Edit|Write"对编辑类工具触发、"*"对所有工具触发。</p>
+<table>
+<thead><tr>
+<th>事件</th>
+<th>触发时机</th>
+<th>退出码语义</th>
+<th>典型用途</th>
+<th>配置复杂度</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>PreToolUse</td>
+<td>工具执行前</td>
+<td>0 = 放行、2 = 拒绝</td>
+<td>拦截危险命令 / 拦截改 lockfile</td>
+<td>低（读 JSON + grep + exit)</td>
+</tr>
+<tr>
+<td>PostToolUse</td>
+<td>工具执行后</td>
+<td>0 = 通过、2 = 阻断（已执行）</td>
+<td>自动格式化 / 审计日志</td>
+<td>低（读 JSON + 跑命令 + 写日志）</td>
+</tr>
+<tr>
+<td>Stop</td>
+<td>主代理停止</td>
+<td>0 = 允许、2 = 强制继续</td>
+<td>检查未提交 / 检查测试通过</td>
+<td>中（需要查询 git 状态 / 测试结果）</td>
+</tr>
+<tr>
+<td>SubAgentStop</td>
+<td>子代理停止</td>
+<td>0 = 允许、2 = 强制继续</td>
+<td>子代理完成后自动汇总报告</td>
+<td>中（类似 Stop、针对子代理）</td>
+</tr>
+</tbody></table>
+<h3>安全三件套：拦截 + 保护 + 审计</h3>
+<p>Hook 的第一类典型应用是安全三件套——拦截 / 保护 / 审计、3 件套叠加形成纵深防御。</p>
+<p><strong>件套 1：拦截（PreToolUse 拦危险命令）</strong></p>
+<p>PreToolUse 触发、Hook 脚本检查命令、危险命令 exit 2 拒绝。典型拦截 5 类命令：</p>
+<p>1. <code>rm -rf</code> / <code>rm -fr</code>（删除文件/目录）— 误用会丢失数据。</p>
+<p>2. <code>curl | sh</code> / <code>curl | bash</code> / <code>wget | sh</code>（下载并执行）— 远程代码执行风险。</p>
+<p>3. <code>git push --force</code>（强制推送）— 会覆盖远程历史。</p>
+<p>4. <code>chmod 777</code>（放开所有权限）— 安全风险。</p>
+<p>5. <code>dd</code>（底层磁盘操作）— 误用会覆盖磁盘。</p>
+<p>Hook 脚本用 grep 匹配这些模式、匹配上就 exit 2,stderr 输出"❌ 拒绝：[命令]被禁止、原因：..."。</p>
+<p><strong>件套 2：保护（Stop 时检查未提交改动）</strong></p>
+<p>Stop 触发、Hook 脚本跑 `git status` 看是否有未提交的改动。如果有、exit 2 强制 Claude 继续、提醒用户还有未提交的改动、是否需要 commit?。</p>
+<p>保护机制防止Claude 完成任务后没提醒用户 commit、用户就关闭了会话、改动丢失。</p>
+<p><strong>件套 3：审计（PostToolUse 记录所有 Bash 命令）</strong></p>
+<p>PostToolUse 触发、Hook 脚本把所有 Bash 命令记录到 .claude/audit/&lt;date&gt;.log、包含时间戳 / 用户 / 命令 / 退出码 / 输出摘要。审计日志可以：</p>
+<p>• 事后追溯今天跑了哪些命令。</p>
+<p>• 安全事件调查什么时候改了权限 / 什么时候删了文件。</p>
+<p>• 团队规范审计团队成员用 Claude 时跑了哪些高风险操作。</p>
+<p>3 件套叠加形成纵深防御：</p>
+<p>• 拦截层（PreToolUse)——危险命令根本进不来。</p>
+<p>• 保护层（Stop)——重要操作不会静默完成。</p>
+<p>• 审计层（PostToolUse)——所有操作有据可查。</p>
+<p>3 层叠加、即使某一层失效、其他层也兜底。这是防御性编程在 AI Agent 时代的应用。</p>
+<h3>质量三件套：格式化 + Lint + 测试</h3>
+<p>Hook 的第二类典型应用是质量三件套——格式化 / Lint / 测试、把代码质量门从人审自动化成机器审。</p>
+<p><strong>件套 1：自动格式化（PostToolUse 写完代码立即跑 ruff format)</strong></p>
+<p>PostToolUse 触发（matcher："Edit|Write"），Hook 脚本检查刚写的文件是不是 Python、是就跑 `ruff format &lt;file&gt;` 自动格式化。Claude 写完代码、机器立即格式化、不用人手动跑。</p>
+<p>件套价值：把团队代码风格从团队成员自觉变成机器强制、任何 PR 都不会出现格式问题。</p>
+<p><strong>件套 2：Lint 检查（PreToolUse 检查 Edit 工具是否修改了不该改的文件）</strong></p>
+<p>PreToolUse 触发（matcher："Edit|Write"），Hook 脚本检查文件路径、如果是不该改的文件（比如 lock 文件 / 配置文件）就 exit 2 拒绝。</p>
+<p>典型：防止 Claude 误改 package-lock.json / yarn.lock / requirements.txt（这些文件应该用 npm install / pip install 改、不应该直接编辑）。</p>
+<p><strong>件套 3：测试（Stop 时检查所有测试是否通过）</strong></p>
+<p>Stop 触发、Hook 脚本跑 `pytest tests/ -q` 看是否全过。如果有失败、exit 2 强制 Claude 继续、提醒测试未通过、需要修复。</p>
+<p>件套价值：把测试通过从PR review 的人工检查变成机器强制门、任何 PR 提交前都过测试。</p>
+<p>3 件套叠加形成质量门：</p>
+<p>• 写代码时自动格式化（避免风格问题）。</p>
+<p>• 改文件时 Lint 检查（避免改错文件）。</p>
+<p>• 完成任务时测试验证（避免破坏现有功能）。</p>
+<p>质量门 + 安全门、组成完整的Claude Code 防御体系——这是工程化实战的核心。</p>
+<table>
+<thead><tr>
+<th>维度</th>
+<th>安全三件套</th>
+<th>质量三件套</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>触发事件</td>
+<td>PreToolUse（拦截） + Stop（保护） + PostToolUse（审计）</td>
+<td>PostToolUse（格式化） + PreToolUse(Lint) + Stop（测试）</td>
+</tr>
+<tr>
+<td>拦截 vs 改进</td>
+<td>拦截为主（拒绝危险操作）</td>
+<td>改进为主（自动格式化 / 提醒）</td>
+</tr>
+<tr>
+<td>静默 vs 可见</td>
+<td>静默（用户看不到拦截过程）</td>
+<td>可见（用户看到格式化 / 测试输出）</td>
+</tr>
+<tr>
+<td>实施成本</td>
+<td>低（grep + exit 2)</td>
+<td>中（需要 ruff / pytest / git)</td>
+</tr>
+<tr>
+<td>用户感知</td>
+<td>低（很少触发、触发时拒绝）</td>
+<td>中（频繁触发、但用户不反感）</td>
+</tr>
+</tbody></table>
+<h3>Hooks 配置实战：settings.json + 3 个 Hook 脚本</h3>
+<p>完整的 Hook 配置需要 2 步：.claude/settings.json 配置事件 + 钩子命令；.claude/hooks/ 目录放 3 个 Hook 脚本。</p>
+<p><strong>step 1：.claude/settings.json 完整配置</strong></p>
+<pre><code class="lang-json">// .claude/settings.json(完整 Hook 配置)
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {"type": "command", "command": "bash .claude/hooks/deny-pipe-exec.sh"},
+          {"type": "command", "command": "bash .claude/hooks/deny-extra-dangerous.sh"}
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {"type": "command", "command": "bash .claude/hooks/deny-edit-lockfile.sh"}
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {"type": "command", "command": "bash .claude/hooks/auto-format.sh"},
+          {"type": "command", "command": "bash .claude/hooks/audit-log.sh"}
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {"type": "command", "command": "bash .claude/hooks/check-uncommitted.sh"},
+          {"type": "command", "command": "bash .claude/hooks/check-tests.sh"}
+        ]
+      }
+    ]
+  }
+}</code></pre>
+<p>这个配置覆盖了 3 类事件（PreToolUse / PostToolUse / Stop)、每个事件配 1-2 个 Hook 脚本、形成防御 + 质量 + 审计完整链路。</p>
+<p><strong>step 2：.claude/hooks/ 目录放 3 个核心 Hook 脚本</strong></p>
+<p>3 个核心脚本：</p>
+<p>• deny-pipe-exec.sh(PreToolUse 拦截 pipe 执行）</p>
+<p>• auto-format.sh(PostToolUse 自动格式化）</p>
+<p>• check-uncommitted.sh(Stop 检查未提交）</p>
+<p>每个脚本都是一个独立的 Bash 脚本、可以从 stdin 读 JSON（包含工具名 / 参数 / 命令）、从 stdout 输出结果、退出码 0/2 表示通过/拒绝。</p>
+<h3>3 个 Hook 实战案例</h3>
+<p><strong>案例 1：危险命令拦截（5 种）</strong></p>
+<p>PreToolUse Hook 拦截 5 类危险命令：rm -rf / curl | sh / git push --force / chmod 777 / dd。实现：用 grep -E 匹配命令、匹配上 exit 2 + stderr 输出拒绝原因。</p>
+<p>完整实现见后面5 类危险命令拦截规则代码块。</p>
+<p><strong>案例 2：自动格式化</strong></p>
+<p>PostToolUse Hook 自动跑 ruff format（写完 Python 立即格式化）。实现：从 stdin 读 JSON（包含 file_path)、如果是 .py 文件就跑 `ruff format &lt;file&gt;`。</p>
+<p>自动格式化的优势：Claude 写代码时不需要记住 PEP 8、机器自动保证格式一致。</p>
+<p><strong>案例 3：审计日志</strong></p>
+<p>PostToolUse Hook 记录所有 Bash 命令到 .claude/audit/&lt;date&gt;.log。实现：从 stdin 读 JSON（包含 command)、追加一行 `[timestamp] command=<command> exit=<code>` 到日志文件。</p>
+<p>审计日志的价值：事后追溯 / 安全事件调查 / 团队规范审计。</p>
+<h3>Hooks vs Skills vs SubAgent 边界</h3>
+<p>第 14 讲说过4 种扩展机制——Commands(用户主动)/ SubAgent(角色层)/ Skills(能力层)/ Hook(机制层)。本讲专门讲 Hook 的工程定位。</p>
+<p><strong>3 种机制的工程定位</strong></p>
+<p>• <strong>Hooks</strong>：门卫——在工具被调用的瞬间做检查,硬约束,瞬间拦截。负责不能做的事和必须做的事。</p>
+<p>• <strong>Skills</strong>：能力——LLM 推理该用就用,软规范,渐进披露。负责该做的事。</p>
+<p>• <strong>SubAgent</strong>：角色——独立上下文,@name 显式调。负责复杂任务的隔离执行。</p>
+<p>3 者的工作层次不同：Hook 在工具层(瞬时检查),Skill 在能力层(LLM 推理),SubAgent 在角色层(独立上下文)。</p>
+<p><strong>3 者的协同</strong></p>
+<p>典型协同场景：危险操作 Skill(如 rollback Skill)需要用户主动 + 双保险——Skill 加 disable-model-invocation: true(LLM 看不到)+ Hook 拦截危险命令(双保险)。3 者形成用户主动调 Skill + Skill 调用时 Hook 兜底的两层防御。</p>
+<p>典型反协同：不要用 Hook 替代 Skill。Hook 只能拦截/记录,不能做复杂任务——比如代码审查,Hook 只能检查是否调用了 reviewer,不能实际跑审查。实际审查用 Skill 或 SubAgent。</p>
+<p>3 者的边界判断：这件事是瞬间检查吗?是 → Hook。这件事是LLM 推理该用就用吗?是 → Skill。这件事需要独立上下文吗?是 → SubAgent。这件事是用户主动调吗?是 → Command。</p>
+<h2 class="section-anchor">🛠️ 实战代码</h2>
+<p><strong>📄 第 17 讲配套：3 个 Hook 脚本完整实现（deny-pipe-exec.sh / auto-format.sh / check-uncommitted.sh)</strong></p>
+<pre><code class="lang-bash">#!/usr/bin/env bash
+# .claude/hooks/deny-pipe-exec.sh
+# 拦截 curl | sh / wget | bash 等 pipe 执行
+set -e
+
+# 从 stdin 读 JSON(Claude Code 注入的 hook 输入)
+INPUT=$(cat)
+COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // ""')
+
+# 拦截 pipe 执行
+if echo "$COMMAND" | grep -qE 'curl\s+.*\|\s*(sh|bash)|wget\s+.*\|\s*(sh|bash)'; then
+  echo "❌ 拒绝:pipe 执行被禁止(curl/wget | sh/bash 是远程代码执行风险)" &gt;&amp;2
+  exit 2
+fi
+
+exit 0</code></pre>
+<pre><code class="lang-bash">#!/usr/bin/env bash
+# .claude/hooks/auto-format.sh
+# 写完 Python 立即 ruff format
+set -e
+
+INPUT=$(cat)
+FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // ""')
+
+# 只对 .py 文件做格式化
+if [[ "$FILE_PATH" == *.py ]]; then
+  if command -v ruff &gt; /dev/null; then
+    ruff format "$FILE_PATH" 2&gt;/dev/null || true
+    echo "✅ 已自动格式化: $FILE_PATH"
+  fi
+fi
+
+exit 0</code></pre>
+<pre><code class="lang-bash">#!/usr/bin/env bash
+# .claude/hooks/check-uncommitted.sh
+# Stop 时检查是否有未提交改动
+set -e
+
+# 在 git 仓库内才检查
+if ! git rev-parse --is-inside-work-tree &gt; /dev/null 2&gt;&amp;1; then
+  exit 0
+fi
+
+# 检查未提交改动
+if ! git diff --quiet HEAD 2&gt;/dev/null || [ -n "$(git status --porcelain)" ]; then
+  echo "⚠️ 还有未提交的改动,记得 git commit" &gt;&amp;2
+  echo "" &gt;&amp;2
+  git status --short &gt;&amp;2
+  exit 2  # exit 2 = 强制 Claude 继续
+fi
+
+exit 0</code></pre>
+<p><strong>📄 第 17 讲配套：5 类危险命令拦截规则（rm/curl|sh/git push --force/chmod 777/dd)</strong></p>
+<pre><code class="lang-bash">#!/usr/bin/env bash
+# .claude/hooks/deny-extra-dangerous.sh
+# 拦截 5 类危险命令
+set -e
+
+INPUT=$(cat)
+COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // ""')
+
+# === 规则 1:rm -rf / rm -fr(递归删除) ===
+if echo "$COMMAND" | grep -qE '\brm\s+(-[a-zA-Z]*[rf][a-zA-Z]*\s+|-[a-zA-Z]*[r][a-zA-Z]*f|-[a-zA-Z]*[f][a-zA-Z]*r)\s+'; then
+  echo "❌ 拒绝:rm -rf 被禁止(防止误删数据,改用 rm -i 交互式删除)" &gt;&amp;2
+  exit 2
+fi
+
+# === 规则 2:curl | sh / curl | bash / wget | sh / wget | bash ===
+if echo "$COMMAND" | grep -qE '(curl|wget)\s+.*\|\s*(sh|bash|sudo)'; then
+  echo "❌ 拒绝:pipe 执行被禁止(curl | sh 是远程代码执行风险)" &gt;&amp;2
+  exit 2
+fi
+
+# === 规则 3:git push --force / git push -f(强制推送) ===
+if echo "$COMMAND" | grep -qE 'git\s+push\s+.*--force|git\s+push\s+.*-f\b'; then
+  echo "❌ 拒绝:git push --force 被禁止(会覆盖远程历史,改用 git push --force-with-lease)" &gt;&amp;2
+  exit 2
+fi
+
+# === 规则 4:chmod 777(放开所有权限) ===
+if echo "$COMMAND" | grep -qE 'chmod\s+777|chmod\s+-R\s+777|chmod\s+-R\s+0777'; then
+  echo "❌ 拒绝:chmod 777 被禁止(放开所有权限有安全风险,改用 644 / 755)" &gt;&amp;2
+  exit 2
+fi
+
+# === 规则 5:dd(底层磁盘操作) ===
+if echo "$COMMAND" | grep -qE '\bdd\s+'; then
+  echo "❌ 拒绝:dd 命令被禁止(底层磁盘操作,误用会覆盖磁盘,改用更安全的工具)" &gt;&amp;2
+  exit 2
+fi
+
+exit 0</code></pre>
+<p><strong>📄 第 17 讲配套：审计日志的 Bash 记录实现（.claude/audit/&lt;date&gt;.log)</strong></p>
+<pre><code class="lang-bash">#!/usr/bin/env bash
+# .claude/hooks/audit-log.sh
+# 记录所有 Bash 命令到 .claude/audit/&lt;date&gt;.log
+set -e
+
+INPUT=$(cat)
+COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // ""')
+EXIT_CODE=$(echo "$INPUT" | jq -r '.tool_result.exit_code // "?"')
+TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+
+# 创建 audit 目录
+mkdir -p .claude/audit
+
+# 追加日志(每天一个文件)
+LOG_FILE=".claude/audit/$(date '+%Y-%m-%d').log"
+echo "[$TIMESTAMP] exit=$EXIT_CODE command=$COMMAND" &gt;&gt; "$LOG_FILE"
+
+exit 0</code></pre>
+<pre><code class="lang-bash"># 审计日志示例(.claude/audit/2026-06-02.log)
+[2026-06-02 10:15:23] exit=0 command=git status
+[2026-06-02 10:16:45] exit=0 command=git diff --stat
+[2026-06-02 10:18:12] exit=0 command=pytest tests/ -q
+[2026-06-02 10:25:33] exit=0 command=ruff format src/api.py
+[2026-06-02 10:30:18] exit=2 command=rm -rf node_modules/
+[2026-06-02 10:30:18] ❌ 拒绝:rm -rf 被禁止(...)
+
+# 审计日志的 3 个用途:
+# 1. 事后追溯:今天跑了哪些命令
+# 2. 安全事件调查:什么时候改了权限 / 什么时候删了文件
+# 3. 团队规范审计:团队成员用 Claude 时跑了哪些高风险操作</code></pre>
+<h2 class="section-anchor">⚠️ 常见坑</h2>
+<div class="callout warn">
+<strong>⚠️ Hook 脚本写得太慢（超过 1 秒、影响 Claude 响应速度）</strong>
+<p>Hook 性能陷阱：PostToolUse Hook 每次 Claude 调 Edit/Write 都会触发、如果 Hook 跑得慢（比如自动跑 pylint 而不只是 ruff format、要 5-10 秒）,Claude 整体响应速度会被拖慢。修正：Hook 脚本要轻——用 grep 匹配比用 python -c 跑复杂逻辑快；缓存常用结果（比如 ruff 检查过的文件不要重复检查）；长时间操作（跑完整测试套件）改用 Stop 触发而不是 PreToolUse。判断标准：HW 脚本 &gt; 1 秒 = 太慢、优化。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ Hook exit 2 但没给清晰错误信息（用户不知道为啥被拒）</strong>
+<p>"拒绝不解释"的体验陷阱：Hook exit 2 但 stderr 只输出"❌ 拒绝"没说原因、Claude 收到拒绝信号后不知道怎么办、用户也不知道为啥被拒。修正：exit 2 时、stderr 必须输出清晰的拒绝原因——"❌ 拒绝：rm -rf 被禁止、原因：防止误删数据、改用 rm -i 交互式删除"。这样 Claude 收到后能告诉用户"我被拒绝的原因、你可以用 rm -i 替代"、形成完整反馈链。判断标准：Hook 拒绝时 stderr 输出的信息、用户能直接看懂原因?能、正确；不能、补全。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ Hook 拦截了合法操作（比如 "rm /tmp/test" 是合法清理、被误拦）</strong>
+<p>误拦的过度防御：Hook 规则写得太宽——所有 rm 命令都拦、结果 `rm /tmp/test.txt`（合法的临时文件清理）也被拦。修正：HW 规则要精准——只拦真正危险的模式（rm -rf / rm -fr + 关键目录）、不拦普通 rm。规则写好后、在测试环境跑一组应该被拦的命令和应该被放过的命令、确保两个集合都正确。判断标准：HW 误拦率 &gt; 5%?调规则。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ Hook 只配置没测试（只在生产配置、没在测试环境跑过）</strong>
+<p>配了但没测的风险：配置 Hook 后没在测试环境验证、直接上生产、结果某天发现HW 没生效（可能是路径写错 / 权限问题 / jq 没装）、危险命令没被拦下来。修正：配置后立即在测试环境跑5 个应该被拦的命令和5 个应该被放过的命令、确认两个集合都正确。再用 Stop HW 的未提交检查故意制造未提交改动、确认 HW 能强制 Claude 继续。判断标准：HW 配置后、你在测试环境跑过 &gt;10 个测试用例吗?没有、补测。</p>
+</div>
+<h2 class="section-anchor">💡 一句话备忘</h2>
+<blockquote>Hooks 是 4 种扩展机制中最底层的——在工具被调用的瞬间做硬约束（PreToolUse 拦截 / PostToolUse 记录 / Stop 强制继续）、形成安全三件套（拦截 + 保护 + 审计）+ 质量三件套（格式化 + Lint + 测试）的纵深防御。</blockquote>
+<hr>
+<p class="breadcrumb">← 回到 <a href="#top">本讲网页顶部</a></p>
+</main>
+<script>
+  (function () {
+    var STORAGE_KEY = "***";
+    var root = document.documentElement;
+    var btn  = document.getElementById("themeToggle");
+    var icon = document.getElementById("themeIcon");
+    var lbl  = document.getElementById("themeLabel");
+    function apply(theme) {
+      root.setAttribute("data-theme", theme);
+      if (theme === "dark") {
+        icon.innerHTML = "&#9728;&#65039;";
+        lbl.textContent  = "亮色";
+      } else {
+        icon.innerHTML = "&#127769;";
+        lbl.textContent  = "暗色";
+      }
+    }
+    var saved = null;
+    try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    if (saved === "light" || saved === "dark") {
+      apply(saved);
+    } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      apply("dark");
+    } else {
+      apply("light");
+    }
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") || "light";
+      var next = cur === "dark" ? "light" : "dark";
+      apply(next);
+      try { localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>

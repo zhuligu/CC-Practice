@@ -1,0 +1,641 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 18 讲 · 步步为营 · Hooks 高级模式与工程实践（下）</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fff; --fg: #222; --muted: #555; --link: #1a73e8;
+    --code-bg: #f4f4f4; --code-fg: inherit;
+    --pre-bg: #1e1e1e; --pre-fg: #eaeaea;
+    --border: #ddd; --th-bg: #f5f5f5; --zebra: #fafafa;
+    --hover-row: #e8f0fe; --hover-th: #eef2f7;
+    --blockquote-bg: #fafafa; --blockquote-border: #ddd;
+    --hr: #eee;
+    --toggle-bg: #f5f5f5; --toggle-fg: #333; --toggle-border: #ddd;
+    --tag-bg: #eef4ff; --tag-fg: #1a73e8;
+    --callout-bg: #fffbe6; --callout-border: #fadb14;
+    --warn-bg: #fff1f0; --warn-border: #ff4d4f;
+    --ok-bg: #f6ffed; --ok-border: #52c41a;
+    --code-block-bg: #f8f9fa;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1115; --fg: #e6e6e6; --muted: #9aa0a6; --link: #8ab4f8;
+    --code-bg: #1e1f24; --code-fg: #e6e6e6;
+    --pre-bg: #1a1d23; --pre-fg: #e6e6e6;
+    --border: #303136; --th-bg: #1c1f25; --zebra: #16181d;
+    --hover-row: #1f2733; --hover-th: #262c36;
+    --blockquote-bg: #181a20; --blockquote-border: #303136;
+    --hr: #2a2d33;
+    --toggle-bg: #1c1f25; --toggle-fg: #e6e6e6; --toggle-border: #303136;
+    --tag-bg: #1a2540; --tag-fg: #8ab4f8;
+    --callout-bg: #2a261a; --callout-border: #b89333;
+    --warn-bg: #2a1a1a; --warn-border: #a84545;
+    --ok-bg: #1a261a; --ok-border: #4a8a4a;
+    --code-block-bg: #16181d;
+  }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 "PingFang SC", "Microsoft YaHei", "Helvetica Neue",
+                 Arial, sans-serif;
+    font-size: 15px; line-height: 1.7;
+    transition: background-color .2s ease, color .2s ease;
+  }
+  main {
+    max-width: 1100px;
+    width: calc(100% - 32px);
+    margin: 0 auto;
+    padding: 24px 0 64px 0;
+    box-sizing: border-box;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    line-height: 1.3; margin: 1.5em 0 .6em;
+  }
+  h1 { font-size: 1.9em; border-bottom: 2px solid var(--hr); padding-bottom: .3em; }
+  h2 { font-size: 1.45em; border-bottom: 1px solid var(--hr); padding-bottom: .25em; margin-top: 2em; }
+  h3 { font-size: 1.18em; color: var(--link); margin-top: 1.5em; }
+  h4 { font-size: 1.05em; margin-top: 1.2em; color: var(--fg); font-weight: 600; }
+  p, ul, ol, blockquote, pre, table { margin: .7em 0; }
+  ul, ol { padding-left: 1.6em; }
+  li { margin: .3em 0; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  blockquote {
+    margin: .8em 0; padding: .6em 1em;
+    border-left: 4px solid var(--blockquote-border);
+    color: var(--muted); background: var(--blockquote-bg);
+  }
+  .callout {
+    background: var(--callout-bg);
+    border-left: 4px solid var(--callout-border);
+    padding: 12px 16px; margin: 1.2em 0; border-radius: 4px;
+  }
+  .callout.warn { background: var(--warn-bg); border-left-color: var(--warn-border); }
+  .callout.ok   { background: var(--ok-bg);   border-left-color: var(--ok-border); }
+  code {
+    font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: .9em; background: var(--code-bg); color: var(--code-fg);
+    padding: 1px 5px; border-radius: 3px;
+  }
+  pre {
+    background: var(--pre-bg); color: var(--pre-fg);
+    padding: 14px 16px; border-radius: 6px;
+    overflow-x: auto; font-size: 13px; line-height: 1.55;
+    margin: 1em 0;
+  }
+  pre code { background: transparent; padding: 0; color: inherit; }
+  pre.lang-flow {
+    background: var(--code-block-bg); color: var(--fg);
+    border: 1px solid var(--border);
+  }
+  :root[data-theme="dark"] pre.lang-flow {
+    background: #0a0b0d; color: #d4d4d4;
+  }
+  table {
+    width: 100% !important; border-collapse: collapse;
+    table-layout: auto; margin: 1em 0;
+    font-size: 14px; display: table;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left; vertical-align: top;
+    transition: background-color .15s ease;
+  }
+  th { background: var(--th-bg); font-weight: 600; }
+  tbody tr:nth-child(even) td { background: var(--zebra); }
+  tbody tr:hover td, tbody tr:hover th { background: var(--hover-row) !important; }
+  thead th:hover { background: var(--hover-th) !important; }
+  :root[data-theme="dark"] tbody tr:hover td,
+  :root[data-theme="dark"] tbody tr:hover th,
+  :root[data-theme="dark"] thead th:hover { color: #fff; }
+  hr { border: none; border-top: 1px solid var(--hr); margin: 2em 0; }
+  img { max-width: 100%; height: auto; }
+
+  .tag {
+    display: inline-block; padding: 2px 8px; margin-right: 6px;
+    background: var(--tag-bg); color: var(--tag-fg);
+    border-radius: 12px; font-size: 12px; font-weight: 500;
+  }
+  .breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 1em; }
+  .breadcrumb a { color: var(--muted); }
+  .breadcrumb a:hover { color: var(--link); }
+
+  .theme-toggle {
+    position: fixed; top: 12px; right: 12px; z-index: 9999;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: var(--toggle-bg); color: var(--toggle-fg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 6px; font-size: 13px; font-family: inherit;
+    cursor: pointer; user-select: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    transition: background-color .2s ease, transform .1s ease;
+  }
+  .theme-toggle:hover { background: var(--hover-row); }
+  .theme-toggle:active { transform: scale(.97); }
+  .theme-toggle .icon { font-size: 15px; line-height: 1; }
+
+  .lesson-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, #1a73e8, #6f42c1);
+    color: #fff; font-size: 24px; font-weight: 700;
+    margin-right: 14px; vertical-align: middle;
+  }
+
+  .section-anchor { scroll-margin-top: 60px; }
+</style>
+<link rel="stylesheet" href="assets/flow.css">
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="切换暗色模式">
+  <span class="icon" id="themeIcon">&#127769;</span>
+  <span id="themeLabel">暗色</span>
+</button>
+<main>
+<div class="breadcrumb">课程导航： « <a href="lesson-17.html">第 17 讲</a>  ·  <a href="lesson-19.html">第 19 讲</a> »</div>
+<h1><span class="lesson-badge">18</span>第 18 讲 · 步步为营 · Hooks 高级模式与工程实践（下）</h1>
+<p>
+  <span class="tag">正课</span>
+  <span class="tag">第 18 / 33 讲</span>
+  <span class="tag">Claude Code 工程化实战</span>
+  <span class="tag">Hooks 系列 · 高级模式</span>
+</p>
+<div class="callout ok">
+<strong>📌 本讲摘要</strong>
+<p>第 17 讲讲了 Hooks 的 4 类事件 + 安全三件套 + 质量三件套、本讲是 Hooks 系列的下篇、讲 4 个进阶主题：Stop Hook 门控（任务完成前的强制质量检查）/ SubAgent 事件验收（子代理完成后的报告自动汇总）/ frontmatter 精准配置（matcher / type / command 3 字段的最佳实践）/ 三维决策框架（性能 × 必要性 × 用户体验）。目的是让你"从会用 Hook 走向精通 Hook"——配置精准、响应快速、用户体验好。</p>
+<p>本讲的三条主线：</p>
+<p>第一、Stop Hook 门控 + SubAgent 事件验收——把质量检查和子代理完成验收自动化成机器强制的门、避免人为遗漏。</p>
+<p>第二、frontmatter 精准配置——matcher 字段精确定位（避免 Edit 漏写 Write）/ command 字段最佳实践（绝对路径 + 错误信息清晰 + 退出码正确）。</p>
+<p>第三、三维决策框架——性能（Hook 不能 &gt; 1 秒）/ 必要性（是否真的需要拦截）/ 用户体验（不要频繁打断）；3 维评分决定 Hook 该不该配。</p>
+<p>学完本讲、你应该能把 6 个 Hook 串成完整防御链（PreToolUse 2 + PostToolUse 2 + Stop 2)、能用 Stop Hook 强制质量门、能用 SubAgentStop 自动汇总子代理报告、能用三维决策框架判断这个 Hook 该不该配。</p>
+</div>
+<h2 class="section-anchor">📖 详细内容</h2>
+<h3>Stop Hook 门控：任务完成前的强制质量检查</h3>
+<p>第 17 讲说 Stop Hook 可以强制 Claude 继续、本讲深入到完整的 Stop 门控——任务完成前、跑 4 步质量检查、任一不通过就强制继续、直到 4 步全过才允许停止。</p>
+<p><strong>4 步质量检查</strong></p>
+<p>步骤 1:<strong>未提交检查</strong>(check-uncommitted.sh)——`git status` 看是否有未提交的改动。如果有、exit 2 强制 Claude 提醒"先 commit"。</p>
+<p>步骤 2:<strong>测试通过检查</strong>(check-tests.sh)——`pytest tests/ -q` 看是否全过。如果有失败、exit 2 强制 Claude 修复。</p>
+<p>步骤 3:<strong>文档同步检查</strong>(check-docs-sync.sh)——对比 src/ 改动 vs docs/ 改动、如果 src 改了 docs 没改、exit 2 强制 Claude 同步文档。</p>
+<p>步骤 4:<strong>审查 checklist 完整性</strong>(check-review-checklist.sh)——如果任务涉及代码改动、检查 review 报告是否包含 Security / Style / Test 3 段。缺一段、exit 2 强制 Claude 补全。</p>
+<p>4 步门控形成质量门——任务未真正完成前、Stop 永远会被阻断、Claude 必须继续把 4 步都做对才能停下。</p>
+<p><strong>4 步的全或无语义</strong></p>
+<p>门控的设计原则：4 步必须全过、任一不过就 exit 2。这意味着：</p>
+<p>• 步骤 1 失败 → 阻断、不进入步骤 2 / 3 / 4（避免连锁阻断）。</p>
+<p>• 步骤 1 通过 + 步骤 2 失败 → 阻断、不进入步骤 3 / 4。</p>
+<p>• 4 步全过 → 放行、允许 Stop。</p>
+<p>这种短路求值避免了步骤 1 失败但步骤 2 3 4 还跑的浪费、Hook 性能也最优。</p>
+<p><strong>门控 vs 单检查</strong></p>
+<p>单检查（check-uncommitted.sh 单独配）的弱点：Claude 完成任务后只检查未提交、可能测试失败但没提醒。4 步门控（把 4 个检查串成一个 Stop Hook）的好处：任一不通过都被强制继续、质量门是复合的而不是单点的。</p>
+<p>4 步门控的实现见后面"完整 Stop Hook 门控实现"代码块。</p>
+<h3>SubAgent 事件验收：子代理完成后的报告自动汇总</h3>
+<p>第 8 讲讲过子代理完成时、主对话需要汇总子代理输出。本讲用 SubAgentStop Hook 自动化这个过程——子代理完成后、Hook 读子代理输出、检查报告完整性、汇总到主对话的状态文件。</p>
+<p><strong>验收流程</strong></p>
+<p>1. 子代理完成任务、准备停止。</p>
+<p>2. SubAgentStop 事件触发、Hook 脚本读子代理的输出（从 stdin 读 JSON、包含 subagent_output 字段）。</p>
+<p>3. Hook 检查报告完整性（比如代码审查 SubAgent 必须有 Security / Style / Test 3 段、缺一段 exit 2 强制继续）。</p>
+<p>4. Hook 把汇总报告写到 .claude/state/subagent-reports/&lt;subagent-name&gt;-&lt;timestamp&gt;.md。</p>
+<p>5. Hook 通知主对话："子代理 [name] 报告已汇总、路径： [path]"。</p>
+<p>5 步形成子代理验收 + 自动汇总——避免子代理跑完报告没汇总、主对话不知道结果。</p>
+<p><strong>验收的 3 个检查项</strong></p>
+<p>检查项 1：<strong>报告完整性</strong>——子代理输出是否包含所有必要段（代码审查：Security / Style / Test；数据分析：数据源 / 处理逻辑 / 结论；部署：版本号 / 环境 / 健康状态）。</p>
+<p>检查项 2：<strong>输出格式</strong>——是否按约定的 Markdown 结构（## 标题、表格、列表）。</p>
+<p>检查项 3：<strong>状态文件</strong>——子代理是否写了状态文件到 .claude/state/&lt;name&gt;.json（供主对话读取）。</p>
+<p>3 个检查项任一不过、exit 2 强制子代理继续。</p>
+<p><strong>验收 vs 不验收</strong></p>
+<p>不配 SubAgentStop Hook 的弱点：子代理完成任务后、主对话只看到任务完成信号、不知道具体结果。需要用户主动 /ask 子代理汇报结果、或者主对话自己再读子代理输出——延迟高、容易遗漏。</p>
+<p>配 SubAgentStop 的好处：子代理报告自动汇总到状态文件 + 通知主对话、主对话可以直接用结果。延迟从用户主动问降到自动汇总,0 用户操作。</p>
+<h3>frontmatter 精准配置：matcher / type / command 3 字段</h3>
+<p>第 17 讲配 Hook 时用了 frontmatter 的 matcher / type / command 3 个字段、本讲讲 3 字段的精准配置最佳实践。</p>
+<p><strong>字段 1：matcher 精确定位</strong></p>
+<p>matcher 字段决定哪个工具触发——Bash / Read / Edit / Write / Grep / Glob 等。常见写法：</p>
+<p>• <code>"matcher": "Bash"</code>——只对 Bash 工具触发（危险命令拦截）。</p>
+<p>• <code>"matcher": "Edit|Write"</code>——对 Edit 或 Write 触发（自动格式化）。</p>
+<p>• <code>"matcher": "*"</code>——对所有工具触发（Stop 门控）。</p>
+<p>• <code>"matcher": "Edit"</code>——只对 Edit 触发（漏写 Write 会导致 Write 不触发）。</p>
+<p>易错点：写 Edit 漏写 Write,Write 不触发——Claude 用 Write 改文件时、自动格式化 / Lint 检查不会跑。修正：涉及修改文件的 Hook 统一写 <code>"Edit|Write"</code>。</p>
+<p><strong>字段 2：type（目前仅 "command")</strong></p>
+<p>type 字段目前只支持 "command"、表示 Hook 是一个 shell 命令。未来可能支持 "prompt"(LLM 推理触发）、"http"(HTTP 回调）等。当前用 "command"。</p>
+<p><strong>字段 3：command 最佳实践</strong></p>
+<p>command 字段是 Hook 脚本的执行命令、3 个最佳实践：</p>
+<p>实践 1：<strong>用绝对路径</strong>——<code>"command": "bash /home/user/.claude/hooks/deny.sh"</code> 而不是 <code>"command": "bash .claude/hooks/deny.sh"</code>。绝对路径避免 Claude 在不同目录运行时找不到脚本的问题。</p>
+<p>实践 2：<strong>错误信息清晰</strong>——Hook 脚本 exit 2 时、stderr 必须输出清晰的拒绝原因（第 17 讲坑 2）。</p>
+<p>实践 3：<strong>退出码正确</strong>——0 = 放行 / 通过、2 = 拒绝 / 强制继续。其他退出码（1 / 3 等）行为未定义、不要用。</p>
+<p>3 字段的精准配置决定 Hook 是否按预期工作——matcher 写错 = 不触发、command 写错 = 拒绝 / 强制行为错乱。</p>
+<h3>三维决策框架：性能 × 必要性 × 用户体验</h3>
+<p>不是所有想法都要配 Hook。这个 Hook 该不该配有 3 维评估标准。</p>
+<p><strong>维度 1：性能（Hook 脚本耗时）</strong></p>
+<p>Hook 在 Claude 工具调用的关键路径上、每次都会跑。如果 Hook 太慢、Claude 整体响应速度被拖慢。判断标准：Hook 脚本 &lt; 1 秒。超过 1 秒、优化或拆到 Stop 触发。</p>
+<p>4 个性能问题：</p>
+<p>1. Hook 跑 ruff + pylint + mypy（总耗时 10 秒）→ 优化：只跑 ruff format(&lt; 0.5 秒）。</p>
+<p>2. Hook 跑 pytest 完整套件（2 分钟）→ 优化：移到 Stop 触发、不阻塞工具调用。</p>
+<p>3. Hook 跑 curl 拉远程数据（网络延迟）→ 优化：缓存到本地、避免重复拉。</p>
+<p>4. Hook 跑 python -c 复杂逻辑（启动开销 0.5 秒 + 逻辑耗时）→ 优化：用 bash + grep 替代。</p>
+<p><strong>维度 2：必要性（是否真的需要拦截）</strong></p>
+<p>有些想法听起来好但实际没必要配 Hook。判断标准：Hook 拦截后、真的能避免实际发生过的真实问题吗?</p>
+<p>4 个必要性问题：</p>
+<p>1. 拦截"误删 /tmp/test.txt"——真发生过多起吗?没有 → 不配。</p>
+<p>2. 拦截"chmod 777"——真发生过吗?发生过 → 配。</p>
+<p>3. 拦截提交含 TODO 的代码——值得拦截吗?看团队规范 → 视情况。</p>
+<p>4. 拦截在 main 分支直接 commit——团队用 PR 流程吗?用 → 不需要 Hook 拦截（main 分支保护由 GitHub 配）；不用 → 配 Hook 提醒。</p>
+<p><strong>维度 3：用户体验（不要频繁打断）</strong></p>
+<p>Hook 频繁阻断会让用户觉得 Claude 怎么老是被打断。判断标准：这个 Hook 每天阻断 &gt; 5 次吗?是、可能太严了或规则不精准。</p>
+<p>4 个 UX 问题：</p>
+<p>1. Stop Hook 强制跑 pytest（每天阻断 10+ 次）→ 优化：只在涉及 test 改动时跑。</p>
+<p>2. PreToolUse 拦截所有 rm 命令（连 rm /tmp/test 都拦）→ 优化：只拦 rm -rf。</p>
+<p>3. PostToolUse 跑 ruff --fix（改文件 → 改回来循环）→ 优化：只跑 ruff format、不改语义。</p>
+<p>4. Stop Hook 阻断未提交（每次任务结束都阻断）→ 用户已经 commit 怎么办?优化：Hook 只在 git status --porcelain 有输出时阻断。</p>
+<p>3 维评分：</p>
+<p>• 性能：&lt; 1 秒 = 通过、1-3 秒 = 警告、&gt; 3 秒 = 失败。</p>
+<p>• 必要性：真实问题发生过 = 通过、理论可能 = 警告、纯理论 = 失败。</p>
+<p>• UX：&lt; 5 次/天 = 通过、5-10 次/天 = 警告、&gt; 10 次/天 = 失败。</p>
+<p>3 维全通过 = 应该配；有 1 维警告 = 谨慎配；任 1 维失败 = 不配。</p>
+<table>
+<thead><tr>
+<th>维度</th>
+<th>评分标准</th>
+<th>通过</th>
+<th>警告</th>
+<th>失败</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>性能</td>
+<td>Hook 脚本耗时</td>
+<td>&lt; 1 秒</td>
+<td>1-3 秒</td>
+<td>&gt; 3 秒</td>
+</tr>
+<tr>
+<td>必要性</td>
+<td>真实问题是否发生过</td>
+<td>发生过多次</td>
+<td>理论可能</td>
+<td>纯理论</td>
+</tr>
+<tr>
+<td>UX</td>
+<td>每天阻断次数</td>
+<td>&lt; 5 次/天</td>
+<td>5-10 次/天</td>
+<td>&gt; 10 次/天</td>
+</tr>
+</tbody></table>
+<h3>多 Hook 编排：6 个 Hook 串成完整防御链</h3>
+<p>单个 Hook 是点、多个 Hook 串起来是链。本讲展示 6 个 Hook 串成的完整防御链——PreToolUse 2 个（拦截）+ PostToolUse 2 个（记录 / 改进）+ Stop 2 个（门控）。</p>
+<p>完整配置见后面"6 个 Hook 完整防御链配置"代码块。</p>
+<p>6 个 Hook 的出场顺序形成防御纵深：</p>
+<p>1. 工具执行前：PreToolUse deny-pipe-exec.sh 拦截 pipe 执行（curl | sh）。</p>
+<p>2. 工具执行前：PreToolUse deny-extra-dangerous.sh 拦截危险命令（rm -rf / chmod 777）。</p>
+<p>3. 工具执行后：PostToolUse auto-format.sh 自动格式化（.py 文件 ruff format）。</p>
+<p>4. 工具执行后：PostToolUse audit-log.sh 记录所有 Bash 命令（.claude/audit/&lt;date&gt;.log）。</p>
+<p>5. 任务完成时：Stop check-uncommitted.sh 检查未提交。</p>
+<p>6. 任务完成时：Stop check-tests.sh 检查测试通过。</p>
+<p>6 个 Hook 叠加形成防御链——任何一步有漏洞、其他步骤兜底。这是 defense in depth 在 Claude Code 中的工程实现。</p>
+<div class="flow-diagram">
+  <div class="flow-note" style="font-size:14px;font-weight:600;color:var(--link);font-style:normal;margin-bottom:10px">Hooks 完整防御链（6 个 Hook 串成）</div>
+
+  <div class="flow-actor"><div class="flow-actor-label">Claude 启动</div></div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box"><div class="flow-box-title">用户说话 → Claude 推理 → 决定调起工具</div></div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg" style="border-color:var(--warn-border)">
+    <div class="flow-box-title" style="color:var(--warn-border)">① PreToolUse（工具前）</div>
+    <ul>
+      <li><code>deny-pipe-exec.sh</code> 拦 pipe 执行</li>
+      <li><code>deny-extra-dangerous.sh</code> 拦危险</li>
+      <li><code>deny-edit-lockfile.sh</code> 拦 lockfile</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"><span class="flow-arrow-label">放行</span></div>
+  <div class="flow-box"><div class="flow-box-title">工具实际执行</div></div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">② PostToolUse（工具后）</div>
+    <ul>
+      <li><code>auto-format.sh</code> 自动 ruff format</li>
+      <li><code>audit-log.sh</code> 记录到 audit log</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box"><div class="flow-box-title">SubAgent 调起（任务隔离）</div></div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg" style="border-color:var(--link)">
+    <div class="flow-box-title">③ SubAgentStop（子代理停止）</div>
+    <ul>
+      <li><code>subagent-accept.sh</code> 验收 + 汇总</li>
+      <li>① 报告完整性（必填段）</li>
+      <li>② 状态文件（必须写）</li>
+      <li>③ 输出格式（## 标题）</li>
+      <li>④ 汇总到 .claude/state/.../md</li>
+      <li>⑤ 通知主对话</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg" style="border-color:var(--ok-border)">
+    <div class="flow-box-title" style="color:var(--ok-border)">④ Stop（主代理停止）· 4 步质量门控</div>
+    <ol style="padding-left:1.2em;font-size:13px">
+      <li>未提交检查（强制 commit）</li>
+      <li>测试通过（强制修复）</li>
+      <li>文档同步（强制 sync）</li>
+      <li>审查 checklist 完整</li>
+    </ol>
+    <div class="flow-box-sub" style="text-align:left;margin-top:4px">退出码 0 = 放行 · 2 = 强制继续</div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-actor flow-actor-final"><div class="flow-actor-label">返回用户</div></div>
+</div>
+<h3>Hooks 的工程最佳实践 5 条</h3>
+<p>5 条最佳实践是 Hook 工程的检查清单、任何 Hook 都应该按这 5 条评估。</p>
+<p><strong>最佳实践 1：Hook 脚本要轻（&lt; 1 秒）</strong></p>
+<p>Hook 在关键路径上、每次都跑。轻量级：用 grep / awk / sed 比 python -c 快；缓存常用结果；长时间操作（完整测试套件）改用 Stop 触发。判断标准：Hook 脚本 &gt; 1 秒 = 优化。</p>
+<p><strong>最佳实践 2：Hook 拒绝要说清原因</strong></p>
+<p>Hook exit 2 时、stderr 必须输出清晰的拒绝原因（"❌ 拒绝：rm -rf 被禁止、原因：防止误删、改用 rm -i"）。这样 Claude 收到后能告诉用户我被拒了、你可以用 rm -i、形成完整反馈链。判断标准：Hook 拒绝时 stderr 输出的信息、用户能直接看懂原因?能、正确。</p>
+<p><strong>最佳实践 3：Hook 规则要精准（不要误拦）</strong></p>
+<p>Hook 规则要精准——只拦真正危险的模式（rm -rf + 关键目录）、不拦普通 rm。规则写好后、在测试环境跑 10+ 测试用例（5 个应该被拦 + 5 个应该被放过的）、确保两个集合都正确。判断标准：Hook 误拦率 &gt; 5%?调规则。</p>
+<p><strong>最佳实践 4：Hook 配置后要测试</strong></p>
+<p>配置 Hook 后立即在测试环境跑 5 个应该被拦的命令和 5 个应该被放过的命令、确认两个集合都正确。再用 Stop Hook 的未提交检查故意制造未提交改动、确认 Hook 能强制 Claude 继续。判断标准：Hook 配置后、跑过 &gt;10 个测试用例吗?没有、补测。</p>
+<p><strong>最佳实践 5：Hook 进 git + 配 PR review</strong></p>
+<p>Hooks 是工程资产、不是个人草稿。所有 Hook 脚本和 .claude/settings.json 都进 git、变更走 PR review。这样团队用的 Hook 是一致的、可追溯的、可回滚的。判断标准：你的 .claude/hooks/ 目录是本地文件还是 git 跟踪?本地、赶紧入 git。</p>
+<h2 class="section-anchor">🛠️ 实战代码</h2>
+<p><strong>📄 第 18 讲配套：完整 Stop Hook 门控实现（4 步质量检查 + 任一失败强制继续）</strong></p>
+<pre><code class="lang-bash">#!/usr/bin/env bash
+# .claude/hooks/stop-gate.sh
+# 4 步质量门控:未提交 / 测试 / 文档 / 审查 checklist
+# 任一不过 exit 2 强制 Claude 继续
+
+set -e
+
+FAIL=0
+
+# === 步骤 1:未提交检查 ===
+if git rev-parse --is-inside-work-tree &gt; /dev/null 2&gt;&amp;1; then
+  if ! git diff --quiet HEAD 2&gt;/dev/null || [ -n "$(git status --porcelain)" ]; then
+    echo "⚠️ 步骤 1 失败:还有未提交的改动" &gt;&amp;2
+    git status --short &gt;&amp;2
+    FAIL=1
+  fi
+fi
+
+# === 步骤 2:测试通过检查(只在涉及 test 改动时跑) ===
+if git diff --name-only HEAD 2&gt;/dev/null | grep -qE '^(src/|tests/)'; then
+  if command -v pytest &gt; /dev/null; then
+    if ! pytest tests/ -q --tb=no &gt; /dev/null 2&gt;&amp;1; then
+      echo "⚠️ 步骤 2 失败:测试未通过" &gt;&amp;2
+      FAIL=1
+    fi
+  fi
+fi
+
+# === 步骤 3:文档同步检查(src 改了 docs 没改) ===
+if git diff --name-only HEAD 2&gt;/dev/null | grep -qE '^src/'; then
+  if ! git diff --name-only HEAD 2&gt;/dev/null | grep -qE '^docs/'; then
+    echo "⚠️ 步骤 3 失败:src 改了但 docs 没同步" &gt;&amp;2
+    FAIL=1
+  fi
+fi
+
+# === 步骤 4:审查 checklist 完整性(如果改了 src/) ===
+if git diff --name-only HEAD 2&gt;/dev/null | grep -qE '^src/'; then
+  REVIEW_FILE=".claude/reports/review-latest.md"
+  if [ ! -f "$REVIEW_FILE" ]; then
+    echo "⚠️ 步骤 4 失败:没有审查报告(需要先跑 /review)" &gt;&amp;2
+    FAIL=1
+  elif ! grep -qE '^## (Security|Style|Test)' "$REVIEW_FILE"; then
+    echo "⚠️ 步骤 4 失败:审查报告缺段(Security / Style / Test 必填)" &gt;&amp;2
+    FAIL=1
+  fi
+fi
+
+if [ "$FAIL" -eq 1 ]; then
+  echo "" &gt;&amp;2
+  echo "🚫 Stop 门控未通过,请修复后再次停止" &gt;&amp;2
+  exit 2
+fi
+
+exit 0</code></pre>
+<p><strong>📄 第 18 讲配套：SubAgentStop 验收 + 报告自动汇总实现（读子代理输出 / 写状态文件 / 通知主对话）</strong></p>
+<pre><code class="lang-bash">#!/usr/bin/env bash
+# .claude/hooks/subagent-accept.sh
+# 子代理完成后的验收 + 报告自动汇总
+set -e
+
+INPUT=$(cat)
+SUBAGENT_NAME=$(echo "$INPUT" | jq -r '.subagent_name // "unknown"')
+SUBAGENT_OUTPUT=$(echo "$INPUT" | jq -r '.subagent_output // ""')
+TIMESTAMP=$(date '+%Y-%m-%d_%H-%M-%S')
+
+# === 验收 1:报告完整性(代码审查 SubAgent 必须有 3 段) ===
+if [ "$SUBAGENT_NAME" = "code-reviewer" ]; then
+  if ! echo "$SUBAGENT_OUTPUT" | grep -qE '^## Security'; then
+    echo "⚠️ 验收 1 失败:code-reviewer 报告缺 ## Security 段" &gt;&amp;2
+    exit 2
+  fi
+  if ! echo "$SUBAGENT_OUTPUT" | grep -qE '^## Style'; then
+    echo "⚠️ 验收 1 失败:code-reviewer 报告缺 ## Style 段" &gt;&amp;2
+    exit 2
+  fi
+  if ! echo "$SUBAGENT_OUTPUT" | grep -qE '^## Test'; then
+    echo "⚠️ 验收 1 失败:code-reviewer 报告缺 ## Test 段" &gt;&amp;2
+    exit 2
+  fi
+fi
+
+# === 验收 2:状态文件(子代理必须写状态文件) ===
+STATE_FILE=".claude/state/${SUBAGENT_NAME}.json"
+if [ ! -f "$STATE_FILE" ]; then
+  echo "⚠️ 验收 2 失败:${SUBAGENT_NAME} 没写状态文件 $STATE_FILE" &gt;&amp;2
+  exit 2
+fi
+
+# === 验收 3:输出格式(必须有 ## 标题) ===
+if ! echo "$SUBAGENT_OUTPUT" | grep -qE '^## '; then
+  echo "⚠️ 验收 3 失败:子代理输出缺 ## 标题(Markdown 结构)" &gt;&amp;2
+  exit 2
+fi
+
+# === 验收通过:汇总报告到主对话 ===
+REPORT_DIR=".claude/state/subagent-reports"
+mkdir -p "$REPORT_DIR"
+
+REPORT_FILE="$REPORT_DIR/${SUBAGENT_NAME}-${TIMESTAMP}.md"
+cat &gt; "$REPORT_FILE" &lt;&lt; EOF
+# SubAgent Report: $SUBAGENT_NAME
+# Timestamp: $TIMESTAMP
+# State File: $STATE_FILE
+
+$SUBAGENT_OUTPUT
+EOF
+
+# 通知主对话(写到 .claude/state/notifications.log)
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] SubAgent '$SUBAGENT_NAME' 完成,报告已汇总到 $REPORT_FILE" \
+  &gt;&gt; .claude/state/notifications.log
+
+exit 0</code></pre>
+<p><strong>📄 第 18 讲配套：6 个 Hook 完整防御链配置（.claude/settings.json 完整版）</strong></p>
+<pre><code class="lang-json">// .claude/settings.json(完整 6 个 Hook 防御链)
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {"type": "command", "command": "bash /home/user/.claude/hooks/deny-pipe-exec.sh"},
+          {"type": "command", "command": "bash /home/user/.claude/hooks/deny-extra-dangerous.sh"}
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {"type": "command", "command": "bash /home/user/.claude/hooks/deny-edit-lockfile.sh"}
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {"type": "command", "command": "bash /home/user/.claude/hooks/auto-format.sh"},
+          {"type": "command", "command": "bash /home/user/.claude/hooks/audit-log.sh"}
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {"type": "command", "command": "bash /home/user/.claude/hooks/stop-gate.sh"},
+          {"type": "command", "command": "bash /home/user/.claude/hooks/check-tests.sh"}
+        ]
+      }
+    ],
+    "SubAgentStop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {"type": "command", "command": "bash /home/user/.claude/hooks/subagent-accept.sh"}
+        ]
+      }
+    ]
+  }
+}
+
+// 6 个 Hook 串成的防御链:
+// PreToolUse  deny-pipe-exec        → 拦截 curl | sh
+// PreToolUse  deny-extra-dangerous  → 拦截 rm -rf / chmod 777 / dd
+// PreToolUse  deny-edit-lockfile    → 拦截改 lockfile
+// PostToolUse auto-format           → 写完代码自动 ruff format
+// PostToolUse audit-log             → 记录所有 Bash 命令
+// Stop        stop-gate             → 4 步质量门控
+// Stop        check-tests           → 测试通过检查
+// SubAgentStop subagent-accept      → 子代理验收 + 报告汇总</code></pre>
+<p><strong>📄 第 18 讲配套：三维决策框架的实操清单（性能 / 必要性 / 用户体验 3 维各 4 个问题）</strong></p>
+<pre><code class="lang-markdown"># Hook 三维决策框架实操清单
+
+# === 维度 1:性能(Hook 脚本耗时) ===
+□ 1. Hook 脚本 &lt; 1 秒吗?(用 `time bash hook.sh` 测)
+□ 2. Hook 是否跑网络请求?(curl / wget 会慢,加缓存)
+□ 3. Hook 是否跑完整测试套件?(pytest 全套 1-2 分钟,改用 Stop 或 subset)
+□ 4. Hook 是否用 python -c 复杂逻辑?(启动开销 0.5s+,改用 bash + grep)
+
+# === 维度 2:必要性(是否真的需要拦截) ===
+□ 1. 拦截的命令 / 操作真发生过多起吗?(没有 = 不配)
+□ 2. 拦截后能避免"实际发生过的真实问题"吗?(发生过 = 配;纯理论 = 不配)
+□ 3. 团队有更轻的方案替代吗?(比如 GitHub 分支保护比 Hook 拦截更合适)
+□ 4. 拦截的频率和价值匹配吗?(高频高价值 = 配;低频低价值 = 不配)
+
+# === 维度 3:用户体验(不要频繁打断) ===
+□ 1. 这个 Hook 每天阻断 &gt; 5 次吗?(&gt; 5 次调规则)
+□ 2. 阻断时 stderr 输出的信息用户能看懂吗?(看不懂 = 补)
+□ 3. Hook 是否会"误拦合法操作"?(&gt; 5% 误拦 = 调规则)
+□ 4. Hook 是否会"循环阻断"?(改文件 → 改回来 → 再改,改用 PostToolUse auto-format)
+
+# === 评分规则 ===
+# 性能:&lt; 1 秒 = 通过,1-3 秒 = 警告,&gt; 3 秒 = 失败
+# 必要性:真实问题发生过 = 通过,理论可能 = 警告,纯理论 = 失败
+# UX:&lt; 5 次/天 = 通过,5-10 次/天 = 警告,&gt; 10 次/天 = 失败
+
+# === 决策结果 ===
+# 3 维全通过 = 应该配
+# 有 1 维警告 = 谨慎配,记录原因
+# 任 1 维失败 = 不配
+
+# === 示例 ===
+# Hook: PreToolUse 拦 rm -rf
+# 性能:grep 匹配 &lt; 0.1 秒 = ✅ 通过
+# 必要性:误删事件发生过 3 次 = ✅ 通过
+# UX:每月阻断 1-2 次 = ✅ 通过
+# 决策:应该配
+
+# Hook: Stop 强制跑完整 pytest
+# 性能:pytest 完整 1-2 分钟 = ❌ 失败
+# 决策:不配(或改用 subset 测试)
+
+# Hook: PreToolUse 拦所有 rm 命令
+# 性能:grep 匹配 &lt; 0.1 秒 = ✅ 通过
+# 必要性:误删 /tmp/test 发生过 0 次 = ❌ 失败
+# 决策:不配(或只拦 rm -rf)</code></pre>
+<h2 class="section-anchor">⚠️ 常见坑</h2>
+<div class="callout warn">
+<strong>⚠️ Stop Hook 配太多（每步都强制 Claude 继续、反而拖慢任务完成）</strong>
+<p>"门控过多"的反作用：Stop Hook 配 5-6 个、每个都强制 Claude 继续、结果 Claude 任务完成后被反复阻断、体验很差。修正：Stop Hook 控制在 2-3 个（关键门控：未提交 + 测试通过 + 文档同步；非关键不配）。其他质量检查移到 PreToolUse / PostToolUse。判断标准：Stop Hook &gt; 3 个 = 太多、精简。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ SubAgentStop 没配置（子代理跑完报告没汇总、主对话不知道结果）</strong>
+<p>"子代理静默完成"陷阱：用 SubAgent 跑代码审查（第 6 讲 code-reviewer)、完成后主对话只看到"子代理任务完成"信号、不知道审查结果是什么。需要用户主动 /ask 子代理"汇报结果"、或者主对话自己再读子代理输出——延迟高、容易遗漏。修正：配 SubAgentStop Hook（子代理-accept.sh）做"自动验收 + 报告汇总到 .claude/state/subagent-reports/"、主对话可以直接用。判断标准：你的 SubAgentStop Hook 配置了吗?没有、补配。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ frontmatter matcher 写错（"Edit"漏写"Write",Write 不触发）</strong>
+<p>"matcher 漏写"陷阱：配置 PostToolUse auto-format 时、matcher 写 "Edit"（漏写 Write)、结果 Claude 用 Write 改文件时、自动格式化不触发。修正：涉及"修改文件"的 Hook 统一写 "Edit|Write"（用 | 分隔多个工具名）。判断标准：你的 matcher 字段覆盖了所有相关工具吗?grep "Edit|Write" 检查。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ Hook 配置后没监控（执行次数 / 拦截次数 / 性能没度量、无法迭代优化）</strong>
+<p>"配了不看"的优化盲区：Hook 配了之后、不知道"每天触发多少次 / 拦截多少次 / 每次耗时多少"、无法判断 Hook 是否真的有用 / 是否误拦太多 / 是否拖慢速度。修正：Hook 自带监控——audit-log 记录所有 Bash 命令、stop-gate 记录门控阻断次数、subagent-accept 记录子代理验收结果。每周看一次统计、调整规则。判断标准：你最近一次看 Hook 执行统计是什么时候?超过 1 个月 = 落后了、补监控。</p>
+</div>
+<h2 class="section-anchor">💡 一句话备忘</h2>
+<blockquote>Hooks 高级模式是"从会用走向精通"——Stop Hook 4 步门控强制质量、SubAgentStop 自动验收汇总、frontmatter 精准配置避免漏触发、三维决策框架判断"该配不该配"；6 个 Hook 串成完整防御链、5 条最佳实践沉淀团队资产。</blockquote>
+<hr>
+<p class="breadcrumb">← 回到 <a href="#top">本讲网页顶部</a></p>
+</main>
+<script>
+  (function () {
+    var STORAGE_KEY = "***";
+    var root = document.documentElement;
+    var btn  = document.getElementById("themeToggle");
+    var icon = document.getElementById("themeIcon");
+    var lbl  = document.getElementById("themeLabel");
+    function apply(theme) {
+      root.setAttribute("data-theme", theme);
+      if (theme === "dark") {
+        icon.innerHTML = "&#9728;&#65039;";
+        lbl.textContent  = "亮色";
+      } else {
+        icon.innerHTML = "&#127769;";
+        lbl.textContent  = "暗色";
+      }
+    }
+    var saved = null;
+    try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    if (saved === "light" || saved === "dark") {
+      apply(saved);
+    } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      apply("dark");
+    } else {
+      apply("light");
+    }
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") || "light";
+      var next = cur === "dark" ? "light" : "dark";
+      apply(next);
+      try { localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 16 讲 · Skills 专题总结</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fff; --fg: #222; --muted: #555; --link: #1a73e8;
+    --code-bg: #f4f4f4; --code-fg: inherit;
+    --pre-bg: #1e1e1e; --pre-fg: #eaeaea;
+    --border: #ddd; --th-bg: #f5f5f5; --zebra: #fafafa;
+    --hover-row: #e8f0fe; --hover-th: #eef2f7;
+    --blockquote-bg: #fafafa; --blockquote-border: #ddd;
+    --hr: #eee;
+    --toggle-bg: #f5f5f5; --toggle-fg: #333; --toggle-border: #ddd;
+    --tag-bg: #eef4ff; --tag-fg: #1a73e8;
+    --callout-bg: #fffbe6; --callout-border: #fadb14;
+    --warn-bg: #fff1f0; --warn-border: #ff4d4f;
+    --ok-bg: #f6ffed; --ok-border: #52c41a;
+    --code-block-bg: #f8f9fa;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1115; --fg: #e6e6e6; --muted: #9aa0a6; --link: #8ab4f8;
+    --code-bg: #1e1f24; --code-fg: #e6e6e6;
+    --pre-bg: #1a1d23; --pre-fg: #e6e6e6;
+    --border: #303136; --th-bg: #1c1f25; --zebra: #16181d;
+    --hover-row: #1f2733; --hover-th: #262c36;
+    --blockquote-bg: #181a20; --blockquote-border: #303136;
+    --hr: #2a2d33;
+    --toggle-bg: #1c1f25; --toggle-fg: #e6e6e6; --toggle-border: #303136;
+    --tag-bg: #1a2540; --tag-fg: #8ab4f8;
+    --callout-bg: #2a261a; --callout-border: #b89333;
+    --warn-bg: #2a1a1a; --warn-border: #a84545;
+    --ok-bg: #1a261a; --ok-border: #4a8a4a;
+    --code-block-bg: #16181d;
+  }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 "PingFang SC", "Microsoft YaHei", "Helvetica Neue",
+                 Arial, sans-serif;
+    font-size: 15px; line-height: 1.7;
+    transition: background-color .2s ease, color .2s ease;
+  }
+  main {
+    max-width: 1100px;
+    width: calc(100% - 32px);
+    margin: 0 auto;
+    padding: 24px 0 64px 0;
+    box-sizing: border-box;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    line-height: 1.3; margin: 1.5em 0 .6em;
+  }
+  h1 { font-size: 1.9em; border-bottom: 2px solid var(--hr); padding-bottom: .3em; }
+  h2 { font-size: 1.45em; border-bottom: 1px solid var(--hr); padding-bottom: .25em; margin-top: 2em; }
+  h3 { font-size: 1.18em; color: var(--link); margin-top: 1.5em; }
+  h4 { font-size: 1.05em; margin-top: 1.2em; color: var(--fg); font-weight: 600; }
+  p, ul, ol, blockquote, pre, table { margin: .7em 0; }
+  ul, ol { padding-left: 1.6em; }
+  li { margin: .3em 0; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  blockquote {
+    margin: .8em 0; padding: .6em 1em;
+    border-left: 4px solid var(--blockquote-border);
+    color: var(--muted); background: var(--blockquote-bg);
+  }
+  .callout {
+    background: var(--callout-bg);
+    border-left: 4px solid var(--callout-border);
+    padding: 12px 16px; margin: 1.2em 0; border-radius: 4px;
+  }
+  .callout.warn { background: var(--warn-bg); border-left-color: var(--warn-border); }
+  .callout.ok   { background: var(--ok-bg);   border-left-color: var(--ok-border); }
+  code {
+    font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: .9em; background: var(--code-bg); color: var(--code-fg);
+    padding: 1px 5px; border-radius: 3px;
+  }
+  pre {
+    background: var(--pre-bg); color: var(--pre-fg);
+    padding: 14px 16px; border-radius: 6px;
+    overflow-x: auto; font-size: 13px; line-height: 1.55;
+    margin: 1em 0;
+  }
+  pre code { background: transparent; padding: 0; color: inherit; }
+  pre.lang-flow {
+    background: var(--code-block-bg); color: var(--fg);
+    border: 1px solid var(--border);
+  }
+  :root[data-theme="dark"] pre.lang-flow {
+    background: #0a0b0d; color: #d4d4d4;
+  }
+  table {
+    width: 100% !important; border-collapse: collapse;
+    table-layout: auto; margin: 1em 0;
+    font-size: 14px; display: table;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left; vertical-align: top;
+    transition: background-color .15s ease;
+  }
+  th { background: var(--th-bg); font-weight: 600; }
+  tbody tr:nth-child(even) td { background: var(--zebra); }
+  tbody tr:hover td, tbody tr:hover th { background: var(--hover-row) !important; }
+  thead th:hover { background: var(--hover-th) !important; }
+  :root[data-theme="dark"] tbody tr:hover td,
+  :root[data-theme="dark"] tbody tr:hover th,
+  :root[data-theme="dark"] thead th:hover { color: #fff; }
+  hr { border: none; border-top: 1px solid var(--hr); margin: 2em 0; }
+  img { max-width: 100%; height: auto; }
+
+  .tag {
+    display: inline-block; padding: 2px 8px; margin-right: 6px;
+    background: var(--tag-bg); color: var(--tag-fg);
+    border-radius: 12px; font-size: 12px; font-weight: 500;
+  }
+  .breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 1em; }
+  .breadcrumb a { color: var(--muted); }
+  .breadcrumb a:hover { color: var(--link); }
+
+  .theme-toggle {
+    position: fixed; top: 12px; right: 12px; z-index: 9999;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: var(--toggle-bg); color: var(--toggle-fg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 6px; font-size: 13px; font-family: inherit;
+    cursor: pointer; user-select: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    transition: background-color .2s ease, transform .1s ease;
+  }
+  .theme-toggle:hover { background: var(--hover-row); }
+  .theme-toggle:active { transform: scale(.97); }
+  .theme-toggle .icon { font-size: 15px; line-height: 1; }
+
+  .lesson-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, #1a73e8, #6f42c1);
+    color: #fff; font-size: 24px; font-weight: 700;
+    margin-right: 14px; vertical-align: middle;
+  }
+
+  .section-anchor { scroll-margin-top: 60px; }
+</style>
+<link rel="stylesheet" href="assets/flow.css">
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="切换暗色模式">
+  <span class="icon" id="themeIcon">&#127769;</span>
+  <span id="themeLabel">暗色</span>
+</button>
+<main>
+<div class="breadcrumb">课程导航： « <a href="lesson-15.html">第 15 讲</a>  ·  <a href="lesson-17.html">第 17 讲</a> »</div>
+<h1><span class="lesson-badge">16</span>第 16 讲 · Skills 专题总结</h1>
+<p>
+  <span class="tag">加餐</span>
+  <span class="tag">第 16 / 33 讲</span>
+  <span class="tag">Claude Code 工程化实战</span>
+  <span class="tag">Skills 系列 · 收官篇</span>
+</p>
+<div class="callout ok">
+<strong>📌 本讲摘要</strong>
+<p>第 10-15 讲用了 6 讲把 Skills 讲透——基础结构 / 任务型 / 渐进式披露 / 组合实战 / 设计模式 / 行业影响。本讲是 Skills 系列的收官篇、做 4 件事：六讲全景回顾（从第 10 讲到第 15 讲、6 个核心主题）、四种设计模式提炼（自动发现 / 任务型 / 渐进披露 / 组合）、Skills × Tools × SubAgents 关系（3 种能力扩展的边界与协作）、工程方法论沉淀（从会写到会用到会演化）。目的是让你看完 6 讲、会写 SKILL.md / 会用 SKILL.md / 会按场景选 SKILL.md / 会关注 SKILL.md 生态演化。</p>
+<p>本讲的三条主线：</p>
+<p>第一、六讲全景回顾——每讲 1 句话总结 + 关键工具/字段、形成 6 讲速查表。</p>
+<p>第二、四种设计模式提炼——把 6 讲内容抽象为 4 种核心模式（自动发现 / 任务型 / 渐进披露 / 组合）、每种模式有适用场景 + 反模式。</p>
+<p>第三、Skills × Tools × SubAgents 关系——3 种能力扩展的边界（Skills 共享主对话 / SubAgent 隔离 / Tools 原子能力）与协作方式（SubAgent 调 Tools / SubAgent 加载 Skills）。</p>
+<p>学完本讲、你应该有 6 讲知识地图能在脑中快速索引、能用 4 种设计模式判断该写哪种 Skill、能区分 Skills / SubAgent / Tools / Hook 的边界与协作、能用工程方法论（会写 → 会用 → 会选 → 会演化）沉淀团队资产。</p>
+</div>
+<h2 class="section-anchor">📖 详细内容</h2>
+<h3>六讲全景回顾</h3>
+<p>用 6 句话回顾 Skills 系列的 6 讲、每讲 1 句话总结 + 1 个关键工具/字段。</p>
+<p><strong>第 10 讲 · 触类旁通 · SKILL.md 基础结构</strong></p>
+<p>核心命题：Skills 是什么、怎么写、怎么触发——description 写"何时触发"是 LLM 推理的"索引键"、写错 = 触发率 = 0。关键工具/字段：frontmatter 4 字段（name / description / license / allowed-tools）。一句话总结：Skills = 自动发现的能力包、LLM 推理触发、Markdown 定义。</p>
+<p><strong>第 11 讲 · 令行禁止 · 任务型 Skills 实战</strong></p>
+<p>核心命题：怎么让 Skill 禁止 LLM 自动调用、只允许用户主动调——加 <code>disable-model-invocation: true</code> 字段、Skill 退化成"团队命令"。关键工具/字段：disable-model-invocation + 危险操作双保险（配 Hook 二次拦截）。一句话总结：<code>disable-model-invocation</code> 是 Skills 的"反向开关"、让 LLM 看不到、占 0 token、用户主动调才触发。</p>
+<p><strong>第 12 讲 · 循序渐进 · 渐进式披露架构设计</strong></p>
+<p>核心命题：为什么 Skills 是 3 层而不是 1 层或 5 层——frontmatter 50 + 章节 2K + 附录按需、token 节省 91%+。关键工具/字段：3 层目录结构（.claude/skills/&lt;name&gt;/SKILL.md + references/)+ 3 个度量指标（加载率 / 命中率 / 维护成本）。一句话总结：3 层渐进式披露是 LLM 推理 + 人类维护的甜区、加载率 13% / 命中率 80% / 维护成本 1-2。</p>
+<p><strong>第 13 讲 · 浑然天成 · Skills 高级模式与 SubAgent 配合实战</strong></p>
+<p>核心命题：Skills + SubAgent + Commands 三件套不是孤立机制、而是可以联动的——3 种组合模式（注入 / 动态 / 流水线）。关键工具/字段：SubAgent system prompt 注入 Skill 内容 / SubAgent 流程中动态加载 Skill / Command 触发一连串 Skill 流水线。一句话总结：3 种组合模式叠加形成"专家系统"——Command 触发 + SubAgent 隔离 + Skill 注入能力。</p>
+<p><strong>第 14 讲 · 登高望远 · Skills 架构定位与设计模式</strong></p>
+<p>核心命题：跳出 Claude Code、看 Skills 在 AI Agent 生态中的位置——3 大独特性（LLM 语义推理触发 / 渐进式披露 / Markdown 定义）+ 设计模式四象限（频率 × 风险）。关键工具/字段：3 大独特性 + 四象限决策（高频低风险普通 Skill / 高频高风险加 ask / 低频低风险普通 / 低频高风险双保险）。一句话总结：Skills 的差异化在"LLM 智能 + Markdown 协作 + 渐进披露"、四象限给所有实践定坐标。</p>
+<p><strong>第 15 讲 · 星火燎原 · Skills 出圈——从 Claude Code 到行业开放标准</strong></p>
+<p>核心命题：Agent Skills 协议用 125 天成为行业开放标准、5 个主流 AI Agent 工具共同采纳——工程师写一次到处用。关键工具/字段：Agent Skills 协议（目录结构 + frontmatter 4 字段 + 触发机制）+ 跨平台兼容（Claude Code / Codex / Cursor / Copilot / Windsurf）。一句话总结：Skills 从单产品特性演变为行业开放标准、核心是"足够简单 + 足够强大 + 足够开放"。</p>
+<p>6 讲的递进关系：基础（10)→ 任务型（11)→ 架构（12)→ 组合（13)→ 全局（14)→ 行业（15)。从会写、会用、会选、会演化、形成完整的 Skills 工程知识体系。</p>
+<table>
+<thead><tr>
+<th>讲次</th>
+<th>主题</th>
+<th>关键字段或工具</th>
+<th>一句话总结</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>第 10 讲</td>
+<td>基础结构</td>
+<td>frontmatter 4 字段</td>
+<td>Skills = 自动发现的能力包、LLM 推理触发、Markdown 定义</td>
+</tr>
+<tr>
+<td>第 11 讲</td>
+<td>任务型</td>
+<td>disable-model-invocation</td>
+<td>反向开关、LLM 看不到、用户主动调才触发</td>
+</tr>
+<tr>
+<td>第 12 讲</td>
+<td>渐进披露</td>
+<td>3 层加载 + references/</td>
+<td>加载率 13% / 命中率 80% / token 节省 91%+</td>
+</tr>
+<tr>
+<td>第 13 讲</td>
+<td>组合实战</td>
+<td>注入 / 动态 / 流水线</td>
+<td>3 种模式叠加形成专家系统</td>
+</tr>
+<tr>
+<td>第 14 讲</td>
+<td>设计模式</td>
+<td>四象限（频率 × 风险）</td>
+<td>差异化在 LLM 智能 + Markdown 协作 + 渐进披露</td>
+</tr>
+<tr>
+<td>第 15 讲</td>
+<td>行业影响</td>
+<td>Agent Skills 协议</td>
+<td>125 天从单产品到行业开放标准、跨 5+ 平台</td>
+</tr>
+</tbody></table>
+<h3>四种设计模式提炼</h3>
+<p>把 6 讲内容抽象为 4 种核心设计模式、每种模式有清晰的适用场景 + 反模式。这是 Skills 工程的"工具箱"、面对任何新场景都能从这里挑工具。</p>
+<p><strong>模式 1：自动发现（description 匹配 + LLM 触发）</strong></p>
+<p>触发方式：LLM 看到 description 匹配用户的话、自动加载 SKILL.md。适用场景：LLM 推理该用就用、用户不需要主动调的能力（更新 changelog / 生成 API 文档 / 写测试）。反模式：不写 description 写"做什么"（触发率 = 0)/ 把高频高风险操作也用普通 Skill（误触 = 灾难）。</p>
+<p><strong>模式 2：任务型（disable-model-invocation + 用户主动）</strong></p>
+<p>触发方式：加 <code>disable-model-invocation: true</code>,LLM 完全看不到、只有用户输入 <code>/&lt;name&gt;</code> 才触发。适用场景：团队 SOP（必须严格按步骤走）/ 危险操作（rollback / db-migrate / force-push)/ 调试工具（debug-mode / verbose）。反模式：把日常高频操作也加 disable（用户每次都得手输命令、反而累）/ 危险操作只加 disable 不配 Hook（单层防御不够）。</p>
+<p><strong>模式 3：渐进披露（3 层加载 + token 经济）</strong></p>
+<p>触发方式：frontmatter 50 + 章节 2K + 附录按需、Claude 按"目录 → 章节 → 附录"3 步加载。适用场景：任何 Skill 都需要（渐进披露是 Skills 的核心优势、不是可选项）。反模式：章节写 1000+ 行（伪 3 层实 1 层）/ description 写 200+ 字（目录页过载）/ 第 2 层和第 3 层职责重叠（改一处忘一处）。</p>
+<p><strong>模式 4：组合（Skills + SubAgent + Commands 联动）</strong></p>
+<p>触发方式：3 种组合关系——Skills 喂 SubAgent（模式 1 注入）/ SubAgent 内部用 Skills（模式 2 动态）/ 流水线组合（模式 3 触发）。适用场景：复杂任务需要专家系统——代码审查（SubAgent 注入 3 个 Skill)/ 部署专家（SubAgent 动态加载 + Command 流水线）。反模式：把所有 Skill 都注入 SubAgent（上下文爆炸）/ SubAgent 动态加载没控制触发条件（Skill 误触）/ 流水线没考虑错误传播（任一失败不暂停）。</p>
+<p>4 种模式的关系：模式 1（自动发现）是基础、模式 2（任务型）是反向、模式 3（渐进披露）是优化、模式 4（组合）是升华。实际项目通常需要多种模式叠加：大多数 Skill 用模式 1 + 3（自动发现 + 渐进披露）、少数危险操作用模式 2 + 3（任务型 + 渐进披露）、复杂系统用模式 4 组合所有。</p>
+<h3>Skills × Tools × SubAgents 关系</h3>
+<p>Skills / Tools / SubAgents 是 Claude Code 3 种能力扩展机制、各自有明确的边界。理解 3 者关系、才能在工程实践中按场景选择。</p>
+<p><strong>3 者的本质区别</strong></p>
+<p>• <strong>Skills</strong>：自动发现能力——LLM 推理触发、共享主对话上下文、渐进式披露加载。</p>
+<p>• <strong>SubAgent</strong>：独立上下文角色——@name 显式调、隔离主对话上下文、每次启动 5-15 秒固定成本。</p>
+<p>• <strong>Tools</strong>：原子工具——Read / Edit / Bash / Grep / Glob 等、Claude 直接调、无独立上下文。</p>
+<p>3 者的核心区别在上下文隔离 vs 共享：</p>
+<p>• Tools 共享主对话上下文——Claude 调 Read 读文件、文件内容进主对话。</p>
+<p>• Skills 共享主对话上下文——Skill 加载时 SKILL.md 进主对话、Skill 执行的结果也进主对话。</p>
+<p>• SubAgent 隔离上下文——审查时主对话的噪声不会污染审查结果、审查报告是独立输出。</p>
+<p><strong>3 者的边界</strong></p>
+<p>边界 1：Skills 共享主对话——审查任务用 Skill、主对话的隐私 / 中间状态会泄露到审查上下文。修正：审查用 SubAgent（隔离上下文）。</p>
+<p>边界 2：SubAgent 隔离上下文——简单的读文件 + 总结任务用 SubAgent、固定 5-15 秒启动成本反而拖慢速度。修正：简单任务用 Skill 或直接调 Tool。</p>
+<p>边界 3：Tools 是原子能力——Tools 只能读 / 写 / 执行命令、不能理解任务。修正：复杂任务用 Skill 或 SubAgent，Tool 只作为底层能力。</p>
+<p><strong>3 者的协作</strong></p>
+<p>协作模式 1：SubAgent 调 Tools 跑具体操作。SubAgent 启动后、系统会调 Tools（Read 读文件、Bash 跑测试）完成任务。SubAgent 是角色，Tools 是角色手里的工具。</p>
+<p>协作模式 2：SubAgent 加载 Skills 获得专项能力。SubAgent 启动时、可能加载某个 Skill（注入到 system prompt 或动态加载）获得专业能力。典型：code-reviewer SubAgent 加载 security-audit Skill、获得安全审计能力。</p>
+<p>协作模式 3：Command 触发 SubAgent + Skill 流水线。Command 触发一连串 SubAgent / Skill 顺序执行（第 11 讲 /release 流水线 4 步）。</p>
+<p>3 种能力扩展的关系可类比公司：SubAgent 是员工（有独立工位 / 独立思考），Tools 是员工的工具（电脑 / 椅子 / 笔），Skills 是员工的培训（让员工学会某项专项技能）。Command 是项目流程（按顺序安排员工做事）。</p>
+<table>
+<thead><tr>
+<th>维度</th>
+<th>Skills</th>
+<th>SubAgents</th>
+<th>Tools</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>触发方式</td>
+<td>LLM 推理（description)</td>
+<td>主对话显式（@name)</td>
+<td>Claude 直接调</td>
+</tr>
+<tr>
+<td>上下文</td>
+<td>共享主对话</td>
+<td>隔离独立上下文</td>
+<td>共享主对话</td>
+</tr>
+<tr>
+<td>加载成本</td>
+<td>50-500 tokens（渐进披露）</td>
+<td>8K tokens（每次启动）</td>
+<td>无</td>
+</tr>
+<tr>
+<td>复用度</td>
+<td>高（Markdown + git + 跨平台）</td>
+<td>中（.md 文件、单平台）</td>
+<td>无（系统内置）</td>
+</tr>
+<tr>
+<td>适用场景</td>
+<td>LLM 推理该用的能力</td>
+<td>需要隔离上下文的角色</td>
+<td>原子操作（读/写/执行）</td>
+</tr>
+</tbody></table>
+<h3>从"会写"到"会用"的 4 个台阶</h3>
+<p>Skills 工程能力的成长有 4 个台阶、每个台阶对应一个能力层级。</p>
+<p><strong>台阶 1：会写 SKILL.md</strong></p>
+<p>能力：能写出符合协议规范的 SKILL.md——frontmatter 4 字段 + 章节 3 段式（快速参考 / 详细步骤 / 边界 case)+ references/ 按需拆分。</p>
+<p>验证标准：写一份 sync-changelog SKILL.md、包含正确 frontmatter、3 段式章节、1-2 份 references/ 子文档、description 写"何时触发"不写"做什么"、放进 Claude Code 能正确触发。</p>
+<p><strong>台阶 2：会用 SKILL.md</strong></p>
+<p>能力：不只在自己电脑上能用、还能在 Claude Code / Cursor / Copilot 5+ 平台都用——同一份 SKILL.md 跨平台跑通、触发表现一致。</p>
+<p>验证标准：把同一份 sync-changelog SKILL.md 放进 Claude Code / Cursor / GitHub Copilot 3 个平台、3 个平台的用户问"更新 changelog"时都能正确触发、行为一致。</p>
+<p><strong>台阶 3：会按场景选</strong></p>
+<p>能力：面对一个新需求、能判断该用 Skill / SubAgent / Command / Hook 哪个——基于上下文是否需要隔离 / 是否用户主动 / 是否需要硬约束 / 是否需要 LLM 智能触发 4 个维度决策。</p>
+<p>验证标准：拿到 1 个真实项目需求（比如团队代码审查流程），能给出用 code-reviewer SubAgent + 注入 3 个 Skill + 用 /review Command 触发 + 配 Hook 拦截危险命令的完整方案、而不是全部写成 Skill。</p>
+<p><strong>台阶 4：会演化</strong></p>
+<p>能力：能随业务增长更新 Skills——加 description 提升触发率 / 拆 references/ 减章节 / 配双保险防误触 / 进 git + 配 PR review。同时关注 Agent Skills 协议演进、定期升级现有 SKILL.md。</p>
+<p>验证标准：团队用 6 个月的 Skills 库、做一次协议升级 PR——系统性检查所有 SKILL.md 的 frontmatter / 章节行数 / 危险操作 / git 状态、产出 1 份升级报告。</p>
+<p>4 个台阶的递进关系：会写（基础）→ 会用（跨平台）→ 会选（按场景）→ 会演化（长期）。大多数团队停留在台阶 1-2、少数优秀团队做到台阶 3-4。</p>
+<h3>Skills 工程方法论沉淀</h3>
+<p>4 个长期原则是 Skills 工程的"最佳实践基线"、任何团队 / 项目都应该坚持。</p>
+<p><strong>原则 1：写一次到处用</strong></p>
+<p>从现在起用 SKILL.md 写所有能力扩展、跨平台零成本。不要再用平台专属格式（LangChain Python / OpenAI JSON / Semantic Kernel C#)、这些格式在 2025-02 Agent Skills 协议确认后、正在变成"历史包袱"。</p>
+<p><strong>原则 2：渐进式披露是核心</strong></p>
+<p>章节控制在 200 行内、超过 300 行拆 references/。frontmatter 50 tokens + 章节 2K + 附录按需、3 层叠加形成 token 经济性。3 个度量指标：加载率 5-15% / 命中率 70-90% / 维护成本 1-2。</p>
+<p><strong>原则 3：危险操作双保险</strong></p>
+<p>任何低频高风险操作（rollback / db-migrate / force-push）必须配 disable-model-invocation: true + Hook 二次拦截。单层防御不够、双保险才能兜底。</p>
+<p><strong>原则 4：进 git + 配 PR review</strong></p>
+<p>Skills 是工程资产、不是个人草稿。所有修改必须进 git、所有变更必须 PR review。这保证团队用的 Skills 是一致的、可追溯的、可回滚的。</p>
+<p>4 个原则的检查清单（可作为 PR review 模板）：</p>
+<p>1. [ ] 能力扩展都用 SKILL.md 写（没用平台专属格式）。</p>
+<p>2. [ ] 章节 200 行内、超过拆 references/（加载率 5-15%）。</p>
+<p>3. [ ] 危险操作加 disable + Hook 双保险。</p>
+<p>4. [ ] 进 git + 配 PR review（团队资产、不是个人草稿）。</p>
+<p>PR review 时按这个清单逐项检查、任何一项不合格打回。</p>
+<h3>Skills 生态的未来 3 个观察点</h3>
+<p>Skills 生态还在快速演化、有 3 个观察点值得关注。</p>
+<p><strong>观察 1：Agent Skills 协议会进一步规范化</strong></p>
+<p>参考 LSP(Language Server Protocol）在 2016-2018 年的演化路径——从微软提出到被所有 IDE 采纳、用了 2 年。Agent Skills 协议目前（2025 年中）相当于 LSP 在 2016 年的位置、2 年内可能进一步规范化：frontmatter 字段标准化 / 触发机制规范化 / 跨平台测试套件标准化。</p>
+<p>关注方式：跟踪 Anthropic / OpenAI / GitHub / Cursor 的官方博客、以及 Agent Skills 协议的 GitHub 组织（类似 https://github.com/agentskills/protocol）。</p>
+<p><strong>观察 2：技能市场可能形成</strong></p>
+<p>类比 NPM / PyPI / Docker Hub、未来 1-2 年可能出现"AI Agent 技能市场"——有人写 SKILL.md 卖钱（企业级数据分析 Skill / 行业基准 Skill / 安全审计 Skill)、有人用 SKILL.md 省时间（企业按月订阅行业 Skill 库）。</p>
+<p>但要注意"短期变现 vs 长期资产"的区分。Skills 出圈是"长期工程资产"积累、不是"立刻发财"。先想清楚"这个 Skill 在我的团队 / 项目里真的高频 + 标准化吗?"——是、值得写；否、跳过。</p>
+<p><strong>观察 3：Skills 数量爆炸会催生 Skill 编排新层</strong></p>
+<p>类比 Docker 容器数量爆炸催生 Docker Compose / Kubernetes,Skills 数量爆炸（团队 50+ Skill）会催生"Skill 编排"新层——按角色 / 阶段 / 风险等级组织、提供 Skill 索引 / 依赖管理 / 冲突检测。</p>
+<p>可能的形态：.claude/skills/ 目录的更复杂组织（按团队 / 按阶段 / 按风险等级）/ Skill Pack（打包分发）/ Skill Marketplace（跨团队共享）。</p>
+<p>关注方式：观察 GitHub 上 "agentskills" / "claude-skills" / "ai-skills" 等热门组织的演化。</p>
+<h2 class="section-anchor">🛠️ 实战代码</h2>
+<p><strong>📄 第 16 讲配套：六讲核心命题速查表（6 讲 × 1 句话 + 1 关键工具）</strong></p>
+<pre><code class="lang-markdown"># Skills 6 讲速查表
+
+| 讲次 | 主题 | 关键工具/字段 | 一句话总结 |
+|---|---|---|---|
+| 第 10 讲 | 基础结构 | frontmatter 4 字段 | Skills = 自动发现的能力包,LLM 推理触发,Markdown 定义 |
+| 第 11 讲 | 任务型 | disable-model-invocation | 反向开关,LLM 看不到,用户主动调才触发 |
+| 第 12 讲 | 渐进披露 | 3 层加载 + references/ | 加载率 13% / 命中率 80% / token 节省 91%+ |
+| 第 13 讲 | 组合实战 | 注入 / 动态 / 流水线 | 3 种模式叠加形成"专家系统" |
+| 第 14 讲 | 设计模式 | 四象限(频率 × 风险) | Skills 差异化在"LLM 智能 + Markdown 协作 + 渐进披露" |
+| 第 15 讲 | 行业影响 | Agent Skills 协议 | 125 天从单产品到行业开放标准,跨 5+ 平台 |
+
+# 6 讲关键工具一览
+# - frontmatter:name / description / license / allowed-tools
+# - disable-model-invocation:true(LLM 看不到)
+# - allowed-tools:Read, Edit, Bash(工具白名单)
+# - 3 层目录:.claude/skills/&lt;name&gt;/SKILL.md + references/
+# - SubAgent system prompt 注入 Skill 内容
+# - Command 触发流水线(/release 跑 4 步)</code></pre>
+<p><strong>📄 第 16 讲配套：四种设计模式决策表（模式 / 触发方式 / 上下文 / 适用场景 / 反模式）</strong></p>
+<pre><code class="lang-markdown"># 4 种设计模式决策表
+
+| 模式 | 触发方式 | 上下文 | 适用场景 | 反模式 |
+|---|---|---|---|---|
+| 1 自动发现 | LLM 推理(description 匹配) | 共享主对话 | 日常高频 + 低风险(review/lint/test/生成 API 文档) | 不写 description 写"做什么",触发率 = 0 |
+| 2 任务型 | 用户 /&lt;name&gt; 主动调 | 共享主对话 | SOP / 危险操作 / 调试工具(rollback/db-migrate/debug-mode) | 日常高频也加 disable,用户每次都得手输 |
+| 3 渐进披露 | LLM 推理 + 按需加载 | 共享主对话 | 任何 Skill 都需要(章节 200 行内) | 章节 1000+ 行,伪 3 层实 1 层 |
+| 4 组合 | SubAgent + Skill + Command 联动 | 视具体模式 | 复杂专家系统(代码审查/部署) | 全部 Skill 都注入 SubAgent,上下文爆炸 |
+
+# 4 种模式的关系
+# 模式 1(自动发现)= 基础
+# 模式 2(任务型)= 反向
+# 模式 3(渐进披露)= 优化
+# 模式 4(组合)= 升华
+# 实际项目通常需要多种模式叠加</code></pre>
+<p><strong>📄 第 16 讲配套：Skills × Tools × SubAgents 关系图（3 角色 + 3 协作模式）</strong></p>
+<pre><code class="lang-bash"># === 3 角色的本质区别 ===
+
+# Tools(原子工具)
+# - 触发:Claude 直接调
+# - 上下文:共享主对话
+# - 加载:无
+# - 例子:Read / Edit / Bash / Grep / Glob
+# 类比:员工手里的工具(电脑 / 椅子 / 笔)
+
+# Skills(自动发现能力)
+# - 触发:LLM 推理(description 匹配)
+# - 上下文:共享主对话
+# - 加载:渐进式披露(frontmatter 50 + 章节 2K + 附录按需)
+# - 例子:sync-changelog / generate-api-docs / security-audit
+# 类比:员工的能力培训(学会某项专项技能)
+
+# SubAgent(独立上下文角色)
+# - 触发:主对话显式调(@name)
+# - 上下文:隔离(独立 system prompt + 独立上下文窗口)
+# - 加载:每次启动 5-15 秒固定成本
+# - 例子:code-reviewer / test-runner / pr-drafter
+# 类比:员工本人(有独立工位 / 独立思考)
+
+# === 3 协作模式 ===
+
+# 协作 1:SubAgent 调 Tools
+# SubAgent 启动后,系统会调 Tools(Read/Bash 等)完成任务
+# SubAgent 是"角色",Tools 是"角色手里的工具"
+
+# 协作 2:SubAgent 加载 Skills
+# SubAgent 启动时可能加载某个 Skill
+# - 模式 1(注入):Skill 全文作为 system prompt 的一部分
+# - 模式 2(动态):SubAgent 流程中按需加载 Skill
+# 典型:code-reviewer SubAgent 加载 security-audit Skill
+
+# 协作 3:Command 触发 SubAgent + Skill 流水线
+# Command 触发一连串 SubAgent / Skill 顺序执行
+# 典型:/release 流水线 4 步
+# Step 1:加载 sync-changelog Skill
+# Step 2:加载 run-tests Skill
+# Step 3:调起 deployer SubAgent
+# Step 4:加载 notify Skill</code></pre>
+<p><strong>📄 第 16 讲配套：Skills 工程方法论的 4 个原则检查清单（可作为团队 PR review 模板）</strong></p>
+<pre><code class="lang-markdown"># Skills PR Review 模板(团队标准)
+
+## 提交新 Skill / 修改现有 Skill
+
+### 原则 1:写一次到处用
+- [ ] 能力扩展用 SKILL.md 写(不用 LangChain Python / OpenAI JSON)
+- [ ] frontmatter 4 字段齐全(name / description / license / allowed-tools)
+- [ ] description 写"何时触发"不写"做什么"
+- [ ] 1-2 句话,1-100 字
+
+### 原则 2:渐进式披露是核心
+- [ ] SKILL.md 章节 &lt; 200 行
+- [ ] 超过 300 行 → 拆 references/
+- [ ] 3 段式结构(快速参考 / 详细步骤 / 边界 case)
+- [ ] 加载率 5-15% / 命中率 70-90% / 维护成本 1-2
+
+### 原则 3:危险操作双保险
+- [ ] 低频高风险操作(rollback / db-migrate / force-push)加 disable-model-invocation: true
+- [ ] 配套 Hook 拦截危险命令(.claude/hooks/deny-extra-dangerous.sh)
+- [ ] 测试:即使 LLM 误触发,HW 也能拦截
+
+### 原则 4:进 git + 配 PR review
+- [ ] .claude/skills/&lt;name&gt;/SKILL.md 在 git 跟踪中
+- [ ] 任何修改都有 PR + reviewer
+- [ ] 团队 Skills 库统一管理(不私自改)
+- [ ] 关注 Agent Skills 协议演进,定期升级
+
+### 反例检查(任何一项命中 → 打回)
+- ❌ description 写"做什么"而不是"何时触发"
+- ❌ SKILL.md 1000+ 行(违反渐进式披露)
+- ❌ 危险操作只有 disable 没有 Hook(单层防御)
+- ❌ Skills 没进 git(个人草稿,不是团队资产)
+- ❌ 用平台专属格式(LangChain Python / OpenAI JSON)
+- ❌ 第 2 层和第 3 层职责重叠(边界 case 两处都写)</code></pre>
+<h2 class="section-anchor">⚠️ 常见坑</h2>
+<div class="callout warn">
+<strong>⚠️ 学完 6 讲不会用（光看不做、没在 Claude Code / Cursor 实际写一份 SKILL.md)</strong>
+<p>"知识没转化为能力"的常见陷阱：6 讲都看完了、理解了 description / 渐进披露 / disable-model-invocation 等概念、但从来没真正写一份 SKILL.md。结果——理论懂、实践不会、遇到真实项目还是不会用。修正：学完每一讲、立即在本地 Claude Code 写一份对应主题的 SKILL.md（比如第 10 讲结束写 sync-changelog、第 11 讲结束写 deploy、第 12 讲结束做 3 层拆分）、用起来才能真正掌握。判断标准：你有多少份自己写的 SKILL.md?0 份 = 只看了没做、回去补；3+ 份 = 真掌握了。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 把 Skills 当万能工具（应该和 SubAgent / Tools / Hook 配合、各有边界）</strong>
+<p>"过度依赖 Skills"的边界模糊：以为 Skills 能做所有事、于是把所有能力都写成 Skill、需要隔离上下文的审查任务用 Skill（上下文被污染）/ 需要用户主动的精确控制用 Skill(LLM 自由发挥）/ 需要硬约束的危险操作只用 Skill（没配 Hook 兜底）。修正：Skills / SubAgent / Tools / Hook 4 种扩展机制有明确的职责边界——Commands（用户层主动调）/ SubAgent（角色层隔离上下文）/ Skills（能力层 LLM 推理触发）/ Hook（机制层硬约束）。判断标准：这个任务属于哪一层?层对了、选对应机制；层错了、选哪个都不对。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 写完 SKILL.md 不进 git（个人草稿、不是团队资产、无法协作）</strong>
+<p>"个人草稿"陷阱：在本地写了 5-10 份 SKILL.md、自己用得挺好、但没进 git / 没配 PR review。结果——离开本地电脑就用不了、团队其他成员用不上、没办法 PR review 改进。修正：写完 SKILL.md 第一件事是 git init + 提交 + 推送到团队仓库、后续修改走 PR。判断标准：你的 SKILL.md 是"本地文件"还是"git 跟踪的团队资产"?本地文件 = 危险、赶紧入 git。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 6 讲理论太重、没关注行业动态（Agent Skills 协议在演进、要持续关注）</strong>
+<p>"知识过期"的风险：学完 6 讲时、Agent Skills 协议是 2025-02 确认的版本；但协议还在演进、2026 年可能进一步规范化（类似 LSP 在 2018 年成为标准）。如果 6 讲结束后就不再关注行业动态、等协议更新时你写的老格式可能不兼容。修正：持续关注 Anthropic / OpenAI / GitHub / Cursor 的官方博客、以及 Agent Skills 协议的 GitHub 组织；每季度做一次"协议升级 PR"、系统性检查现有 SKILL.md。判断标准：你最近一次关注 Agent Skills 协议更新是什么时候?超过 3 个月 = 落后了、赶紧补课。</p>
+</div>
+<h2 class="section-anchor">💡 一句话备忘</h2>
+<blockquote>Skills 6 讲的递进关系是"基础结构 → 任务型 → 渐进披露 → 组合实战 → 设计模式 → 行业影响";4 种设计模式（自动发现 / 任务型 / 渐进披露 / 组合）+ 3 种能力扩展的边界与协作（Skills 共享 / SubAgent 隔离 / Tools 原子）+ 4 个工程方法论原则、构成完整的 Skills 工程知识体系。</blockquote>
+<hr>
+<p class="breadcrumb">← 回到 <a href="#top">本讲网页顶部</a></p>
+</main>
+<script>
+  (function () {
+    var STORAGE_KEY = "***";
+    var root = document.documentElement;
+    var btn  = document.getElementById("themeToggle");
+    var icon = document.getElementById("themeIcon");
+    var lbl  = document.getElementById("themeLabel");
+    function apply(theme) {
+      root.setAttribute("data-theme", theme);
+      if (theme === "dark") {
+        icon.innerHTML = "&#9728;&#65039;";
+        lbl.textContent  = "亮色";
+      } else {
+        icon.innerHTML = "&#127769;";
+        lbl.textContent  = "暗色";
+      }
+    }
+    var saved = null;
+    try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    if (saved === "light" || saved === "dark") {
+      apply(saved);
+    } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      apply("dark");
+    } else {
+      apply("light");
+    }
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") || "light";
+      var next = cur === "dark" ? "light" : "dark";
+      apply(next);
+      try { localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>
