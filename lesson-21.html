@@ -1,0 +1,720 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 21 讲 · 无人值守 · Headless 模式与 CI/CD 集成</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fff; --fg: #222; --muted: #555; --link: #1a73e8;
+    --code-bg: #f4f4f4; --code-fg: inherit;
+    --pre-bg: #1e1e1e; --pre-fg: #eaeaea;
+    --border: #ddd; --th-bg: #f5f5f5; --zebra: #fafafa;
+    --hover-row: #e8f0fe; --hover-th: #eef2f7;
+    --blockquote-bg: #fafafa; --blockquote-border: #ddd;
+    --hr: #eee;
+    --toggle-bg: #f5f5f5; --toggle-fg: #333; --toggle-border: #ddd;
+    --tag-bg: #eef4ff; --tag-fg: #1a73e8;
+    --callout-bg: #fffbe6; --callout-border: #fadb14;
+    --warn-bg: #fff1f0; --warn-border: #ff4d4f;
+    --ok-bg: #f6ffed; --ok-border: #52c41a;
+    --code-block-bg: #f8f9fa;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1115; --fg: #e6e6e6; --muted: #9aa0a6; --link: #8ab4f8;
+    --code-bg: #1e1f24; --code-fg: #e6e6e6;
+    --pre-bg: #1a1d23; --pre-fg: #e6e6e6;
+    --border: #303136; --th-bg: #1c1f25; --zebra: #16181d;
+    --hover-row: #1f2733; --hover-th: #262c36;
+    --blockquote-bg: #181a20; --blockquote-border: #303136;
+    --hr: #2a2d33;
+    --toggle-bg: #1c1f25; --toggle-fg: #e6e6e6; --toggle-border: #303136;
+    --tag-bg: #1a2540; --tag-fg: #8ab4f8;
+    --callout-bg: #2a261a; --callout-border: #b89333;
+    --warn-bg: #2a1a1a; --warn-border: #a84545;
+    --ok-bg: #1a261a; --ok-border: #4a8a4a;
+    --code-block-bg: #16181d;
+  }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 "PingFang SC", "Microsoft YaHei", "Helvetica Neue",
+                 Arial, sans-serif;
+    font-size: 15px; line-height: 1.7;
+    transition: background-color .2s ease, color .2s ease;
+  }
+  main {
+    max-width: 1100px;
+    width: calc(100% - 32px);
+    margin: 0 auto;
+    padding: 24px 0 64px 0;
+    box-sizing: border-box;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    line-height: 1.3; margin: 1.5em 0 .6em;
+  }
+  h1 { font-size: 1.9em; border-bottom: 2px solid var(--hr); padding-bottom: .3em; }
+  h2 { font-size: 1.45em; border-bottom: 1px solid var(--hr); padding-bottom: .25em; margin-top: 2em; }
+  h3 { font-size: 1.18em; color: var(--link); margin-top: 1.5em; }
+  h4 { font-size: 1.05em; margin-top: 1.2em; color: var(--fg); font-weight: 600; }
+  p, ul, ol, blockquote, pre, table { margin: .7em 0; }
+  ul, ol { padding-left: 1.6em; }
+  li { margin: .3em 0; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  blockquote {
+    margin: .8em 0; padding: .6em 1em;
+    border-left: 4px solid var(--blockquote-border);
+    color: var(--muted); background: var(--blockquote-bg);
+  }
+  .callout {
+    background: var(--callout-bg);
+    border-left: 4px solid var(--callout-border);
+    padding: 12px 16px; margin: 1.2em 0; border-radius: 4px;
+  }
+  .callout.warn { background: var(--warn-bg); border-left-color: var(--warn-border); }
+  .callout.ok   { background: var(--ok-bg);   border-left-color: var(--ok-border); }
+  code {
+    font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: .9em; background: var(--code-bg); color: var(--code-fg);
+    padding: 1px 5px; border-radius: 3px;
+  }
+  pre {
+    background: var(--pre-bg); color: var(--pre-fg);
+    padding: 14px 16px; border-radius: 6px;
+    overflow-x: auto; font-size: 13px; line-height: 1.55;
+    margin: 1em 0;
+  }
+  pre code { background: transparent; padding: 0; color: inherit; }
+  pre.lang-flow {
+    background: var(--code-block-bg); color: var(--fg);
+    border: 1px solid var(--border);
+  }
+  :root[data-theme="dark"] pre.lang-flow {
+    background: #0a0b0d; color: #d4d4d4;
+  }
+  table {
+    width: 100% !important; border-collapse: collapse;
+    table-layout: auto; margin: 1em 0;
+    font-size: 14px; display: table;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left; vertical-align: top;
+    transition: background-color .15s ease;
+  }
+  th { background: var(--th-bg); font-weight: 600; }
+  tbody tr:nth-child(even) td { background: var(--zebra); }
+  tbody tr:hover td, tbody tr:hover th { background: var(--hover-row) !important; }
+  thead th:hover { background: var(--hover-th) !important; }
+  :root[data-theme="dark"] tbody tr:hover td,
+  :root[data-theme="dark"] tbody tr:hover th,
+  :root[data-theme="dark"] thead th:hover { color: #fff; }
+  hr { border: none; border-top: 1px solid var(--hr); margin: 2em 0; }
+  img { max-width: 100%; height: auto; }
+
+  .tag {
+    display: inline-block; padding: 2px 8px; margin-right: 6px;
+    background: var(--tag-bg); color: var(--tag-fg);
+    border-radius: 12px; font-size: 12px; font-weight: 500;
+  }
+  .breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 1em; }
+  .breadcrumb a { color: var(--muted); }
+  .breadcrumb a:hover { color: var(--link); }
+
+  .theme-toggle {
+    position: fixed; top: 12px; right: 12px; z-index: 9999;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: var(--toggle-bg); color: var(--toggle-fg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 6px; font-size: 13px; font-family: inherit;
+    cursor: pointer; user-select: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    transition: background-color .2s ease, transform .1s ease;
+  }
+  .theme-toggle:hover { background: var(--hover-row); }
+  .theme-toggle:active { transform: scale(.97); }
+  .theme-toggle .icon { font-size: 15px; line-height: 1; }
+
+  .lesson-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, #1a73e8, #6f42c1);
+    color: #fff; font-size: 24px; font-weight: 700;
+    margin-right: 14px; vertical-align: middle;
+  }
+
+  .section-anchor { scroll-margin-top: 60px; }
+</style>
+<link rel="stylesheet" href="assets/flow.css">
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="切换暗色模式">
+  <span class="icon" id="themeIcon">&#127769;</span>
+  <span id="themeLabel">暗色</span>
+</button>
+<main>
+<div class="breadcrumb">课程导航： « <a href="lesson-20.html">第 20 讲</a>  ·  <a href="lesson-22.html">第 22 讲</a> »</div>
+<h1><span class="lesson-badge">21</span>第 21 讲 · 无人值守 · Headless 模式与 CI/CD 集成</h1>
+<p>
+  <span class="tag">正课</span>
+  <span class="tag">第 21 / 33 讲</span>
+  <span class="tag">Claude Code 工程化实战</span>
+  <span class="tag">CI/CD 集成</span>
+</p>
+<div class="callout ok">
+<strong>📌 本讲摘要</strong>
+<p>前 20 讲我们学的所有扩展机制（SubAgent / Skills / Hooks / MCP / Tools）都是交互式——人在回路里、Claude 推理、人确认。本讲进入无人值守——Headless 模式：让 Claude Code 脱离人的实时操控、以守护进程般的姿态嵌入 CI/CD 流水线。3 个核心主题：Headless 模式基础（`claude -p` 非交互模式 + 守护进程）/ GitHub Actions 集成（自动 PR Review + 自动修复）/ 权限收窄（机器自治的安全边界）。目的是让你把 Claude Code 从 IDE 工具变成 CI 工具——提交代码 → Claude 自动审查 → 自动修复 → 自动部署。</p>
+<p>本讲的三条主线：</p>
+<p>第一、Headless 模式基础 + GitHub Actions 集成——<code>claude -p "任务"</code> 让 Claude 跑任务后退出；GitHub Actions workflow 配 Claude Code action,push 触发后自动 PR Review、审查结果写 PR 评论。</p>
+<p>第二、自动修复 + 自动 commit——Claude 跑完审查发现可修复 bug → 自动 Edit 改 → 自动 commit → push 回 PR；危险操作仍被 Hook 拦截（Headless 模式下 Hook 仍生效）。</p>
+<p>第三、权限收窄 + 机器自治工程实践——通过 Hook 收窄（白名单命令）/ env 限制（只读 token)/ sandbox（不让 Claude 改生产环境）;5 条工程实践：CI token 单独管理 / Hook 白名单 / 沙箱 / 失败 fallback / 日志完整。</p>
+<p>学完本讲、你应该能用 <code>claude -p</code> 跑 Headless 模式、能配 GitHub Actions 自动化 PR Review、能设计 CI/CD 中的机器自治安全边界、能区分 Headless 和交互式的工程定位。</p>
+</div>
+<h2 class="section-anchor">📖 详细内容</h2>
+<h3>Headless 模式基础：`claude -p` 非交互模式</h3>
+<p>前 20 讲 Claude Code 都是交互式——人在回路里、Claude 推理、人确认。本讲进入无人值守——Headless 模式：Claude 跑任务后退出、不等人确认。</p>
+<p><strong>3 种 Headless 模式</strong></p>
+<p>模式 1：<strong>单次任务模式</strong>(<code>claude -p "任务"</code>)——Claude 跑任务、完成后退出、stdout 输出结果。例：<code>claude -p "review this PR and list issues"</code> 输出审查结果后退出。</p>
+<p>模式 2：<strong>stdin 模式</strong>(<code>echo "任务" | claude -p</code>)——任务从 stdin 读、适合脚本管道。例：<code>git diff | claude -p "总结这次改动"</code> 把 git diff 通过 stdin 给 Claude,Claude 输出总结。</p>
+<p>模式 3：<strong>守护进程模式</strong>(daemon)——Claude 跑成后台进程、接受远程调用。适合长连接场景（不常用、本讲不深入）。</p>
+<p>3 种模式的选择：CI 自动化用模式 1 / 2、长连接用模式 3。</p>
+<p><strong>单次任务模式的 3 个关键参数</strong></p>
+<p>参数 1：<strong>-p 任务</strong>——指定任务描述。Claude 看到任务后开始推理、完成后 stdout 输出结果。</p>
+<p>参数 2:<strong>--allowedTools</strong>——限制 Claude 能调的工具（权限收窄）。例：<code>claude -p "review PR" --allowedTools "Read,Grep,Glob,Bash(git:*)"</code> 只允许 Read / Grep / Glob / Bash(git 命令）。</p>
+<p>参数 3：<strong>--output-format</strong>——指定输出格式（json / text / stream-json）。CI 集成常用 json 格式（便于解析）。</p>
+<p>3 个参数让 Headless 模式可控——任务明确 / 权限收窄 / 输出可解析。</p>
+<p><strong>Headless 的 4 个适用场景</strong></p>
+<p>1. <strong>CI 自动化</strong>——GitHub Actions / GitLab CI 触发、跑 PR Review / 自动修复 / 部署。</p>
+<p>2. <strong>Cron 定时任务</strong>——每天跑 1 次 Claude 自动总结昨天的代码改动 / 自动整理 changelog。</p>
+<p>3. <strong>Webhook 触发</strong>——GitHub push 触发 / Sentry 异常触发、Claude 跑诊断 / 修复。</p>
+<p>4. <strong>批处理脚本</strong>——批量跑 Claude 任务（每文件 1 次）、适合大规模数据处理。</p>
+<p>4 个场景都无人参与——Headless 模式的核心价值：把 Claude Code 从人用工具变成机器用工具。</p>
+<h3>GitHub Actions 集成：自动 PR Review</h3>
+<p>Headless 模式最常见的应用是 GitHub Actions 集成——开发者 push 代码 → GitHub Actions 触发 → Claude Code Headless 跑 PR Review → 审查结果写 PR 评论。</p>
+<p><strong>step 1：在仓库里配 GitHub Actions workflow</strong></p>
+<p>在 <code>.github/workflows/claude-review.yml</code> 配 workflow、触发条件：PR 打开 / 同步 / push。完整配置见后面GitHub Actions workflow 完整配置代码块。</p>
+<p><strong>step 2：GitHub Actions 跑 Claude Code action</strong></p>
+<p>用 Anthropic 官方提供的 Claude Code GitHub Action（或第三方）、在 workflow 里调用。Action 内部跑 <code>claude -p "review this PR"</code>,Claude 读 PR diff / 推理 / 写审查意见。</p>
+<p><strong>step 3：Claude 审查结果写回 PR 评论</strong></p>
+<p>Claude 输出的审查意见用 GitHub API 写回 PR 评论、开发者看到完整的审查报告。</p>
+<p>3 步形成自动化 PR Review 流水线——开发者 push 代码、几分钟后 PR 上有 Claude 的审查意见、无需人工参与。</p>
+<p><strong>触发条件的选择</strong></p>
+<p>触发 1：<strong>pull_request 触发</strong>(PR 打开 / 同步）— 适合 PR-based 工作流（GitHub flow）。</p>
+<p>触发 2：<strong>push 触发</strong>(push 到 main / develop)— 适合 main-based 工作流。</p>
+<p>触发 3：<strong>workflow_dispatch 手动触发</strong>— 适合按需跑场景、开发者手动点按钮跑 Claude 审查。</p>
+<p>触发 4：<strong>schedule 定时触发</strong>(cron)— 适合每天跑一次健康检查。</p>
+<p>4 种触发条件覆盖所有 CI 场景、PR Review 用触发 1 / 2 最常见。</p>
+<h3>自动修复与自动 commit</h3>
+<p>PR Review 是被动——Claude 指出问题、人修复。本节升级到主动修复——Claude 跑完审查发现可修复 bug → 自动 Edit 改 → 自动 commit → push 回 PR。</p>
+<p><strong>自动修复的 3 个步骤</strong></p>
+<p>步骤 1：<strong>Claude 跑审查</strong>(<code>claude -p "review this PR, find fixable bugs"</code>)——Claude 不仅指出问题、还标记哪些可以自动修复。</p>
+<p>步骤 2：<strong>Claude 自动 Edit 改</strong>——Claude 对可自动修复的问题用 Edit 工具改文件（格式问题 / 简单 bug / 缺 timeout / 缺测试）。</p>
+<p>步骤 3：<strong>自动 commit + push</strong>——Claude 跑 Bash <code>git add . &amp;&amp; git commit -m "fix: auto-fix by Claude" &amp;&amp; git push</code> 把修改推回 PR 分支。</p>
+<p>3 步形成自动修复流水线——开发者 push 代码、Claude 跑审查 + 自动修复 + 推回、开发者只需要看 diff 确认是否合理。</p>
+<p><strong>Headless 模式下 Hook 仍生效</strong></p>
+<p>重要：Headless 模式不是放任 Claude 跑,Hook 仍生效。PreToolUse Hook 仍能拦危险命令（rm -rf / curl | sh),Stop Hook 仍能检查未提交 / 测试通过。</p>
+<p>Headless + Hook 的协同：CI token 权限收窄 + Hook 白名单命令 = 机器自治的安全边界。Claude 在 CI 跑也出不了大错。</p>
+<p><strong>自动修复的边界</strong></p>
+<p>不要全自动修复所有 bug——只自动修复低风险 / 明确的问题（格式 / 简单 bug / 缺 timeout）。复杂 bug（架构问题 / 性能瓶颈）仍由人判断。</p>
+<p>边界判断：这个 bug Claude 能高置信度修复吗?能 → 自动修；不能 → 仅标记让人看。</p>
+<h3>权限收窄：机器自治的安全边界</h3>
+<p>Headless 模式下 Claude 跑在 CI、不能放任——必须有安全边界。3 个维度收窄权限。</p>
+<p><strong>维度 1：HW 白名单命令（PreToolUse 拦危险）</strong></p>
+<p>Headless 模式下配置更严的 PreToolUse HW：白名单允许的命令(<code>git:*, pytest:*, ruff:*, npm run test</code>)、其他命令都拦（rm -rf / curl | sh / dd 等）。</p>
+<p>白名单 vs 黑名单：白名单更严——只允许明确知道安全的命令；黑名单只拦已知的危险、可能漏掉新出现的危险。CI 推荐白名单。</p>
+<p><strong>维度 2：CI token 权限收窄（env 限制）</strong></p>
+<p>GitHub Actions 用 <code>GITHUB_TOKEN</code>（自动提供）,token scope 收窄到 <code>contents: read</code>（只读）或 <code>contents: write</code>（仅 PR 写回）。绝不用 admin token、避免 Claude 改生产环境。</p>
+<p>同理、Anthropic API key 用 <code>ANTHROPIC_API_KEY</code> 单独管理、只给 CI 用、不和其他 key 混。</p>
+<p><strong>维度 3：Sandbox 沙箱（不让 Claude 改生产）</strong></p>
+<p>用 Docker 沙箱跑 Claude Code——Claude 在容器里跑、容器和主机隔离。即使 Claude 跑了 rm -rf、也只删容器内文件、不会影响主机 / 生产环境。</p>
+<p>沙箱 vs 主机直跑：沙箱安全但启动慢（每次 workflow 启动容器）；主机直跑快但有风险。CI 推荐沙箱。</p>
+<p>3 维权限收窄 = 机器自治的安全边界——Claude 在 CI 跑也出不了大错。</p>
+<h3>机器自治的工程实践 5 条</h3>
+<p>5 条工程实践是 Headless 模式的检查清单、任何 CI 集成 Claude Code 都应该按这 5 条评估。</p>
+<p><strong>实践 1：CI token 单独管理</strong></p>
+<p>CI 用的 token(<code>GITHUB_TOKEN</code> / <code>ANTHROPIC_API_KEY</code>）单独生成、scope 收窄（只读 / 仅 PR 写回）、不进代码仓库（用 GitHub Actions secrets）。token 泄露时影响范围最小。</p>
+<p><strong>实践 2：HW 白名单命令</strong></p>
+<p>CI 用的 Hook 配置比开发用更严——白名单命令（<code>git:*, pytest:*, ruff:*, npm run test</code>)、其他命令都拦。PreToolUse HW 配 deny-pipe-exec + deny-extra-dangerous + 白名单三层。</p>
+<p><strong>实践 3：沙箱跑危险操作</strong></p>
+<p>Claude 在 Docker 沙箱里跑、容器和主机隔离。沙箱启动慢但安全。生产环境的 Claude 跑一定要沙箱、开发环境的本地 Claude 跑可直跑。</p>
+<p><strong>实践 4：失败 fallback（回退人工）</strong></p>
+<p>CI 跑 Claude 失败（网络超时 / API 报错 / 任务失败）时、不能直接挂——回退到人工 review 标记或等下次 push 重试。fallback 机制确保 CI 不会因为 Claude 故障而停摆。</p>
+<p><strong>实践 5：日志完整记录</strong></p>
+<p>CI 跑 Claude 的所有输出（任务 / stdout / stderr / Hook 拦截 / 决策点）都完整记录到 GitHub Actions log、便于事后审计。出问题时能从日志看到Claude 跑了什么 / HW 拦了什么 / Claude 怎么推理。</p>
+<table>
+<thead><tr>
+<th>维度</th>
+<th>配置</th>
+<th>风险</th>
+<th>推荐</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>HW 白名单</td>
+<td>PreToolUse ci-allowlist.sh</td>
+<td>无 = Claude 跑任意命令</td>
+<td>配（白名单 git/pytest/ruff)</td>
+</tr>
+<tr>
+<td>token 收窄</td>
+<td>permissions: contents:read</td>
+<td>admin token = Claude 改生产</td>
+<td>配（只读 / 仅 PR 写回）</td>
+</tr>
+<tr>
+<td>沙箱</td>
+<td>Docker 跑 Claude</td>
+<td>主机直跑 = rm -rf 删主机</td>
+<td>配（沙箱 + 容器隔离）</td>
+</tr>
+<tr>
+<td>fallback</td>
+<td>continue-on-error + 人工 label</td>
+<td>无 = Claude 失败 CI 挂</td>
+<td>配（回退人工 review)</td>
+</tr>
+<tr>
+<td>日志</td>
+<td>GitHub Actions 自动记录</td>
+<td>不完整 = 出事无法审计</td>
+<td>配（任务 / stdout / HW / 决策点）</td>
+</tr>
+</tbody></table>
+<h3>Headless vs 交互式 + 与其他扩展机制协同</h3>
+<p>Headless 是另一种使用方式、不是另一种工具——其他 5 种扩展机制（SubAgent / Skills / Hooks / MCP / Tools）在 Headless 模式下仍可用。</p>
+<p><strong>Headless vs 交互式</strong></p>
+<p>交互式：人在回路、Claude 推理 → 调工具 → 输出 → 人确认 → 继续。适合开发阶段（探索性任务）。</p>
+<p>Headless：人不在回路、Claude 跑任务 → 退出。适合CI 阶段（可预测任务）。</p>
+<p>2 种模式的工作流：开发用交互式调通 → 沉淀为 Headless 跑 CI。例：开发用交互式调通"PR Review"流程 → 配 GitHub Actions 用 Headless 跑同样流程。</p>
+<table>
+<thead><tr>
+<th>维度</th>
+<th>交互式</th>
+<th>Headless</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>触发方式</td>
+<td>人启动 Claude Code</td>
+<td>CI / cron / webhook 自动触发</td>
+</tr>
+<tr>
+<td>用户参与</td>
+<td>人在回路（确认 / 决策）</td>
+<td>人不在回路（Claude 自主）</td>
+</tr>
+<tr>
+<td>适用场景</td>
+<td>开发（探索性 / 调试）</td>
+<td>CI / 定时任务（可预测）</td>
+</tr>
+<tr>
+<td>权限</td>
+<td>本地用户权限（较宽）</td>
+<td>CI token 收窄 + HW 白名单（较严）</td>
+</tr>
+<tr>
+<td>输出</td>
+<td>人眼看（交互式输出）</td>
+<td>stdout / JSON（脚本解析）</td>
+</tr>
+<tr>
+<td>调试</td>
+<td>本地日志 / 重跑</td>
+<td>CI 日志 / re-run workflow</td>
+</tr>
+</tbody></table>
+<p><strong>5 种扩展机制在 Headless 下仍可用</strong></p>
+<p>• <strong>Tools</strong>：Headless 下 Read / Write / Bash 仍可用、只是没人确认、Claude 直接推理调。</p>
+<p>• <strong>Skills</strong>：Headless 下 .claude/skills/ 仍加载、Claude 仍按 description 自动发现。</p>
+<p>• <strong>SubAgent</strong>：Headless 下 @name 仍能调 SubAgent（只是 SubAgent 完成没人确认、直接汇总结果）。</p>
+<p>• <strong>Hooks</strong>：Headless 下 4 类事件仍触发、PreToolUse 仍能拦、PostToolUse 仍能记录、Stop 仍能门控。</p>
+<p>• <strong>MCP</strong>：Headless 下 .mcp.json 仍加载、Claude 仍能调 mcp__xxx__yyy。</p>
+<p>5 种机制无障碍切换——开发交互式用 5 种机制、CI Headless 也用 5 种机制。区别只在有没有人确认。</p>
+<p><strong>5 者的协同场景</strong></p>
+<p>典型 Headless 协同：GitHub Actions 触发 → Claude Headless 跑任务 → 用 Tools 读 PR diff → 用 SubAgent(code-reviewer）做代码审查 → 用 Hook 拦危险命令 / 记录审计 → 用 MCP(GitHub）把审查结果写回 PR 评论 → 退出。</p>
+<p>5 种机制在 Headless 下原班人马工作、只是人不在回路。机器自治 = 5 机制 + 安全边界 + fallback + 日志。</p>
+<h2 class="section-anchor">🛠️ 实战代码</h2>
+<p><strong>📄 第 21 讲配套：Headless 模式命令完整示例（`claude -p` 跑任务 / stdin 输入 / 输出到 stdout)</strong></p>
+<pre><code class="lang-bash">#!/usr/bin/env bash
+# Headless 模式命令完整示例
+
+# === 模式 1:单次任务模式 ===
+# 跑 PR Review,完成后退出
+claude -p "review this PR and list issues" \
+  --allowedTools "Read,Grep,Glob,Bash(git:diff),Bash(git:log)" \
+  --output-format json
+
+# === 模式 2:stdin 模式(管道) ===
+# 把 git diff 通过 stdin 给 Claude
+git diff main..HEAD | claude -p "总结这次改动的关键变更" \
+  --output-format text
+
+# === 模式 3:链式管道 ===
+# 先 git diff,再 claude 总结,再写到 CHANGELOG
+git diff main..HEAD \
+  | claude -p "提取这次改动的关键功能,生成 changelog 条目" \
+  | tee -a CHANGELOG.md
+
+# === 模式 4:输出到文件 ===
+claude -p "生成这次 PR 的审查报告" \
+  --output-format json \
+  &gt; /tmp/claude-review.json 2&gt; /tmp/claude-error.log
+
+# === 模式 5:JSON 输出便于解析 ===
+RESULT=$(claude -p "review this PR" --output-format json)
+ISSUE_COUNT=$(echo "$RESULT" | jq '.issues | length')
+echo "Claude found $ISSUE_COUNT issues"
+
+# === 模式 6:--allowedTools 权限收窄 ===
+# 只允许 Read / Grep / Glob + git 命令,其他都禁止
+claude -p "review this PR" \
+  --allowedTools "Read,Grep,Glob,Bash(git:*)" \
+  --output-format json
+
+# 严禁命令:
+# - 不允许 Edit / Write(只读,不修改文件)
+# - 不允许 Bash(rm|curl|sh)(危险命令)
+# - 不允许 Bash(dd|chmod)(底层操作)</code></pre>
+<p><strong>📄 第 21 讲配套：GitHub Actions workflow 完整配置（自动 PR Review 触发 + Claude Code action + 评论写回）</strong></p>
+<pre><code class="lang-yaml"># .github/workflows/claude-review.yml
+name: Claude Code Review
+
+on:
+  # PR 打开 / 同步时触发
+  pull_request:
+    types: [opened, synchronize, reopened]
+  # 也支持 push 到 main
+  push:
+    branches: [main, develop]
+
+# 最小权限:只读 + 评论写回
+permissions:
+  contents: read       # 读代码
+  pull-requests: write # 写 PR 评论
+
+jobs:
+  claude-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10  # 10 分钟超时
+    steps:
+      # 1. 检出代码
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 完整历史(便于 git diff)
+
+      # 2. 配置 .claude 目录(HW / Skills / SubAgent 配置)
+      - name: Setup .claude
+        run: |
+          mkdir -p .claude/hooks
+          # 把团队沉淀的 HW 复制到 .claude/hooks
+          cp .github/claude-config/hooks/*.sh .claude/hooks/
+          chmod +x .claude/hooks/*.sh
+
+      # 3. 跑 Claude Code 审查
+      - name: Claude Review
+        id: review
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          # 跑 PR Review(Headless 模式)
+          REVIEW_RESULT=$(claude -p "review this PR, list issues by severity" \
+            --allowedTools "Read,Grep,Glob,Bash(git:diff),Bash(git:log)" \
+            --output-format json)
+          echo "review_result=$REVIEW_RESULT" &gt;&gt; $GITHUB_OUTPUT
+
+      # 4. 把审查结果写回 PR 评论
+      - name: Post PR Comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const review = `${{ steps.review.outputs.review_result }}`;
+            const body = `## Claude Code Review\n\n${review}`;
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            });
+
+# === 关键配置解释 ===
+# on.pull_request: PR 打开 / 同步时触发
+# permissions: 最小权限(只读 + 评论写回)
+# allowedTools: 只允许 Read / Grep / Glob / git 命令(权限收窄)
+# secrets.ANTHROPIC_API_KEY: 从 GitHub Secrets 读 API key(不进代码)
+# timeout-minutes: 10 分钟超时(避免挂死)</code></pre>
+<div class="flow-diagram">
+  <div class="flow-note" style="font-size:14px;font-weight:600;color:var(--link);font-style:normal;margin-bottom:10px">Headless CI/CD 流水线完整流程</div>
+
+  <div class="flow-actor"><div class="flow-actor-label">开发者 push 代码 / 提 PR</div></div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box"><div class="flow-box-title">GitHub Actions 触发</div><div class="flow-box-sub">on: pull_request / push</div></div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">checkout + 配置</div>
+    <ul>
+      <li>checkout 代码</li>
+      <li>setup <code>.claude/</code>（Hook / Skills / SubAgent 配置）</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box">
+    <div class="flow-box-title">启动 Claude Code（Headless 模式）</div>
+    <div class="flow-box-sub">沙箱：Docker 容器（隔离）</div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg" style="border-color:var(--warn-border)">
+    <div class="flow-box-title" style="color:var(--warn-border)">PreToolUse Hook（权限收窄）</div>
+    <ul>
+      <li><code>ci-allowlist.sh</code> 白名单命令</li>
+      <li><code>deny-pipe-exec.sh</code> 拦 pipe</li>
+      <li><code>deny-extra-dangerous.sh</code> 拦危险</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"><span class="flow-arrow-label">白名单内</span></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">Claude 跑任务（PR Review / 自动修复）</div>
+    <ul>
+      <li>Tools 读 PR diff（Read / Grep / Glob）</li>
+      <li>SubAgent 跑代码审查（@code-reviewer）</li>
+      <li>MCP 调 GitHub API（读 repo / 写评论）</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">PostToolUse Hook（记录审计）</div>
+    <ul>
+      <li><code>ci-audit-log.sh</code> 记录到 log</li>
+      <li><code>ci-stats.sh</code> 统计拦截次数</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg" style="border-color:var(--ok-border)">
+    <div class="flow-box-title" style="color:var(--ok-border)">Stop Hook（质量门控）</div>
+    <ul>
+      <li><code>ci-stop-gate.sh</code> 检查质量</li>
+      <li><code>ci-tests.sh</code> 跑测试</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box"><div class="flow-box-title">Claude 输出审查结果（JSON）</div></div>
+  <div class="flow-arrow"></div>
+  <div class="flow-actor flow-actor-final">
+    <div class="flow-actor-label">写 PR 评论 / 自动 commit + push</div>
+    <div class="flow-actor-desc">workflow 结束 · 日志完整记录</div>
+  </div>
+</div>
+<p><strong>📄 第 21 讲配套：自动修复 + 自动 commit 完整流程（审查 → 修复 → commit → push)</strong></p>
+<pre><code class="lang-yaml"># .github/workflows/claude-auto-fix.yml
+name: Claude Auto-Fix
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  contents: write  # 需要 write 权限(自动 commit)
+  pull-requests: write
+
+jobs:
+  auto-fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup .claude
+        run: |
+          mkdir -p .claude/hooks
+          cp .github/claude-config/hooks/*.sh .claude/hooks/
+          chmod +x .claude/hooks/*.sh
+
+      # 1. Claude 审查 + 自动修复
+      - name: Claude Review and Fix
+        id: fix
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          # Claude 跑审查 + 标记可自动修复的问题 + 自动 Edit
+          FIX_RESULT=$(claude -p "review this PR, find auto-fixable issues (format / timeout / simple bugs) and fix them with Edit tool" \
+            --allowedTools "Read,Grep,Glob,Edit,Write,Bash(git:*),Bash(rff:format),Bash(ruff:check)" \
+            --output-format json)
+          echo "fix_result=$FIX_RESULT" &gt;&gt; $GITHUB_OUTPUT
+
+      # 2. 自动 commit(只在有改动时)
+      - name: Commit Auto-Fix
+        run: |
+          if ! git diff --quiet; then
+            git config user.name "Claude Auto-Fix"
+            git config user.email "claude@anthropic.com"
+            git add .
+            git commit -m "fix: auto-fix by Claude Code Review
+
+            - 格式问题(ruff format)
+            - 简单 bug(缺 timeout / 缺错误处理)
+            - 缺测试覆盖
+
+            Reviewed-by: Claude Code"
+            git push
+          else
+            echo "No changes to commit"
+          fi
+
+      # 3. 写 PR 评论说明自动修复了什么
+      - name: Post Fix Comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const result = `${{ steps.fix.outputs.fix_result }}`;
+            const body = `## Claude Auto-Fix\n\n${result}`;
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            });
+
+# === 安全约束 ===
+# 1. allowedTools 收窄(只允许 git / ruff / Edit,不开放 rm / curl)
+# 2. HW 拦截(deny-pipe-exec + deny-extra-dangerous)
+# 3. 沙箱(Docker 跑 Claude,容器隔离)
+# 4. 只自动修复低风险 / 明确的问题(格式 / 简单 bug)
+# 5. 复杂 bug 仅标记不修复(让人判断)</code></pre>
+<p><strong>📄 第 21 讲配套：机器自治权限收窄 5 维配置（HW / token / sandbox / fallback / 日志）</strong></p>
+<pre><code class="lang-markdown"># 机器自治权限收窄 5 维配置
+
+## 维度 1:HW 白名单命令(PreToolUse 拦危险)
+HW 配置:
+  PreToolUse matcher: "Bash"
+  行为: 只允许白名单命令
+  白名单: git:*, pytest:*, ruff:*, npm run test, make test
+  黑名单(拒绝): rm -rf, curl | sh, dd, chmod 777, git push --force
+
+```bash
+# .claude/hooks/ci-allowlist.sh
+INPUT=$(cat)
+COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // ""')
+
+# 白名单:只允许明确安全的命令
+if echo "$COMMAND" | grep -qE '^(git|pytest|ruff|npm run test|make test)\b'; then
+  exit 0
+fi
+
+# 其他都拒绝
+echo "❌ CI 模式拒绝: '$COMMAND' 不在白名单" &gt;&amp;2
+exit 2
+```
+
+## 维度 2:CI token 权限收窄(env 限制)
+GitHub Actions permissions:
+  contents: read       # 只读代码
+  pull-requests: write # 评论写回(可选)
+  # 绝不用 admin / write 全部权限
+
+GitHub Secrets:
+  ANTHROPIC_API_KEY: 单独管理(不进代码)
+  GITHUB_TOKEN: 自动提供,scope 收窄
+
+## 维度 3:Sandbox 沙箱(不让 Claude 改生产)
+Docker 跑 Claude:
+  FROM ubuntu:22.04
+  RUN apt-get update &amp;&amp; apt-get install -y curl git python3
+  RUN curl -fsSL https://claude.ai/install.sh | sh
+  WORKDIR /workspace
+  # 容器和主机隔离,即使 Claude 跑了 rm -rf,只删容器内
+
+## 维度 4:失败 fallback(回退人工)
+workflow 配置:
+  steps:
+    - name: Claude Review
+      continue-on-error: true  # Claude 失败不阻塞 CI
+    - name: Notify Failure
+      if: failure()
+      run: |
+        # Claude 失败时,标记 PR "需要人工 review"
+        gh pr edit $PR_NUMBER --add-label "needs-human-review"
+        gh pr comment $PR_NUMBER --body "⚠️ Claude Review 失败,请人工 review"
+
+## 维度 5:日志完整记录
+GitHub Actions 自动记录:
+  - workflow 触发时间 / 触发人
+  - Claude 跑的任务
+  - Claude stdout / stderr 输出
+  - HW 拦截记录(PreToolUse / PostToolUse / Stop)
+  - Claude 最终审查结果
+  - exit code / 耗时
+
+# === 5 维配置检查清单 ===
+# 1. HW 白名单命令配了吗?  (没配 = 补)
+# 2. CI token 权限收窄了吗? (用 admin = 改)
+# 3. Claude 在沙箱跑吗?     (主机直跑 = 改)
+# 4. Claude 失败有 fallback 吗? (没 fallback = 补)
+# 5. 日志完整记录吗?         (只记成功 = 改)</code></pre>
+<h2 class="section-anchor">⚠️ 常见坑</h2>
+<div class="callout warn">
+<strong>⚠️ Headless 模式没配 HW 拦截（机器自治的 Claude 没拦截、跑出 rm -rf)</strong>
+<p>Headless = 放任的致命错误：以为 Headless 模式 Claude 自动跑、不用配 HW。结果 Claude 推理中跑了 <code>rm -rf node_modules/</code> 试图重装依赖、把整个项目删了。修正：Headless 模式下 HW 必须配（更严、白名单命令）,PreToolUse 拦截所有非白名单命令。判断标准：你的 Headless workflow 有 PreToolUse HW 吗?没有、补 HW。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ CI token 权限过大（用 admin token 让 Claude 改生产、改用 repo scope + read-only)</strong>
+<p>admin token 自杀陷阱：GitHub Actions 用 admin token(<code>permissions: write-all</code>),Claude 用这个 token 能改生产环境（force-push main / 改 workflow / 删 repo）。修正：token scope 收窄——<code>permissions: contents: read</code> + <code>pull-requests: write</code>。Claude 只读代码 + 写 PR 评论、不能改生产。判断标准：你的 CI token scope 收窄到最小吗?没用 admin token 吧?用了、改 scope。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ Claude 失败没 fallback（网络超时 / API 报错 / 任务失败、CI 直接挂、没回退人工）</strong>
+<p>Claude 挂 = CI 挂陷阱：Claude 跑失败（网络超时 / Anthropic API 报错 / 任务复杂超时）,workflow 直接 fail,PR 阻塞无法 merge。修正：加 fallback——<code>continue-on-error: true</code>(Claude 失败不阻塞 CI)+ 失败时给 PR 加 label "needs-human-review" + 写评论⚠️ Claude Review 失败、请人工 review。CI 不会因为 Claude 故障而停摆。判断标准：你的 CI 失败时会回退人工 review 吗?不会、补 fallback。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 日志不完整（只记成功不记失败、出事后无法审计、完整记录 stdout / stderr / 决策点）</strong>
+<p>日志残缺陷阱：CI 跑 Claude 只记成功任务的输出、失败任务 / HW 拦截 / Claude 推理过程不记。出事后想看"Claude 那天跑了什么 / HW 拦了什么 / Claude 怎么推理"——找不到。修正：完整日志——任务输入 / Claude stdout / Claude stderr / HW 拦截记录（PreToolUse / PostToolUse / Stop)/ 决策点（Claude 为什么选这个工具）/ exit code / 耗时。GitHub Actions 自动记录、但要确保这些字段都打。判断标准：你能从 CI 日志回溯"Claude 那次 PR Review 的完整推理过程"吗?不能、补日志。</p>
+</div>
+<h2 class="section-anchor">💡 一句话备忘</h2>
+<blockquote>Headless 模式让 Claude Code 从 IDE 工具变成 CI 工具——<code>claude -p</code> 跑非交互任务、GitHub Actions 自动 PR Review + 自动修复、5 维权限收窄（HW 白名单 / token 收窄 / 沙箱 / fallback / 日志）保障机器自治的安全边界。</blockquote>
+<hr>
+<p class="breadcrumb">← 回到 <a href="#top">本讲网页顶部</a></p>
+</main>
+<script>
+  (function () {
+    var STORAGE_KEY = "***";
+    var root = document.documentElement;
+    var btn  = document.getElementById("themeToggle");
+    var icon = document.getElementById("themeIcon");
+    var lbl  = document.getElementById("themeLabel");
+    function apply(theme) {
+      root.setAttribute("data-theme", theme);
+      if (theme === "dark") {
+        icon.innerHTML = "&#9728;&#65039;";
+        lbl.textContent  = "亮色";
+      } else {
+        icon.innerHTML = "&#127769;";
+        lbl.textContent  = "暗色";
+      }
+    }
+    var saved = null;
+    try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    if (saved === "light" || saved === "dark") {
+      apply(saved);
+    } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      apply("dark");
+    } else {
+      apply("light");
+    }
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") || "light";
+      var next = cur === "dark" ? "light" : "dark";
+      apply(next);
+      try { localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>
