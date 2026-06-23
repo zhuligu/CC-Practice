@@ -1,0 +1,721 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 19 讲 · 海纳百川 · MCP 协议与外部工具连接</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fff; --fg: #222; --muted: #555; --link: #1a73e8;
+    --code-bg: #f4f4f4; --code-fg: inherit;
+    --pre-bg: #1e1e1e; --pre-fg: #eaeaea;
+    --border: #ddd; --th-bg: #f5f5f5; --zebra: #fafafa;
+    --hover-row: #e8f0fe; --hover-th: #eef2f7;
+    --blockquote-bg: #fafafa; --blockquote-border: #ddd;
+    --hr: #eee;
+    --toggle-bg: #f5f5f5; --toggle-fg: #333; --toggle-border: #ddd;
+    --tag-bg: #eef4ff; --tag-fg: #1a73e8;
+    --callout-bg: #fffbe6; --callout-border: #fadb14;
+    --warn-bg: #fff1f0; --warn-border: #ff4d4f;
+    --ok-bg: #f6ffed; --ok-border: #52c41a;
+    --code-block-bg: #f8f9fa;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1115; --fg: #e6e6e6; --muted: #9aa0a6; --link: #8ab4f8;
+    --code-bg: #1e1f24; --code-fg: #e6e6e6;
+    --pre-bg: #1a1d23; --pre-fg: #e6e6e6;
+    --border: #303136; --th-bg: #1c1f25; --zebra: #16181d;
+    --hover-row: #1f2733; --hover-th: #262c36;
+    --blockquote-bg: #181a20; --blockquote-border: #303136;
+    --hr: #2a2d33;
+    --toggle-bg: #1c1f25; --toggle-fg: #e6e6e6; --toggle-border: #303136;
+    --tag-bg: #1a2540; --tag-fg: #8ab4f8;
+    --callout-bg: #2a261a; --callout-border: #b89333;
+    --warn-bg: #2a1a1a; --warn-border: #a84545;
+    --ok-bg: #1a261a; --ok-border: #4a8a4a;
+    --code-block-bg: #16181d;
+  }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 "PingFang SC", "Microsoft YaHei", "Helvetica Neue",
+                 Arial, sans-serif;
+    font-size: 15px; line-height: 1.7;
+    transition: background-color .2s ease, color .2s ease;
+  }
+  main {
+    max-width: 1100px;
+    width: calc(100% - 32px);
+    margin: 0 auto;
+    padding: 24px 0 64px 0;
+    box-sizing: border-box;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    line-height: 1.3; margin: 1.5em 0 .6em;
+  }
+  h1 { font-size: 1.9em; border-bottom: 2px solid var(--hr); padding-bottom: .3em; }
+  h2 { font-size: 1.45em; border-bottom: 1px solid var(--hr); padding-bottom: .25em; margin-top: 2em; }
+  h3 { font-size: 1.18em; color: var(--link); margin-top: 1.5em; }
+  h4 { font-size: 1.05em; margin-top: 1.2em; color: var(--fg); font-weight: 600; }
+  p, ul, ol, blockquote, pre, table { margin: .7em 0; }
+  ul, ol { padding-left: 1.6em; }
+  li { margin: .3em 0; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  blockquote {
+    margin: .8em 0; padding: .6em 1em;
+    border-left: 4px solid var(--blockquote-border);
+    color: var(--muted); background: var(--blockquote-bg);
+  }
+  .callout {
+    background: var(--callout-bg);
+    border-left: 4px solid var(--callout-border);
+    padding: 12px 16px; margin: 1.2em 0; border-radius: 4px;
+  }
+  .callout.warn { background: var(--warn-bg); border-left-color: var(--warn-border); }
+  .callout.ok   { background: var(--ok-bg);   border-left-color: var(--ok-border); }
+  code {
+    font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: .9em; background: var(--code-bg); color: var(--code-fg);
+    padding: 1px 5px; border-radius: 3px;
+  }
+  pre {
+    background: var(--pre-bg); color: var(--pre-fg);
+    padding: 14px 16px; border-radius: 6px;
+    overflow-x: auto; font-size: 13px; line-height: 1.55;
+    margin: 1em 0;
+  }
+  pre code { background: transparent; padding: 0; color: inherit; }
+  pre.lang-flow {
+    background: var(--code-block-bg); color: var(--fg);
+    border: 1px solid var(--border);
+  }
+  :root[data-theme="dark"] pre.lang-flow {
+    background: #0a0b0d; color: #d4d4d4;
+  }
+  table {
+    width: 100% !important; border-collapse: collapse;
+    table-layout: auto; margin: 1em 0;
+    font-size: 14px; display: table;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left; vertical-align: top;
+    transition: background-color .15s ease;
+  }
+  th { background: var(--th-bg); font-weight: 600; }
+  tbody tr:nth-child(even) td { background: var(--zebra); }
+  tbody tr:hover td, tbody tr:hover th { background: var(--hover-row) !important; }
+  thead th:hover { background: var(--hover-th) !important; }
+  :root[data-theme="dark"] tbody tr:hover td,
+  :root[data-theme="dark"] tbody tr:hover th,
+  :root[data-theme="dark"] thead th:hover { color: #fff; }
+  hr { border: none; border-top: 1px solid var(--hr); margin: 2em 0; }
+  img { max-width: 100%; height: auto; }
+
+  .tag {
+    display: inline-block; padding: 2px 8px; margin-right: 6px;
+    background: var(--tag-bg); color: var(--tag-fg);
+    border-radius: 12px; font-size: 12px; font-weight: 500;
+  }
+  .breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 1em; }
+  .breadcrumb a { color: var(--muted); }
+  .breadcrumb a:hover { color: var(--link); }
+
+  .theme-toggle {
+    position: fixed; top: 12px; right: 12px; z-index: 9999;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: var(--toggle-bg); color: var(--toggle-fg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 6px; font-size: 13px; font-family: inherit;
+    cursor: pointer; user-select: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    transition: background-color .2s ease, transform .1s ease;
+  }
+  .theme-toggle:hover { background: var(--hover-row); }
+  .theme-toggle:active { transform: scale(.97); }
+  .theme-toggle .icon { font-size: 15px; line-height: 1; }
+
+  .lesson-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, #1a73e8, #6f42c1);
+    color: #fff; font-size: 24px; font-weight: 700;
+    margin-right: 14px; vertical-align: middle;
+  }
+
+  .section-anchor { scroll-margin-top: 60px; }
+</style>
+<link rel="stylesheet" href="assets/flow.css">
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="切换暗色模式">
+  <span class="icon" id="themeIcon">&#127769;</span>
+  <span id="themeLabel">暗色</span>
+</button>
+<main>
+<div class="breadcrumb">课程导航： « <a href="lesson-18.html">第 18 讲</a>  ·  <a href="lesson-20.html">第 20 讲</a> »</div>
+<h1><span class="lesson-badge">19</span>第 19 讲 · 海纳百川 · MCP 协议与外部工具连接</h1>
+<p>
+  <span class="tag">正课</span>
+  <span class="tag">第 19 / 33 讲</span>
+  <span class="tag">Claude Code 工程化实战</span>
+  <span class="tag">MCP 系列开篇</span>
+</p>
+<div class="callout ok">
+<strong>📌 本讲摘要</strong>
+<p>Claude Code 原生只能读写本地文件（Bash / Read / Edit / Write / Grep / Glob)、前 18 讲我们通过 Skills / SubAgent / Hooks 扩展了 Claude 的能力边界、但这些扩展都基于本地文件或本地命令。本讲进入第 4 种扩展——MCP(Model Context Protocol)：让 Claude Code 连接 GitHub / Notion / 数据库 / 实时文档等外部世界。MCP 是 Anthropic 在 2024-11 推出的开放标准、3 种传输方式（stdio / HTTP / SSE)、本讲讲清楚 MCP 是什么、3 种传输方式怎么选、5 个实战 MCP 服务器怎么用、以及如何自己写一个自定义 MCP 服务器。</p>
+<p>本讲的三条主线：</p>
+<p>第一、MCP 是什么?为什么需要它?——Claude Code 原生能力边界（只能本地文件/命令）+ MCP 解决如何连接外部世界(GitHub / Notion / 数据库）+ MCP 是 Anthropic 2024-11 推出的开放标准（JSON-RPC 2.0 over stdio / HTTP / SSE)+ MCP 工具调用模式（tool discovery / tool call / structured output）。</p>
+<p>第二、3 种传输方式 stdio / HTTP / SSE 怎么选 + 5 个实战 MCP 服务器——stdio（本地进程、最快）/ HTTP（远程 SaaS)/ SSE（流式长连接）;5 个实战：GitHub / Notion / Filesystem / Database / Puppeteer。</p>
+<p>第三、如何自己写一个自定义 MCP 服务器 + 4 种扩展机制边界——用 Python / TypeScript MCP SDK 写；MCP vs Skills vs Hooks vs SubAgent 的工程定位。</p>
+<p>学完本讲、你应该能配置 5 个常见 MCP server（在 .mcp.json)、能用 stdio / HTTP / SSE 3 种传输方式、能自己用 Python SDK 写一个最小 MCP server、能区分 MCP / Skills / Hooks / SubAgent 4 种扩展机制的工程定位。</p>
+</div>
+<h2 class="section-anchor">📖 详细内容</h2>
+<h3>MCP 是什么?为什么需要它?</h3>
+<p>前 18 讲我们用 3 种方式扩展 Claude Code：SubAgent（角色层独立上下文）/ Skills（能力层软规范）/ Hooks（事件层硬约束）。3 种扩展都基于本地文件 + 本地命令、但 Claude Code 想要连接外部世界(GitHub / Notion / 数据库 / 实时文档）、就需要 MCP。</p>
+<p><strong>Claude Code 原生能力边界</strong></p>
+<p>Claude Code 默认带 6 类工具：Bash（本地命令）/ Read / Edit / Write / Grep / Glob（本地文件）。这 6 类工具只能操作当前工作目录 + 子进程能访问的范围。</p>
+<p>如果 Claude 想：</p>
+<p>• 创建 GitHub issue → 没有 GitHub API 工具。</p>
+<p>• 写 Notion 页面 → 没有 Notion API 工具。</p>
+<p>• 查 PostgreSQL 数据库 → 没有 SQL 工具。</p>
+<p>• 抓网页内容 → 没有浏览器工具。</p>
+<p>这 4 类需求都超出本地、需要外部连接。</p>
+<p><strong>MCP 解决如何连接外部世界</strong></p>
+<p>MCP(Model Context Protocol）是 Anthropic 在 2024-11 推出的开放标准、目标是让 AI Agent 像 USB-C 一样、即插即用地连接任何外部工具。</p>
+<p>MCP 的工作方式：开发者把外部工具打包成 MCP server（一个进程）,MCP client(Claude Code 内置）通过 JSON-RPC 2.0 协议和 server 通信、把 server 暴露的工具注入到 Claude 的工具列表、Claude 就能像调 Bash 一样调这些外部工具。</p>
+<p>类比：MCP 之于 AI Agent ≈ USB-C 之于硬件。一个 USB-C 接口、接显示器 / 硬盘 / 充电器、协议统一。一个 MCP 协议、接 GitHub / Notion / 数据库、API 统一。</p>
+<p><strong>MCP 是开放标准</strong></p>
+<p>MCP 不绑定 Claude Code。OpenAI Codex / Cursor / GitHub Copilot / Windsurf 等主流 AI Agent 工具都已支持 MCP 协议（2025-02 之后）。这意味着：你写一个 MCP server、可以在 5 个 AI Agent 工具里通用。</p>
+<p>这是 MCP 与 Skills / SubAgent / Hooks 最大的不同：Skills / SubAgent / Hooks 都是 Claude Code 专有机制、MCP 是行业标准协议。</p>
+<p><strong>MCP 工具调用模式</strong></p>
+<p>3 步调用流程：</p>
+<p>1. <strong>tool discovery</strong>（工具发现）——Claude 启动时、mcp client 拉所有 MCP server 的工具清单、合并到 Claude 工具列表。Claude 看到 `mcp__github__create_issue` 等工具、知道可以用。</p>
+<p>2. <strong>tool call</strong>（工具调用）——Claude 推理决定调 `mcp__github__create_issue`,mcp client 通过 JSON-RPC 2.0 协议调用对应的 MCP server。</p>
+<p>3. <strong>structured output</strong>（结构化输出）——MCP server 调 GitHub API、把结果（JSON）返回给 mcp client,mcp client 解析后返回给 Claude。</p>
+<p>3 步形成工具全生命周期——从发现到调用到结果、标准化。</p>
+<div class="flow-diagram">
+  <div class="flow-note" style="font-size:14px;font-weight:600;color:var(--link);font-style:normal;margin-bottom:10px">MCP 工具调用全流程</div>
+
+  <div class="flow-actor"><div class="flow-actor-label">Claude Code 启动</div></div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">读取 MCP 配置</div>
+    <ul>
+      <li><code>.mcp.json</code>（项目级）</li>
+      <li><code>~/.claude/.mcp.json</code>（全局）</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">启动 / 连接 MCP server</div>
+    <ul>
+      <li>stdio：本地子进程</li>
+      <li>HTTP / SSE：远程</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box">
+    <div class="flow-box-title">拉所有 server 工具清单</div>
+    <div class="flow-box-sub">Claude 看到 mcp__github__create_issue 等</div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box">
+    <div class="flow-box-title">用户说话 → Claude 推理决定调外部工具</div>
+    <div class="flow-box-sub">"创建 GitHub issue：bug #123"</div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg" style="border-color:var(--link)">
+    <div class="flow-box-title">mcp client 构造 JSON-RPC 2.0 请求</div>
+    <pre style="font-size:11px;margin:6px 0;padding:8px;background:var(--code-bg);border-radius:4px;color:var(--fg);overflow-x:auto">{
+  "jsonrpc": "2.0",
+  "method": "tools/call",
+  "params": {
+    "name": "create_issue",
+    "arguments": { "repo": "owner/repo", "title": "bug #123", "body": "..." }
+  },
+  "id": 1
+}</pre>
+  </div>
+  <div class="flow-arrow"><span class="flow-arrow-label">stdio / HTTP / SSE 传输</span></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">MCP Server</div>
+    <ul>
+      <li>解析 JSON-RPC 请求</li>
+      <li>调 GitHub API（POST /repos/.../issues）</li>
+      <li>收到响应，构造 JSON-RPC 响应</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"><span class="flow-arrow-label">JSON-RPC 响应</span></div>
+  <div class="flow-box"><div class="flow-box-title">mcp client 解析，返回给 Claude</div></div>
+  <div class="flow-arrow"></div>
+  <div class="flow-actor flow-actor-final">
+    <div class="flow-actor-label">用户收到："已创建 issue #124"</div>
+  </div>
+</div>
+<h3>3 种传输方式 stdio / HTTP / SSE 怎么选</h3>
+<p>MCP 协议层都是 JSON-RPC 2.0（标准 RPC 协议）、只是传输层有 3 种实现。</p>
+<p><strong>方式 1：stdio（本地进程）</strong></p>
+<p>stdio = standard input / output。MCP server 是一个本地进程、Claude Code 启动它、通过 stdin / stdout 收发 JSON-RPC 消息。</p>
+<p>配置：<code>"command": "npx -y @modelcontextprotocol/server-github"</code>——直接启动本地命令。</p>
+<p>适用场景：本地 MCP server（如 filesystem MCP / GitHub MCP 通过 npx 启动的本地包）。</p>
+<p>优势：最快（无网络开销）/ 最简单（无需 HTTP server)/ 最安全（进程隔离）。</p>
+<p>劣势：只能本地、不能跨机器。</p>
+<p><strong>方式 2：HTTP（远程 HTTP 调用）</strong></p>
+<p>HTTP = 标准的 HTTP 请求-响应。MCP server 跑在远程（或本地 HTTP server),Claude Code 用 HTTP POST 发 JSON-RPC 消息。</p>
+<p>配置：<code>"url": "https://mcp.example.com/api"</code> + <code>"type": "http"</code>——指向远程 MCP server URL。</p>
+<p>适用场景：远程 SaaS 服务（如 Anthropic 官方托管的 MCP / 第三方托管的 Notion MCP）。</p>
+<p>优势：跨机器 / 集中部署 / 多 client 共享一个 server。</p>
+<p>劣势：有网络延迟 / 需要 HTTPS / 需要鉴权。</p>
+<p><strong>方式 3：SSE(Server-Sent Events、流式长连接）</strong></p>
+<p>SSE = 服务端推送。MCP server 主动推送消息给 client,client 保持长连接。</p>
+<p>配置：<code>"url": "https://mcp.example.com/sse"</code> + <code>"type": "sse"</code>。</p>
+<p>适用场景：长连接 / 实时推送（如数据库变更通知 / 实时文档同步）。</p>
+<p>优势：实时（服务端主动推送）/ 适合长任务。</p>
+<p>劣势：实现复杂 / 防火墙可能拦截 / 资源占用。</p>
+<p>3 种方式的选择原则：</p>
+<p>• 本地 server、追求性能 → stdio。</p>
+<p>• 远程 SaaS、需要跨机器 → HTTP。</p>
+<p>• 需要服务端推送、实时场景 → SSE。</p>
+<p>具体配置见后面 3 种传输方式对比代码代码块。</p>
+<table>
+<thead><tr>
+<th>维度</th>
+<th>stdio</th>
+<th>HTTP</th>
+<th>SSE</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>传输层</td>
+<td>stdin/stdout</td>
+<td>HTTP POST</td>
+<td>HTTP 长连接</td>
+</tr>
+<tr>
+<td>适用场景</td>
+<td>本地 MCP server</td>
+<td>远程 SaaS</td>
+<td>流式长连接</td>
+</tr>
+<tr>
+<td>性能</td>
+<td>~5-10ms（最快）</td>
+<td>~50-200ms</td>
+<td>~50-200ms 首字节</td>
+</tr>
+<tr>
+<td>配置</td>
+<td>command + args</td>
+<td>url + type：http</td>
+<td>url + type：sse</td>
+</tr>
+<tr>
+<td>调试</td>
+<td>echo 测试简单</td>
+<td>Postman / curl</td>
+<td>浏览器 DevTools</td>
+</tr>
+<tr>
+<td>安全性</td>
+<td>进程隔离（最安全）</td>
+<td>需要 HTTPS + 鉴权</td>
+<td>需要 HTTPS + 鉴权</td>
+</tr>
+</tbody></table>
+<h3>5 个实战 MCP 服务器配置</h3>
+<p>5 个常见 MCP server 覆盖了连接外部世界的 4 类典型需求：代码托管（GitHub)/ 文档（Notion)/ 文件扩展（Filesystem)/ 数据（Database)/ 浏览器（Puppeteer）。</p>
+<p><strong>Server 1：GitHub MCP（管理 issue / PR / repo)</strong></p>
+<p>用途：让 Claude 直接操作 GitHub——创建 issue / 提 PR / 读 repo / 触发 workflow。</p>
+<p>配置：<code>"github": {"command": "npx -y @modelcontextprotocol/server-github", "env": {"GITHUB_TOKEN": "ghp_..."}}</code>——stdio 模式启动、通过 env 传 GitHub token。</p>
+<p><strong>Server 2：Notion MCP（读写 Notion 页面）</strong></p>
+<p>用途：让 Claude 读写 Notion 数据库 / 页面——查询任务清单 / 写会议纪要 / 更新文档。</p>
+<p>配置：<code>"notion": {"command": "npx -y @modelcontextprotocol/server-notion", "env": {"NOTION_API_KEY": "secret_..."}}</code>。</p>
+<p><strong>Server 3：Filesystem MCP（扩展文件访问到任意路径）</strong></p>
+<p>用途：让 Claude 访问工作目录外的文件（如 ~/.claude/ 全局配置 / 共享盘 / 其他项目的文件）。</p>
+<p>配置：<code>"filesystem": {"command": "npx -y @modelcontextprotocol/server-filesystem", "args": ["/path/to/allowed/dir"]}</code>——args 限定可访问路径（安全）。</p>
+<p><strong>Server 4：Database MCP(SQLite / PostgreSQL)</strong></p>
+<p>用途：让 Claude 查数据库——查用户数据 / 跑 SQL / 导出报表。</p>
+<p>配置（以 SQLite 为例）:<code>"sqlite": {"command": "uvx mcp-server-sqlite", "args": ["--db-path", "/path/to/db.sqlite"]}</code>。</p>
+<p><strong>Server 5：Puppeteer MCP（浏览器自动化）</strong></p>
+<p>用途：让 Claude 操作浏览器——抓网页内容 / 填表单 / 点按钮 / 截图。</p>
+<p>配置：<code>"puppeteer": {"command": "npx -y @modelcontextprotocol/server-puppeteer"}</code>。</p>
+<p>5 个 server 一起配、就形成了 Claude Code 的瑞士军刀——任何外部世界都能连接。完整配置见后面 .mcp.json 完整配置代码块。</p>
+<h3>.mcp.json 配置文件结构</h3>
+<p>所有 MCP server 都配置在 .mcp.json（项目根目录）或 ~/.claude/.mcp.json（全局）。</p>
+<p><strong>完整结构</strong></p>
+<pre><code class="lang-json">{
+  "mcpServers": {
+    "github": {...},
+    "notion": {...},
+    "filesystem": {...},
+    "sqlite": {...},
+    "puppeteer": {...}
+  }
+}</code></pre>
+<p>每个 server 配置项的字段：</p>
+<p>• <strong>name</strong>（键名、如 github)——MCP server 名字、工具名前缀是 `mcp__&lt;name&gt;__&lt;tool&gt;`。</p>
+<p>• <strong>command</strong>(stdio 模式）——启动 server 的本地命令。</p>
+<p>• <strong>args</strong>(stdio 模式）——传给 command 的参数。</p>
+<p>• <strong>url</strong>(HTTP / SSE 模式）——远程 MCP server URL。</p>
+<p>• <strong>type</strong>——<code>"http"</code> 或 <code>"sse"</code>（默认 stdio、不用写）。</p>
+<p>• <strong>env</strong>——传给 server 的环境变量（API token 等）。</p>
+<p><strong>加载机制</strong></p>
+<p>Claude Code 启动时：</p>
+<p>1. 读 .mcp.json（项目级）。</p>
+<p>2. 读 ~/.claude/.mcp.json（全局级）。</p>
+<p>3. 合并两份配置（项目级优先）。</p>
+<p>4. 启动所有 stdio 模式的 server（子进程）。</p>
+<p>5. 连接所有 HTTP / SSE 模式的 server。</p>
+<p>6. 拉所有 server 的工具清单、合并到 Claude 工具列表。</p>
+<p>7. Claude 看到 `mcp__github__create_issue` 等工具、就能调用。</p>
+<h3>如何自己写一个自定义 MCP 服务器</h3>
+<p>MCP server 是个普通进程、可以用任何语言写。官方 SDK 支持 Python / TypeScript / Go / Rust、本节用 Python SDK 演示。</p>
+<p><strong>step 1：装 SDK</strong></p>
+<pre><code class="lang-bash">pip install mcp</code></pre>
+<p><strong>step 2：写最小 MCP server(2 个 tool：hello / echo)</strong></p>
+<p>完整代码见后面 自定义 MCP 服务器完整实现代码块。</p>
+<p><strong>step 3：配置到 .mcp.json</strong></p>
+<pre><code class="lang-json">{
+  "mcpServers": {
+    "my-server": {
+      "command": "python",
+      "args": ["/path/to/my_server.py"]
+    }
+  }
+}</code></pre>
+<p><strong>step 4：Claude Code 启动时、自动加载 my-server</strong></p>
+<p>Claude 看到工具 `mcp__my_server__hello` 和 `mcp__my_server__echo`、能直接调。</p>
+<p><strong>step 5：调试</strong></p>
+<p>用 mcp-inspector 调试 MCP server：</p>
+<pre><code class="lang-bash">npx -y @modelcontextprotocol/inspector python /path/to/my_server.py</code></pre>
+<p>打开浏览器 http://localhost:5173、看 server 暴露的工具列表 / 调工具 / 看 JSON-RPC 消息。</p>
+<p>mcp-inspector 是 MCP server 的 Postman——必备调试工具。</p>
+<h3>MCP vs Skills vs Hooks vs SubAgent 边界</h3>
+<p>前 14 讲我们学了 3 种扩展机制：Skills（能力）/ SubAgent（角色）/ Hooks（门卫）。本讲加了第 4 种 MCP（桥梁）。4 者的工程定位不同、不能互相替代。</p>
+<p><strong>4 者的工程定位</strong></p>
+<p>• <strong>MCP</strong>：桥梁——连接外部世界、标准化协议、跨 AI Agent 工具通用。负责调用外部 API。</p>
+<p>• <strong>Skills</strong>：说明书——LLM 推理该用就用、渐进披露、Markdown 描述。负责描述本地能力。</p>
+<p>• <strong>Hooks</strong>：门卫——事件驱动、硬约束、瞬间拦截。负责瞬间检查。</p>
+<p>• <strong>SubAgent</strong>：角色——独立上下文、@name 显式调。负责复杂任务隔离执行。</p>
+<p>4 者的工作层次不同：MCP 在工具层（连接外部 API),Skill 在能力层(LLM 推理）,HW 在事件层（瞬时检查）,SubAgent 在角色层（独立上下文）。</p>
+<p><strong>4 者的协同</strong></p>
+<p>典型协同：Claude 用 GitHub MCP(`mcp__github__create_issue`)+ Stop Hook（检查是否 commit)+ 文档 Skill（自动写 changelog）。3 者各司其职、形成完整工作流。</p>
+<p>典型反协同：不要用 MCP 替代 Skill。MCP 是调外部 API、不能做复杂任务。比如代码审查用 code-reviewer SubAgent（第 6 讲）、不用 GitHub MCP（只能调 API、不能推理）。</p>
+<p>4 者的边界判断：这件事是调外部 API吗?是 → MCP。这件事是LLM 推理该用就用吗?是 → Skill。这件事是瞬间检查吗?是 → HW。这件事需要独立上下文吗?是 → SubAgent。</p>
+<table>
+<thead><tr>
+<th>维度</th>
+<th>MCP</th>
+<th>Skills</th>
+<th>Hooks</th>
+<th>SubAgent</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>扩展方式</td>
+<td>连接外部 API</td>
+<td>本地能力描述</td>
+<td>事件驱动拦截</td>
+<td>独立上下文</td>
+</tr>
+<tr>
+<td>触发</td>
+<td>LLM 推理</td>
+<td>LLM 推理（description 匹配）</td>
+<td>工具执行前后 / Stop</td>
+<td>@name 显式调</td>
+</tr>
+<tr>
+<td>边界</td>
+<td>工具层</td>
+<td>能力层</td>
+<td>事件层</td>
+<td>角色层</td>
+</tr>
+<tr>
+<td>配置位置</td>
+<td>.mcp.json</td>
+<td>.claude/skills/*/SKILL.md</td>
+<td>.claude/settings.json hooks</td>
+<td>.claude/agents/*.md</td>
+</tr>
+<tr>
+<td>典型用途</td>
+<td>调 GitHub / Notion / DB API</td>
+<td>自动发现的本地能力</td>
+<td>危险拦截 / 自动格式化</td>
+<td>复杂任务隔离</td>
+</tr>
+<tr>
+<td>调试</td>
+<td>mcp-inspector</td>
+<td>看 SKILL.md description</td>
+<td>看 stderr 输出</td>
+<td>看 subagent 报告</td>
+</tr>
+</tbody></table>
+<h2 class="section-anchor">🛠️ 实战代码</h2>
+<p><strong>📄 第 19 讲配套：.mcp.json 完整配置（5 个 MCP server：github / notion / filesystem / database / puppeteer)</strong></p>
+<pre><code class="lang-json">// .mcp.json(项目根目录)
+{
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_TOKEN": "ghp_your_token_here"
+      }
+    },
+    "notion": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-notion"],
+      "env": {
+        "NOTION_API_KEY": "secret_your_key_here"
+      }
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/Users/me/projects"]
+    },
+    "sqlite": {
+      "command": "uvx",
+      "args": ["mcp-server-sqlite", "--db-path", "/Users/me/data/app.sqlite"]
+    },
+    "puppeteer": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-puppeteer"]
+    }
+  }
+}
+
+// 配置说明:
+// - github / notion:stdio 模式 + env 传 API token
+// - filesystem:stdio 模式 + args 限定可访问路径(安全)
+// - sqlite:stdio 模式 + args 传数据库路径
+// - puppeteer:stdio 模式,无额外配置
+
+// 加载后 Claude 看到的工具:
+// - mcp__github__create_issue / list_issues / create_pull_request / ...
+// - mcp__notion__create_page / query_database / ...
+// - mcp__filesystem__read_file / write_file / list_directory
+// - mcp__sqlite__query / list_tables / describe_table
+// - mcp__puppeteer__navigate / click / screenshot / ...</code></pre>
+<p><strong>📄 第 19 讲配套：3 种传输方式对比代码（stdio / HTTP / SSE 各自的配置 + 调用示例）</strong></p>
+<pre><code class="lang-json">// .mcp.json(3 种传输方式对比)
+{
+  "mcpServers": {
+    // === 方式 1:stdio(本地进程)===
+    "github-local": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {"GITHUB_TOKEN": "ghp_..."}
+    },
+
+    // === 方式 2:HTTP(远程 SaaS)===
+    "github-remote": {
+      "url": "https://mcp.example-github.com/api",
+      "type": "http",
+      "headers": {
+        "Authorization": "Bearer ghp_..."
+      }
+    },
+
+    // === 方式 3:SSE(流式长连接)===
+    "github-sse": {
+      "url": "https://mcp.example-github.com/sse",
+      "type": "sse",
+      "headers": {
+        "Authorization": "Bearer ghp_..."
+      }
+    }
+  }
+}
+
+// 3 种方式选择:
+// stdio:  本地 server, 最快, 适合本地进程
+// HTTP:   远程 SaaS, 跨机器, 适合集中部署
+// SSE:    流式推送, 实时场景, 适合长任务
+
+// 性能对比(同网络条件下):
+// stdio:  ~5-10ms(本地进程间通信)
+// HTTP:   ~50-200ms(网络 RTT)
+// SSE:    ~50-200ms 首字节,后续流式</code></pre>
+<p><strong>📄 第 19 讲配套：自定义 MCP 服务器完整实现（Python SDK 写最小 MCP server,2 个 tool)</strong></p>
+<pre><code class="lang-python">#!/usr/bin/env python3
+# my_server.py
+# 最小 MCP server(2 个 tool:hello / echo)
+import asyncio
+from mcp.server import Server
+from mcp.types import Tool, TextContent
+from mcp.server.stdio import stdio_server
+
+# 创建 server 实例
+app = Server("my-server")
+
+# 注册工具列表
+@app.list_tools()
+async def list_tools() -> list[Tool]:
+    return [
+        Tool(
+            name="hello",
+            description="Say hello to a name. Use this when the user wants a greeting.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string", "description": "The name to greet"}
+                },
+                "required": ["name"]
+            }
+        ),
+        Tool(
+            name="echo",
+            description="Echo back a message. Use this when the user wants to repeat a message.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "message": {"type": "string", "description": "The message to echo"}
+                },
+                "required": ["message"]
+            }
+        )
+    ]
+
+# 实现工具逻辑
+@app.call_tool()
+async def call_tool(name: str, arguments: dict) -> list[TextContent]:
+    if name == "hello":
+        greeting = f"Hello, {arguments['name']}!"
+        return [TextContent(type="text", text=greeting)]
+    elif name == "echo":
+        return [TextContent(type="text", text=arguments["message"])]
+    else:
+        raise ValueError(f"Unknown tool: {name}")
+
+# 启动 server(stdio 模式)
+async def main():
+    async with stdio_server() as (read_stream, write_stream):
+        await app.run(
+            read_stream,
+            write_stream,
+            app.create_initialization_options()
+        )
+
+if __name__ == "__main__":
+    asyncio.run(main()
+
+# === 配置到 .mcp.json ===
+# {
+#   "mcpServers": {
+#     "my-server": {
+#       "command": "python",
+#       "args": ["/path/to/my_server.py"]
+#     }
+#   }
+# }
+#
+# === Claude 看到的工具 ===
+# mcp__my_server__hello(name: str) -> "Hello, {name}!"
+# mcp__my_server__echo(message: str) -> "{message}"
+#
+# === 调试 ===
+# npx -y @modelcontextprotocol/inspector python /path/to/my_server.py
+# 打开 http://localhost:5173,看工具列表 / 调工具 / 看 JSON-RPC 消息</code></pre>
+<p><strong>📄 第 19 讲配套：MCP 工具调用的 5 个调试技巧（mcp-inspector / stdio echo / 日志 / 重启 / token 检查）</strong></p>
+<pre><code class="lang-bash">#!/usr/bin/env bash
+# MCP 工具调用的 5 个调试技巧
+set -e
+
+# === 技巧 1:mcp-inspector(图形化调试工具) ===
+# 启动 inspector + 你的 MCP server
+npx -y @modelcontextprotocol/inspector python /path/to/my_server.py
+# 打开 http://localhost:5173
+# 能看到:工具列表 / 工具参数 / 调工具 / 看 JSON-RPC 消息
+
+# === 技巧 2:stdio 模式手动 echo(验证 server 能正常启动) ===
+# stdio 模式下 Claude Code 通过 stdin/stdout 通信,手动发 JSON-RPC 请求:
+echo '{"jsonrpc":"2.0","method":"tools/list","id":1}' | python /path/to/my_server.py
+# 应该看到 JSON 响应,包含工具列表
+
+# === 技巧 3:日志到 stderr(避免污染 stdout) ===
+# stdio 模式下 stdout 是 JSON-RPC 消息通道,日志必须打 stderr
+# 错误示例(污染 stdout):
+# print("loading config...")  # ❌ 错,污染 JSON-RPC 通道
+# 正确示例:
+import sys
+print("loading config...", file=sys.stderr)  # ✅ 对,日志走 stderr
+
+# === 技巧 4:重启 MCP server ===
+# Claude Code 启动时加载 .mcp.json,改 .mcp.json 后要重启 Claude Code 才生效
+# 重启方法:退出 Claude Code → 重新进入
+
+# === 技巧 5:token 检查(API 鉴权失败是常见原因) ===
+# GitHub MCP 启动失败?检查 GITHUB_TOKEN 是否有效
+# Notion MCP 启动失败?检查 NOTION_API_KEY 是否有效
+# 验证方法:用 curl 直接调 API,看是否 401
+curl -H "Authorization: token ghp_xxx" https://api.github.com/user
+# 401 = token 无效,重新生成;200 = token 有效</code></pre>
+<h2 class="section-anchor">⚠️ 常见坑</h2>
+<div class="callout warn">
+<strong>⚠️ MCP server 启动失败（API token 错 / 路径错 / 端口占用、先单独跑 server 验证）</strong>
+<p>MCP 启动失败排查：Claude Code 启动时、MCP server 加载失败（看不到工具）、常见原因：API token 错（env 字段填错或 token 过期）/ 路径错（command 路径不对或 args 路径不存在）/ 端口占用（HTTP 模式端口被占）。修正：先单独跑 server 验证——<code>npx -y @modelcontextprotocol/server-github</code>(stdio 模式）看是否能启动；或者 mcp-inspector 启动 server、看是否报错。判断标准：MCP 加载失败、你先单独跑过 server 吗?没有、先单独跑。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ stdio 模式下输出日志污染(server 把日志打到 stdout 干扰 JSON-RPC、必须打 stderr)</strong>
+<p>日志污染 stdout陷阱：stdio 模式下 stdout 是 JSON-RPC 消息通道、如果 server 用 <code>print("loading config...")</code> 打日志、日志会污染 stdout,Claude 收到无法解析的输出报错。修正：MCP server 所有日志必须打 stderr——Python 用 <code>print(..., file=sys.stderr)</code>,Node.js 用 <code>console.error()</code>。判断标准：你的 MCP server 有任何 <code>print(</code> / <code>console.log(</code> 吗?有、改成 stderr。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ MCP 工具名拼错（配置 mcp__github__create_issue 调成 mcp__git__create_issue,LLM 报tool not found)</strong>
+<p>工具名前缀拼错陷阱：MCP 工具名格式 <code>mcp__&lt;server-name&gt;__&lt;tool-name&gt;</code>、双下划线分隔。如果 Claude 调成 <code>mcp__git__create_issue</code>（少写 hub)、报"tool not found"。修正：工具名以 .mcp.json 配置的 server name 为准（<code>"github"</code> → 工具前缀 <code>mcp__github__</code>）。判断标准：LLM 报 tool not found 时、先看 .mcp.json 里的 server name 是什么、工具名前缀必须严格匹配。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 远程 MCP server 网络超时（用 HTTP / SSE 模式必须设置 timeout、避免阻塞 Claude)</strong>
+<p>HTTP/SSE 网络超时陷阱：远程 MCP server（网络延迟 / 临时不可用）调用超时、Claude 阻塞在工具调用上、用户体验差。修正：HTTP / SSE 模式配 timeout——mcp client 默认 timeout 30 秒、可以缩短到 10 秒（超时报错给 Claude 让它重试或换方案）；还可以用 mcp client 的 retry 配置（失败重试 2 次）。判断标准：你的远程 MCP server 有 timeout 配置吗?没有、补 timeout。</p>
+</div>
+<h2 class="section-anchor">💡 一句话备忘</h2>
+<blockquote>MCP 是 Claude Code 连接外部世界的 USB-C——3 种传输方式（stdio 本地 / HTTP 远程 / SSE 流式）+ 5 个实战 server(GitHub / Notion / Filesystem / Database / Puppeteer)+ 自定义 MCP server(Python SDK)、让 Claude 跨越本地文件边界、连接 GitHub / 数据库 / 浏览器 / 任何 API。</blockquote>
+<hr>
+<p class="breadcrumb">← 回到 <a href="#top">本讲网页顶部</a></p>
+</main>
+<script>
+  (function () {
+    var STORAGE_KEY = "***";
+    var root = document.documentElement;
+    var btn  = document.getElementById("themeToggle");
+    var icon = document.getElementById("themeIcon");
+    var lbl  = document.getElementById("themeLabel");
+    function apply(theme) {
+      root.setAttribute("data-theme", theme);
+      if (theme === "dark") {
+        icon.innerHTML = "&#9728;&#65039;";
+        lbl.textContent  = "亮色";
+      } else {
+        icon.innerHTML = "&#127769;";
+        lbl.textContent  = "暗色";
+      }
+    }
+    var saved = null;
+    try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    if (saved === "light" || saved === "dark") {
+      apply(saved);
+    } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      apply("dark");
+    } else {
+      apply("light");
+    }
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") || "light";
+      var next = cur === "dark" ? "light" : "dark";
+      apply(next);
+      try { localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>

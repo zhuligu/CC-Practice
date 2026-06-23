@@ -1,0 +1,616 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 20 讲 · 庖丁解牛 · Tools 工具系统深度剖析</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fff; --fg: #222; --muted: #555; --link: #1a73e8;
+    --code-bg: #f4f4f4; --code-fg: inherit;
+    --pre-bg: #1e1e1e; --pre-fg: #eaeaea;
+    --border: #ddd; --th-bg: #f5f5f5; --zebra: #fafafa;
+    --hover-row: #e8f0fe; --hover-th: #eef2f7;
+    --blockquote-bg: #fafafa; --blockquote-border: #ddd;
+    --hr: #eee;
+    --toggle-bg: #f5f5f5; --toggle-fg: #333; --toggle-border: #ddd;
+    --tag-bg: #eef4ff; --tag-fg: #1a73e8;
+    --callout-bg: #fffbe6; --callout-border: #fadb14;
+    --warn-bg: #fff1f0; --warn-border: #ff4d4f;
+    --ok-bg: #f6ffed; --ok-border: #52c41a;
+    --code-block-bg: #f8f9fa;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1115; --fg: #e6e6e6; --muted: #9aa0a6; --link: #8ab4f8;
+    --code-bg: #1e1f24; --code-fg: #e6e6e6;
+    --pre-bg: #1a1d23; --pre-fg: #e6e6e6;
+    --border: #303136; --th-bg: #1c1f25; --zebra: #16181d;
+    --hover-row: #1f2733; --hover-th: #262c36;
+    --blockquote-bg: #181a20; --blockquote-border: #303136;
+    --hr: #2a2d33;
+    --toggle-bg: #1c1f25; --toggle-fg: #e6e6e6; --toggle-border: #303136;
+    --tag-bg: #1a2540; --tag-fg: #8ab4f8;
+    --callout-bg: #2a261a; --callout-border: #b89333;
+    --warn-bg: #2a1a1a; --warn-border: #a84545;
+    --ok-bg: #1a261a; --ok-border: #4a8a4a;
+    --code-block-bg: #16181d;
+  }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 "PingFang SC", "Microsoft YaHei", "Helvetica Neue",
+                 Arial, sans-serif;
+    font-size: 15px; line-height: 1.7;
+    transition: background-color .2s ease, color .2s ease;
+  }
+  main {
+    max-width: 1100px;
+    width: calc(100% - 32px);
+    margin: 0 auto;
+    padding: 24px 0 64px 0;
+    box-sizing: border-box;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    line-height: 1.3; margin: 1.5em 0 .6em;
+  }
+  h1 { font-size: 1.9em; border-bottom: 2px solid var(--hr); padding-bottom: .3em; }
+  h2 { font-size: 1.45em; border-bottom: 1px solid var(--hr); padding-bottom: .25em; margin-top: 2em; }
+  h3 { font-size: 1.18em; color: var(--link); margin-top: 1.5em; }
+  h4 { font-size: 1.05em; margin-top: 1.2em; color: var(--fg); font-weight: 600; }
+  p, ul, ol, blockquote, pre, table { margin: .7em 0; }
+  ul, ol { padding-left: 1.6em; }
+  li { margin: .3em 0; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  blockquote {
+    margin: .8em 0; padding: .6em 1em;
+    border-left: 4px solid var(--blockquote-border);
+    color: var(--muted); background: var(--blockquote-bg);
+  }
+  .callout {
+    background: var(--callout-bg);
+    border-left: 4px solid var(--callout-border);
+    padding: 12px 16px; margin: 1.2em 0; border-radius: 4px;
+  }
+  .callout.warn { background: var(--warn-bg); border-left-color: var(--warn-border); }
+  .callout.ok   { background: var(--ok-bg);   border-left-color: var(--ok-border); }
+  code {
+    font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: .9em; background: var(--code-bg); color: var(--code-fg);
+    padding: 1px 5px; border-radius: 3px;
+  }
+  pre {
+    background: var(--pre-bg); color: var(--pre-fg);
+    padding: 14px 16px; border-radius: 6px;
+    overflow-x: auto; font-size: 13px; line-height: 1.55;
+    margin: 1em 0;
+  }
+  pre code { background: transparent; padding: 0; color: inherit; }
+  pre.lang-flow {
+    background: var(--code-block-bg); color: var(--fg);
+    border: 1px solid var(--border);
+  }
+  :root[data-theme="dark"] pre.lang-flow {
+    background: #0a0b0d; color: #d4d4d4;
+  }
+  table {
+    width: 100% !important; border-collapse: collapse;
+    table-layout: auto; margin: 1em 0;
+    font-size: 14px; display: table;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left; vertical-align: top;
+    transition: background-color .15s ease;
+  }
+  th { background: var(--th-bg); font-weight: 600; }
+  tbody tr:nth-child(even) td { background: var(--zebra); }
+  tbody tr:hover td, tbody tr:hover th { background: var(--hover-row) !important; }
+  thead th:hover { background: var(--hover-th) !important; }
+  :root[data-theme="dark"] tbody tr:hover td,
+  :root[data-theme="dark"] tbody tr:hover th,
+  :root[data-theme="dark"] thead th:hover { color: #fff; }
+  hr { border: none; border-top: 1px solid var(--hr); margin: 2em 0; }
+  img { max-width: 100%; height: auto; }
+
+  .tag {
+    display: inline-block; padding: 2px 8px; margin-right: 6px;
+    background: var(--tag-bg); color: var(--tag-fg);
+    border-radius: 12px; font-size: 12px; font-weight: 500;
+  }
+  .breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 1em; }
+  .breadcrumb a { color: var(--muted); }
+  .breadcrumb a:hover { color: var(--link); }
+
+  .theme-toggle {
+    position: fixed; top: 12px; right: 12px; z-index: 9999;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: var(--toggle-bg); color: var(--toggle-fg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 6px; font-size: 13px; font-family: inherit;
+    cursor: pointer; user-select: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    transition: background-color .2s ease, transform .1s ease;
+  }
+  .theme-toggle:hover { background: var(--hover-row); }
+  .theme-toggle:active { transform: scale(.97); }
+  .theme-toggle .icon { font-size: 15px; line-height: 1; }
+
+  .lesson-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, #1a73e8, #6f42c1);
+    color: #fff; font-size: 24px; font-weight: 700;
+    margin-right: 14px; vertical-align: middle;
+  }
+
+  .section-anchor { scroll-margin-top: 60px; }
+</style>
+<link rel="stylesheet" href="assets/flow.css">
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="切换暗色模式">
+  <span class="icon" id="themeIcon">&#127769;</span>
+  <span id="themeLabel">暗色</span>
+</button>
+<main>
+<div class="breadcrumb">课程导航： « <a href="lesson-19.html">第 19 讲</a>  ·  <a href="lesson-21.html">第 21 讲</a> »</div>
+<h1><span class="lesson-badge">20</span>第 20 讲 · 庖丁解牛 · Tools 工具系统深度剖析</h1>
+<p>
+  <span class="tag">正课</span>
+  <span class="tag">第 20 / 33 讲</span>
+  <span class="tag">Claude Code 工程化实战</span>
+  <span class="tag">Tools 系列开篇</span>
+</p>
+<div class="callout ok">
+<strong>📌 本讲摘要</strong>
+<p>前 19 讲我们用了很多工具——Bash / Read / Edit / Write / Grep / Glob / MCP 工具、但没系统讲过工具系统本身。本讲庖丁解牛——把 Claude Code 的工具系统拆解到原子级：5 类原子操作（读 / 写 / 搜 / 执行 / 交互）+ 十几个精选原语工具 + 工具涌现（组合简单工具产生复杂能力）。核心命题是少即是多、约束产生创造力——十几个原语工具组合出无限可能、这是 Unix 哲学在 AI Agent 时代的应用。</p>
+<p>本讲的三条主线：</p>
+<p>第一、5 类原子操作 + 工具涌现——读（Read / Glob）/ 写（Write / Edit）/ 搜（Grep / Glob）/ 执行（Bash）/ 交互（AskUserQuestion / WebFetch / WebSearch）。5 类覆盖 Claude 与信息源和操作的所有交互；小工具组合产生复杂能力（Read + Edit = 理解 + 修改；Bash + Grep = 查 + 改）。</p>
+<p>第二、设计哲学：约束产生创造力——Claude Code 只内置 6 个核心工具 + N 个 MCP 工具、刻意不写专门工具、逼 LLM 自己组合原语；约束的好处：工具稳定 / LLM 学习负担低 / 跨任务通用。</p>
+<p>第三、工具使用的 4 个最佳实践 + 工具 vs 4 种扩展机制边界——精确描述意图 / 利用工具组合 / 长任务后台 / MCP 扩展；工具是内功、扩展机制是招式。</p>
+<p>学完本讲、你应该能识别 5 类原子操作、能用工具组合（管道）解决复杂任务、能理解为什么 Claude Code 只内置几个工具的设计哲学、能区分工具和扩展机制的工程定位。</p>
+</div>
+<h2 class="section-anchor">📖 详细内容</h2>
+<h3>5 类原子操作</h3>
+<p>Claude Code 默认带 6 个核心工具 + 多个 MCP 工具 + 几个交互工具。看似多、实际拆解到操作类型上只有 5 类——读 / 写 / 搜 / 执行 / 交互、5 类覆盖了 Claude 与信息源和操作的所有交互。</p>
+<p><strong>类 1：读（Read / Glob)</strong></p>
+<p>读 = 把信息从某处拿到 Claude 眼前。</p>
+<p>• <strong>Read</strong>（读文件内容）——输入 file_path、输出文件内容（限 ≤2000 行）。</p>
+<p>• <strong>Glob</strong>（按模式列文件）——输入 pattern（如 <code>*.py</code>)、输出匹配的文件路径列表。Glob 也算读类、因为它从文件系统读文件清单。</p>
+<p>读类的特征：从某处（文件 / 文件系统）读信息到上下文。</p>
+<p><strong>类 2：写（Write / Edit)</strong></p>
+<p>写 = 把 Claude 推理结果落到某处。</p>
+<p>• <strong>Write</strong>（创建或覆盖文件）——输入 file_path + content、创建新文件或覆盖旧文件。</p>
+<p>• <strong>Edit</strong>（精确编辑文件）——输入 file_path + old_string + new_string、把文件里 old_string 替换成 new_string（原子操作）。</p>
+<p>写类的特征：把内容落到文件 / 数据库 / 外部系统。</p>
+<p><strong>类 3：搜（Grep / Glob)</strong></p>
+<p>搜 = 在大量信息里找匹配的部分。</p>
+<p>• <strong>Grep</strong>（按内容搜文件）——输入 pattern + path、输出包含 pattern 的行（带文件路径 + 行号）。</p>
+<p>• <strong>Glob</strong>（按文件名搜）——和读类重叠、Glob 既算读也算搜。</p>
+<p>搜类的特征：不读全部、只读匹配的、降低上下文消耗。</p>
+<p><strong>类 4：执行（Bash)</strong></p>
+<p>执行 = 让 Claude 跑命令。</p>
+<p>• <strong>Bash</strong>（跑 shell 命令）——输入 command、跑任意 shell 命令、返回 stdout / stderr / exit_code。</p>
+<p>执行类的特征：启动子进程、跑命令。Claude Code 99% 的动作都靠 Bash 完成——跑 git / pytest / curl / npm / python / docker 等。</p>
+<p><strong>类 5：交互（AskUserQuestion / WebFetch / WebSearch)</strong></p>
+<p>交互 = 和用户或外部世界双向沟通。</p>
+<p>• <strong>AskUserQuestion</strong>（问用户问题）——Claude 在决策点向用户提问、用户提供选项。</p>
+<p>• <strong>WebFetch</strong>（抓 URL 内容）——输入 url、返回 HTML 转 Markdown 的内容。</p>
+<p>• <strong>WebSearch</strong>（搜网络）——输入 query、返回搜索引擎结果。</p>
+<p>交互类的特征：不只是单向读或单向写、是双向的——AskUserQuestion 是问用户，WebFetch / WebSearch 是问互联网。</p>
+<p>5 类操作加起来 = Claude 能读信息（读 / 搜 / 交互-外部）+ 写信息（写）+ 执行动作（执行）+ 问用户（交互-用户）。这是一个 AI Agent 的完整能力图。</p>
+
+<table>
+<thead><tr>
+<th>维度</th>
+<th>读</th>
+<th>写</th>
+<th>搜</th>
+<th>执行</th>
+<th>交互</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>操作类型</td>
+<td>从某处读信息</td>
+<td>把信息落某处</td>
+<td>找匹配内容</td>
+<td>跑 shell 命令</td>
+<td>双向沟通</td>
+</tr>
+<tr>
+<td>典型工具</td>
+<td>Read / Glob</td>
+<td>Write / Edit</td>
+<td>Grep / Glob</td>
+<td>Bash</td>
+<td>AskUserQuestion / WebFetch / WebSearch</td>
+</tr>
+<tr>
+<td>输入</td>
+<td>file_path / pattern</td>
+<td>file_path + content</td>
+<td>pattern + path</td>
+<td>command</td>
+<td>question / url / query</td>
+</tr>
+<tr>
+<td>输出</td>
+<td>文件内容 / 路径列表</td>
+<td>成功 / 失败</td>
+<td>匹配行（file:line:content)</td>
+<td>stdout + stderr + exit_code</td>
+<td>用户选择 / HTML / 搜索结果</td>
+</tr>
+<tr>
+<td>性能</td>
+<td>读 1MB ≈ 100ms</td>
+<td>写文件 ≈ 50ms</td>
+<td>搜 10k 文件 ≈ 200ms</td>
+<td>跑命令 ≈ 10-100ms</td>
+<td>取决于服务</td>
+</tr>
+<tr>
+<td>适用场景</td>
+<td>读文件 / 列举</td>
+<td>创建 / 修改文件</td>
+<td>找内容 / 改文件</td>
+<td>git / 测试 / 部署</td>
+<td>决策 / 联网 / 问用户</td>
+</tr>
+</tbody></table>
+
+<h3>工具涌现：组合产生复杂能力</h3>
+<p>5 类原子操作 → 十几个原语工具、看似简陋、但工具涌现让它们组合出无限可能。</p>
+<p><strong>涌现的本质</strong></p>
+<p>涌现（emergence)：小单元组合产生复杂能力、复杂能力不需要专门工具。</p>
+<p>类比：水的 H₂O 分子简单、但液态 / 固态 / 气态是涌现属性。Claude 的 6 个原语工具简单、但代码审查 / 重构 / 部署是涌现能力。</p>
+<p><strong>4 个典型涌现模式</strong></p>
+<p>模式 1：<strong>Read + Edit = 理解 + 修改</strong>（代码审查 / Bug 修复）</p>
+<p>Claude 先 Read 整个文件 → 推理代码逻辑 → 用 Edit 改具体行。不需要专门的代码审查工具，Read + Edit 组合就够。</p>
+<p>模式 2：<strong>Bash + Grep = 查 + 改</strong>（批量重构）</p>
+<p>Claude 用 Grep 找出所有匹配文件 → 用 Bash 跑 sed / awk 批量改。例：把 100 个 Python 文件的 <code>print("debug:")</code> 改成 <code>logger.debug()</code>，Grep 找文件 + Bash 跑 sed 改。</p>
+<p>模式 3：<strong>Write + Bash = 生成 + 执行</strong>（写脚本并跑）</p>
+<p>Claude 用 Write 写一个 .py 脚本 → 用 Bash 跑这个脚本。例：Claude 写一个数据迁移脚本、先 Write 到 disk、再 Bash 跑。</p>
+<p>模式 4：<strong>Grep + Read + Edit = 搜 + 读 + 改</strong>（多文件修复）</p>
+<p>Claude 用 Grep 找匹配行 → Read 上下文（前后 5 行）→ Edit 修复。例：把 <code>requests.get(url)</code> 改成 <code>requests.get(url, timeout=30)</code> 全项目替换。</p>
+<p>4 个模式覆盖 80% 的 Claude 任务。涌现的力量：不需要专门工具、原语组合就够了。</p>
+<p><strong>涌现 vs 专门工具</strong></p>
+<p>反例：如果给 Claude 一个批量重构工具（专门工具），Claude 必须学这个工具的 API（参数 / 限制 / 错误处理）、反而更复杂。涌现方案：Claude 用 Grep + Bash 就能搞定、不需要学新工具。</p>
+<p>涌现的力量在于 LLM 推理 + 原语组合、而不是工具功能堆砌。这是 AI Agent 时代和传统软件时代最大的不同。</p>
+
+<div class="flow-diagram">
+  <div class="flow-note" style="font-size:14px;font-weight:600;color:var(--link);font-style:normal;margin-bottom:10px">Claude Code 工具使用 · 5 类原子操作 + 涌现路径</div>
+
+  <div class="flow-actor">
+    <div class="flow-actor-label">用户说话</div>
+    <div class="flow-actor-desc">精确意图</div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box"><div class="flow-box-title">Claude 推理（选原子操作）</div></div>
+  <div class="flow-arrow-fork"></div>
+  <div class="flow-row flow-row-auto flow-row-forked" style="max-width:680px;width:100%">
+    <div class="flow-box">
+      <div class="flow-box-title">读</div>
+      <div class="flow-box-sub">Read / Glob</div>
+    </div>
+    <div class="flow-box">
+      <div class="flow-box-title">写</div>
+      <div class="flow-box-sub">Write / Edit</div>
+    </div>
+    <div class="flow-box">
+      <div class="flow-box-title">搜</div>
+      <div class="flow-box-sub">Grep / Glob</div>
+    </div>
+    <div class="flow-box">
+      <div class="flow-box-title">执行</div>
+      <div class="flow-box-sub">Bash</div>
+    </div>
+    <div class="flow-box">
+      <div class="flow-box-title">交互</div>
+      <div class="flow-box-sub">Ask / WebFetch / WebSearch</div>
+    </div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">涌现：组合产生复杂能力</div>
+    <ul>
+      <li>Read + Edit = 理解 + 修改（代码审查）</li>
+      <li>Bash + Grep = 查 + 改（批量重构）</li>
+      <li>Write + Bash = 生成 + 执行（写脚本并跑）</li>
+      <li>Grep + Read + Edit = 搜 + 读 + 改（多文件修复）</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-actor flow-actor-final"><div class="flow-actor-label">完成任务 → 返回用户</div></div>
+</div>
+
+<h3>设计哲学：约束产生创造力</h3>
+<p>Claude Code 的工具系统刻意克制——只内置 6 个核心工具 + N 个 MCP 工具、不写专门工具（不写代码审查工具 / 重构工具 / 部署工具）。这是有意为之、体现约束产生创造力的设计哲学。</p>
+<p><strong>为什么不写专门工具</strong></p>
+<p>• <strong>工具稳定</strong>——Read / Write / Bash 一年没变、LLM 训练数据稳定。如果频繁加专门工具，LLM 要不断学新 API、反而降低能力。</p>
+<p>• <strong>LLM 学习负担低</strong>——6 个核心工具、LLM 一次学完。如果有 50 个专门工具，LLM 选择困难、选错概率高。</p>
+<p>• <strong>跨任务通用</strong>——原语工具组合、可以处理任意任务。代码审查工具只能审查、部署工具只能部署、通用性差。</p>
+<p>• <strong>用户可预测</strong>——用户知道 Claude 能做什么（读 / 写 / 搜 / 执行 / 交互）、不需要看文档学专门工具。</p>
+<p><strong>约束 vs 自由的权衡</strong></p>
+<p>传统 IDE 哲学：工具越多越好（给开发者选择权）。</p>
+<p>Claude Code 哲学：工具越少越好（给 LLM 约束）。</p>
+<p>为什么？因为 AI Agent 不是开发者、不是用户主动调工具——是 LLM 推理调工具。LLM 推理受上下文长度 / 训练数据影响、工具多反而干扰推理。</p>
+<p>约束的好处：LLM 在 6 个工具里深思熟虑地选；自由的坏处：LLM 在 50 个工具里乱选或选不到合适的。</p>
+<p>类比：给一个学生出 6 道题（他认真做）vs 100 道题（他选简单的做）。约束让质量更高。</p>
+<h3>少即是多：Unix 哲学的 AI Agent 应用</h3>
+<p>Claude Code 的工具哲学 = Unix 哲学在 AI Agent 时代的应用。</p>
+<p><strong>Unix 哲学</strong></p>
+<p>Unix 哲学：一个程序只做一件事、但做好。程序之间通过管道（pipe）组合、产生复杂能力。例：<code>cat file.txt | grep "error" | wc -l</code>（cat 读文件 → grep 过滤 → wc 计数），3 个简单程序组合出统计错误行数的能力。</p>
+<p>Unix 的核心：cat / grep / awk / sed 都是简单原语、但组合出无限可能。</p>
+<p><strong>Claude Code 工具哲学</strong></p>
+<p>类比 Unix：Read / Write / Grep / Bash 都是简单原语、组合出无限可能。</p>
+<p>• cat 等价于 Read（读内容）。</p>
+<p>• ls 等价于 Glob（列文件）。</p>
+<p>• grep 等价于 Grep（搜内容）。</p>
+<p>• shell 等价于 Bash（执行命令）。</p>
+<p>• echo / sed / awk 都用 Bash 跑（执行命令）。</p>
+<p>Claude Code 工具系统 = Unix 命令行的 LLM 化——同样的原语、同样的组合、但操作者从人变成 LLM。</p>
+<p><strong>Unix 哲学的 3 个核心</strong></p>
+<p>1. <strong>组合性</strong>(composability)——小工具能组合、产出大能力。</p>
+<p>2. <strong>简单性</strong>(simplicity)——每个工具只做一个原子操作。</p>
+<p>3. <strong>统一性</strong>(uniformity)——所有工具的输入输出是文本流（plain text)、能互相管道。</p>
+<p>Claude Code 工具系统也遵循这 3 个：组合性（Read + Edit）、简单性（每个工具只做一件事）、统一性（所有工具输入输出是结构化文本、LLM 能理解）。</p>
+<h3>工具使用的 4 个最佳实践</h3>
+<p>会用工具是基础、精通工具需要 4 个最佳实践。</p>
+<p><strong>最佳实践 1：精确描述意图（让 LLM 选对工具）</strong></p>
+<p>Claude 选工具的依据是用户说的话 + 工具的 description。如果意图模糊、Claude 可能选错工具。例：用户说看看这个文件，Claude 可能用 Read（读内容）或 Glob（列文件）或 Grep（搜内容）——含糊。改进：用户说读 src/api.py 的 100-200 行、意图精确、Claude 直接用 Read 带 offset/limit。</p>
+<p>精确意图 = 减少 LLM 选择负担 = 更高效。</p>
+<p><strong>最佳实践 2：利用工具组合（不要 1 个工具 1 步到位）</strong></p>
+<p>不要追求 1 个工具完成任务、应该组合。例：用户说修复所有 print 调试、改进方案（单工具）：Claude 用 Read 找 print、改用 Edit 1 个 1 个改、慢。组合方案：Claude 用 Grep 找所有 print → Read 上下文 → Edit 改、快 10 倍。</p>
+<p>工具组合 = 利用涌现 = 更高效。</p>
+<p><strong>最佳实践 3：利用 Bash 跑长任务（后台进程）</strong></p>
+<p>长任务（几分钟 / 几小时）不要让 Claude 阻塞等。用 Bash 后台跑、然后轮询。例：Claude 跑 <code>pytest tests/ &gt; /tmp/test.log 2&gt;&amp;1 &amp;</code> 启动后台进程、然后用 Bash 轮询 <code>cat /tmp/test.log | tail -20</code> 看进度、等结束看结果。</p>
+<p>后台进程 = 不阻塞 Claude = 流畅体验。</p>
+<p><strong>最佳实践 4：利用 MCP 扩展（连接外部世界）</strong></p>
+<p>本地工具够不着的（连接 GitHub / Notion / 数据库）、用 MCP 扩展。第 19 讲讲过 5 个实战 MCP server、本讲强调：MCP 是工具系统的插件、不破坏原语哲学（每个 MCP 工具也是一个原子操作）。</p>
+<p>MCP 扩展 = 不破坏约束 = 灵活扩展。</p>
+<h3>工具系统 vs Skills / SubAgent / Hooks 边界</h3>
+<p>前 19 讲我们学了 4 种扩展机制（SubAgent / Skills / Hooks / MCP)+ 第 20 讲加入工具系统作为底层。5 者的工程定位不同、不能互相替代。</p>
+<p><strong>5 者的工程定位</strong></p>
+<p>• <strong>Tools</strong>：内功——原子操作、LLM 调用的最底层。负责做原子动作。</p>
+<p>• <strong>Skills</strong>：招式——LLM 推理该用就用、渐进披露。负责描述本地能力。</p>
+<p>• <strong>SubAgent</strong>：分身——独立上下文、@name 显式调。负责复杂任务隔离。</p>
+<p>• <strong>Hooks</strong>：门卫——事件驱动、硬约束。负责瞬间检查。</p>
+<p>• <strong>MCP</strong>：桥梁——连接外部 API、标准化协议。负责调用外部世界。</p>
+<p>5 者的工作层次不同：Tools 在内功层（最底层原子），Skill 在招式层（LLM 推理），HW 在门卫层（事件），MCP 在桥梁层（外部 API），SubAgent 在角色层（独立上下文）。</p>
+<p><strong>内功 vs 招式</strong></p>
+<p>类比武侠：Tools 是内功（九阳神功 / 易筋经），Skills / SubAgent / Hooks / MCP 是招式（太极拳 / 独孤九剑）。内功扎实了、招式随意；内功不扎实、招式花哨也打不过。</p>
+<p>对 Claude 来说：Tools 是基础（LLM 推理调工具）、扩展机制是在工具之上构建的逻辑。如果不熟悉工具、Skills / SubAgent / Hooks / MCP 都没用——LLM 连原子操作都做不好、扩展机制再花哨也是空中楼阁。</p>
+<p><strong>5 者的协同</strong></p>
+<p>典型协同：Claude 用 Read（读 src/) + Grep（搜 print) + Edit（改）完成批量重构、整个过程只用基础工具；完成后用 SubAgent（code-reviewer）做代码审查，SubAgent 也用基础工具；最后用 Hook（stop-gate）做 4 步质量门控，Hook 也调基础工具（Read git status / Bash pytest）。</p>
+<p>3 层结构：基础工具（原子） → 扩展机制（招式） → 工作流（组合）。这是 Claude Code 工程化的完整图景。</p>
+
+<table>
+<thead><tr>
+<th>维度</th>
+<th>Tools</th>
+<th>Skills</th>
+<th>SubAgent</th>
+<th>Hooks</th>
+<th>MCP</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>工作层次</td>
+<td>内功层（最底层）</td>
+<td>招式层</td>
+<td>角色层</td>
+<td>门卫层</td>
+<td>桥梁层</td>
+</tr>
+<tr>
+<td>内核</td>
+<td>原子操作</td>
+<td>本地能力描述</td>
+<td>独立上下文</td>
+<td>事件驱动拦截</td>
+<td>外部 API 调用</td>
+</tr>
+<tr>
+<td>触发</td>
+<td>LLM 推理</td>
+<td>LLM 推理（description 匹配）</td>
+<td>@name 显式调</td>
+<td>工具执行前后 / Stop</td>
+<td>LLM 推理（同 Tools)</td>
+</tr>
+<tr>
+<td>配置位置</td>
+<td>内置 + .mcp.json</td>
+<td>.claude/skills/*/SKILL.md</td>
+<td>.claude/agents/*.md</td>
+<td>.claude/settings.json hooks</td>
+<td>.mcp.json</td>
+</tr>
+<tr>
+<td>典型用途</td>
+<td>读 / 写 / 搜 / 执行 / 交互</td>
+<td>自动发现的本地能力</td>
+<td>复杂任务隔离</td>
+<td>危险拦截 / 自动格式化</td>
+<td>调 GitHub / Notion / DB</td>
+</tr>
+<tr>
+<td>调试</td>
+<td>看工具输出 / 日志</td>
+<td>看 SKILL.md description</td>
+<td>看 subagent 报告</td>
+<td>看 stderr 输出</td>
+<td>mcp-inspector</td>
+</tr>
+</tbody></table>
+
+<h2 class="section-anchor">🛠️ 实战代码</h2>
+<p><strong>📄 第 20 讲配套：工具组合的 4 个典型模式（Read+Edit / Bash+Grep / Write+Bash / Grep+Read+Edit 完整管道）</strong></p>
+<pre><code class="lang-bash">#!/usr/bin/env bash
+# 工具组合的 4 个典型模式
+
+# ===================================
+# 模式 2:Bash + Grep = 查 + 改(批量重构)
+# ===================================
+# Claude 工作流:
+# 1. Grep 找所有匹配文件
+# 2. Bash 跑 sed / awk 批量改
+
+# 例: 把所有 Python 文件的 print("debug:") 改成 logger.debug()
+GREP_MATCHES=$(grep -rl 'print("debug:' src/ --include="*.py")
+echo "找到文件: $GREP_MATCHES"
+
+# 批量替换
+for file in $GREP_MATCHES; do
+  sed -i 's/print("debug: \(.*\)")/logger.debug(\1)/g' "$file"
+done
+
+
+# ===================================
+# 模式 3:Write + Bash = 生成 + 执行(写脚本并跑)
+# ===================================
+# Claude 工作流:
+# 1. Write 写脚本到 disk
+# 2. Bash 跑这个脚本
+
+# 例: 数据迁移
+cat &gt; /tmp/migrate.py &lt;&lt; 'EOF'
+import sqlite3
+conn = sqlite3.connect('app.db')
+conn.execute('ALTER TABLE users ADD COLUMN email TEXT')
+conn.commit()
+EOF
+
+python /tmp/migrate.py</code></pre>
+<p><strong>📄 第 20 讲配套：工具使用的 4 个最佳实践（精确意图 / 工具组合 / 长任务后台 / MCP 扩展）</strong></p>
+<pre><code class="lang-markdown"># 工具使用的 4 个最佳实践（BP1 / BP2 见正文描述）
+
+## 最佳实践 3:利用 Bash 跑长任务(后台进程)
+❌ 阻塞: pytest tests/  # 等 2 分钟
+✅ 后台: pytest tests/ &gt; /tmp/test.log 2&gt;&amp;1 &amp;
+        # 立即返回,继续做其他事
+        # 轮询: tail -f /tmp/test.log
+
+# 例: 启动 dev server(Claude 不需要等)
+npm run dev &gt; /tmp/dev.log 2&gt;&amp;1 &amp;
+echo "dev server started, PID=$!"
+# 轮询日志
+tail -20 /tmp/dev.log
+
+## 最佳实践 4:利用 MCP 扩展(连接外部世界)
+本地工具够不着的(连接 GitHub / Notion / 数据库),用 MCP 扩展。
+例: GitHub MCP(server-github) → Claude 能调 mcp__github__create_issue
+   Notion MCP(server-notion) → Claude 能调 mcp__notion__create_page
+   Database MCP(server-sqlite) → Claude 能调 mcp__sqlite__query
+
+# MCP 是工具系统的插件,不破坏原语哲学
+# 每个 MCP 工具也是一个原子操作,符合少即是多原则</code></pre>
+<p><strong>📄 第 20 讲配套：Claude Code 工具系统的设计原则（原子性 / 稳定性 / LLM 友好 / 跨任务通用）</strong></p>
+<pre><code class="lang-markdown"># Claude Code 工具系统的 4 个设计原则
+
+## 原则 1:原子性(Atomicity)
+- 每个工具只做一件事
+- Read 只读不写,Edit 只改不查
+- 工具之间不互相依赖,可以独立调用
+- 例: Bash 工具不内置"git push"专门命令,只跑任意 shell 命令
+      Claude 自己跑 `git push` 就是 Bash 原子操作
+
+## 原则 2:稳定性(Stability)
+- 核心工具 1+ 年不变
+- Read / Write / Bash 等 6 个工具是 LLM 训练数据的稳定 API
+- 频繁加专门工具会破坏稳定性,LLM 要不断学新 API
+
+## 原则 3:LLM 友好(LLM-Friendly)
+- 工具的 description 写得清晰,LLM 能理解何时用
+- 输入输出是结构化文本(LLM 推理友好)
+- 错误信息明确,LLM 能根据错误重试
+- 例: Read 工具的 description: "Read a file from the local filesystem."
+      LLM 看到就知道读文件用这个
+
+## 原则 4:跨任务通用(Cross-Task General)
+- 工具不绑定具体任务
+- 代码审查不写专门工具,用 Read + Grep + Edit 组合
+- 部署不写专门工具,用 Bash 跑 deploy 脚本
+- 通用性 = 工具少 + 组合强
+
+# === 4 个原则的相互关系 ===
+# 原子性  →  工具简单,组合强
+# 稳定性  →  LLM 训练数据稳,选对工具
+# LLM 友好  →  工具易学易用
+# 跨任务通用  →  工具复用率高
+
+# === 反例:违反 4 个原则的专门工具 ===
+# 写一个代码审查工具:
+# - 违反原子性(内部包含 Read + Grep + Edit 多个操作)
+# - 违反稳定性(每次改审查规则,工具 API 变)
+# - 违反 LLM 友好(LLM 要学专门工具的 API)
+# - 违反跨任务通用(只能审查,不能重构 / 部署)
+
+# → 改进: 不用专门工具,用 Read + Grep + Edit 组合 + Skill 描述
+#          既符合原子性,又跨任务通用</code></pre>
+<h2 class="section-anchor">⚠️ 常见坑</h2>
+<div class="callout warn">
+<strong>⚠️ 给 LLM 过多专门工具（自己写代码审查工具、结果 Claude 不会用基础工具、反而降低能力）</strong>
+<p>专门工具反噬陷阱：为了让 Claude 更专业、写一堆代码审查工具 / 重构工具 / 部署工具、结果 Claude 选择困难（50 个工具挑一个）、反而降低能力；而且每个专门工具的 API 变、LLM 训练数据失效。修正：坚持原语 + 组合——让 Claude 用 Read + Grep + Edit 组合做代码审查、用 Bash + Write 组合做部署。不写专门工具、用 Skill 描述 + 原语组合实现专门能力。判断标准：你的工具列表里有 &gt;10 个专门工具吗？有、精简到原语。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 工具配置过深（每个工具 100+ 参数、LLM 选择困难、只暴露必要参数）</strong>
+<p>工具参数爆炸陷阱：工具配置时把所有可能参数都暴露——Read 工具有 100+ 参数（可选 offset / limit / encoding / max_tokens / mode ...），LLM 选错概率高。修正：只暴露必要参数——Read 工具暴露 file_path（必填）+ offset / limit（常用）、其他高级参数（encoding / mode）用工具默认值。判断标准：工具 description 里的参数列表 &gt;10 个？精简到 &lt;5 个必填/常用。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 工具输出过大（Read 1GB 文件卡死、Grep 没 limit 把上下文塞满、必须给合理默认值）</strong>
+<p>输出爆炸陷阱：Read 工具读 1GB 文件、Claude 上下文塞满卡死；Grep 搜 10k 文件、匹配行 100k 行、塞满上下文。修正：工具必须有合理默认值——Read 限 ≤2000 行（用 offset/limit 分段读）；Grep 限 max-results=100（超过提示 Claude 用 --include 缩小范围）；Bash 限 timeout=30s（长任务用后台进程）。判断标准：你的工具默认值能防输出爆炸吗？Read / Grep / Bash 都有合理限制？没有、补默认。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 不利用工具组合（每步单工具调用、没组合出管道、效率低；Read+Edit 一步到位比 Read 一次、Edit 一次高效）</strong>
+<p>不组合低效陷阱：Claude 完成任务时每步只调 1 个工具——Read 一次 → 推理 → Edit 一次 → 推理 → Bash 一次、来回 6 次工具调用、慢。改进：用工具组合——Grep 一次找所有匹配 → Read 一次读上下文 → Edit 多次改、3 次组合工具调用搞定、快 2 倍。修正：Claude 任务前先规划用什么组合、而不是一步一看。判断标准：Claude 完成任务用了 &gt;10 次工具调用、可能是没组合。观察工具调用次数、反思是否应该组合。</p>
+</div>
+<h2 class="section-anchor">💡 一句话备忘</h2>
+<blockquote>工具系统是 Claude Code 的内功——5 类原子操作（读 / 写 / 搜 / 执行 / 交互）+ 十几个原语工具 + 工具涌现（组合产生复杂能力）、体现少即是多、约束产生创造力的设计哲学、这是 Unix 哲学在 AI Agent 时代的应用。</blockquote>
+<hr>
+<p class="breadcrumb">← 回到 <a href="#top">本讲网页顶部</a></p>
+</main>
+<script>
+  (function () {
+    var STORAGE_KEY = "***";
+    var root = document.documentElement;
+    var btn  = document.getElementById("themeToggle");
+    var icon = document.getElementById("themeIcon");
+    var lbl  = document.getElementById("themeLabel");
+    function apply(theme) {
+      root.setAttribute("data-theme", theme);
+      if (theme === "dark") {
+        icon.innerHTML = "&#9728;&#65039;";
+        lbl.textContent  = "亮色";
+      } else {
+        icon.innerHTML = "&#127769;";
+        lbl.textContent  = "暗色";
+      }
+    }
+    var saved = null;
+    try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    if (saved === "light" || saved === "dark") {
+      apply(saved);
+    } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      apply("dark");
+    } else {
+      apply("light");
+    }
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") || "light";
+      var next = cur === "dark" ? "light" : "dark";
+      apply(next);
+      try { localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>
