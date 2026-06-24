@@ -1,0 +1,766 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 22 讲 · 有章可循 · Rules 规则系统深度剖析</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fff; --fg: #222; --muted: #555; --link: #1a73e8;
+    --code-bg: #f4f4f4; --code-fg: inherit;
+    --pre-bg: #1e1e1e; --pre-fg: #eaeaea;
+    --border: #ddd; --th-bg: #f5f5f5; --zebra: #fafafa;
+    --hover-row: #e8f0fe; --hover-th: #eef2f7;
+    --blockquote-bg: #fafafa; --blockquote-border: #ddd;
+    --hr: #eee;
+    --toggle-bg: #f5f5f5; --toggle-fg: #333; --toggle-border: #ddd;
+    --tag-bg: #eef4ff; --tag-fg: #1a73e8;
+    --callout-bg: #fffbe6; --callout-border: #fadb14;
+    --warn-bg: #fff1f0; --warn-border: #ff4d4f;
+    --ok-bg: #f6ffed; --ok-border: #52c41a;
+    --code-block-bg: #f8f9fa;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1115; --fg: #e6e6e6; --muted: #9aa0a6; --link: #8ab4f8;
+    --code-bg: #1e1f24; --code-fg: #e6e6e6;
+    --pre-bg: #1a1d23; --pre-fg: #e6e6e6;
+    --border: #303136; --th-bg: #1c1f25; --zebra: #16181d;
+    --hover-row: #1f2733; --hover-th: #262c36;
+    --blockquote-bg: #181a20; --blockquote-border: #303136;
+    --hr: #2a2d33;
+    --toggle-bg: #1c1f25; --toggle-fg: #e6e6e6; --toggle-border: #303136;
+    --tag-bg: #1a2540; --tag-fg: #8ab4f8;
+    --callout-bg: #2a261a; --callout-border: #b89333;
+    --warn-bg: #2a1a1a; --warn-border: #a84545;
+    --ok-bg: #1a261a; --ok-border: #4a8a4a;
+    --code-block-bg: #16181d;
+  }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 "PingFang SC", "Microsoft YaHei", "Helvetica Neue",
+                 Arial, sans-serif;
+    font-size: 15px; line-height: 1.7;
+    transition: background-color .2s ease, color .2s ease;
+  }
+  main {
+    max-width: 1100px;
+    width: calc(100% - 32px);
+    margin: 0 auto;
+    padding: 24px 0 64px 0;
+    box-sizing: border-box;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    line-height: 1.3; margin: 1.5em 0 .6em;
+  }
+  h1 { font-size: 1.9em; border-bottom: 2px solid var(--hr); padding-bottom: .3em; }
+  h2 { font-size: 1.45em; border-bottom: 1px solid var(--hr); padding-bottom: .25em; margin-top: 2em; }
+  h3 { font-size: 1.18em; color: var(--link); margin-top: 1.5em; }
+  h4 { font-size: 1.05em; margin-top: 1.2em; color: var(--fg); font-weight: 600; }
+  p, ul, ol, blockquote, pre, table { margin: .7em 0; }
+  ul, ol { padding-left: 1.6em; }
+  li { margin: .3em 0; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  blockquote {
+    margin: .8em 0; padding: .6em 1em;
+    border-left: 4px solid var(--blockquote-border);
+    color: var(--muted); background: var(--blockquote-bg);
+  }
+  .callout {
+    background: var(--callout-bg);
+    border-left: 4px solid var(--callout-border);
+    padding: 12px 16px; margin: 1.2em 0; border-radius: 4px;
+  }
+  .callout.warn { background: var(--warn-bg); border-left-color: var(--warn-border); }
+  .callout.ok   { background: var(--ok-bg);   border-left-color: var(--ok-border); }
+  code {
+    font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: .9em; background: var(--code-bg); color: var(--code-fg);
+    padding: 1px 5px; border-radius: 3px;
+  }
+  pre {
+    background: var(--pre-bg); color: var(--pre-fg);
+    padding: 14px 16px; border-radius: 6px;
+    overflow-x: auto; font-size: 13px; line-height: 1.55;
+    margin: 1em 0;
+  }
+  pre code { background: transparent; padding: 0; color: inherit; }
+  pre.lang-flow {
+    background: var(--code-block-bg); color: var(--fg);
+    border: 1px solid var(--border);
+  }
+  :root[data-theme="dark"] pre.lang-flow {
+    background: #0a0b0d; color: #d4d4d4;
+  }
+  table {
+    width: 100% !important; border-collapse: collapse;
+    table-layout: auto; margin: 1em 0;
+    font-size: 14px; display: table;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left; vertical-align: top;
+    transition: background-color .15s ease;
+  }
+  th { background: var(--th-bg); font-weight: 600; }
+  tbody tr:nth-child(even) td { background: var(--zebra); }
+  tbody tr:hover td, tbody tr:hover th { background: var(--hover-row) !important; }
+  thead th:hover { background: var(--hover-th) !important; }
+  :root[data-theme="dark"] tbody tr:hover td,
+  :root[data-theme="dark"] tbody tr:hover th,
+  :root[data-theme="dark"] thead th:hover { color: #fff; }
+  hr { border: none; border-top: 1px solid var(--hr); margin: 2em 0; }
+  img { max-width: 100%; height: auto; }
+
+  .tag {
+    display: inline-block; padding: 2px 8px; margin-right: 6px;
+    background: var(--tag-bg); color: var(--tag-fg);
+    border-radius: 12px; font-size: 12px; font-weight: 500;
+  }
+  .breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 1em; }
+  .breadcrumb a { color: var(--muted); }
+  .breadcrumb a:hover { color: var(--link); }
+
+  .theme-toggle {
+    position: fixed; top: 12px; right: 12px; z-index: 9999;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: var(--toggle-bg); color: var(--toggle-fg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 6px; font-size: 13px; font-family: inherit;
+    cursor: pointer; user-select: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    transition: background-color .2s ease, transform .1s ease;
+  }
+  .theme-toggle:hover { background: var(--hover-row); }
+  .theme-toggle:active { transform: scale(.97); }
+  .theme-toggle .icon { font-size: 15px; line-height: 1; }
+
+  .lesson-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, #1a73e8, #6f42c1);
+    color: #fff; font-size: 24px; font-weight: 700;
+    margin-right: 14px; vertical-align: middle;
+  }
+
+  .section-anchor { scroll-margin-top: 60px; }
+</style>
+<link rel="stylesheet" href="assets/flow.css">
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="切换暗色模式">
+  <span class="icon" id="themeIcon">&#127769;</span>
+  <span id="themeLabel">暗色</span>
+</button>
+<main>
+<div class="breadcrumb">课程导航： « <a href="lesson-21.html">第 21 讲</a>  ·  <a href="lesson-23.html">第 23 讲</a> »</div>
+<h1><span class="lesson-badge">22</span>第 22 讲 · 有章可循 · Rules 规则系统深度剖析</h1>
+<p>
+  <span class="tag">正课</span>
+  <span class="tag">第 22 / 33 讲</span>
+  <span class="tag">Claude Code 工程化实战</span>
+  <span class="tag">Rules 系列开篇</span>
+</p>
+<div class="callout ok">
+<strong>📌 本讲摘要</strong>
+<p>前 21 讲我们学了 5 种扩展机制（SubAgent / Skills / Hooks / MCP / Tools)+ Headless CI/CD、但没系统讲过"规则"——Claude 行为的"宪法"。本讲进入 Rules——两套规则协同构成行为约束：指令规则（.claude/rules/*.md 告诉 Claude 该怎么做、路径匹配自动加载）+ 权限规则（.claude/settings.json 的 permissions 字段告诉 Claude 能做什么,deny/ask/allow 3 档）。Rules 是 Claude Code 工程化的"软规范"层——不强制执行（像 Hooks 那样）、但 Claude 推理时会"看"这些规则、被约束在团队规范内。</p>
+<p>本讲的三条主线：</p>
+<p>第一、两套规则系统 + 路径匹配加载——指令规则（instruction rules,.claude/rules/*.md 路径匹配自动加载）+ 权限规则（permission rules,.claude/settings.json 的 permissions 字段 deny/ask/allow 3 档）。</p>
+<p>第二、paths 条件匹配 + Rules 最佳实践——指令规则 paths 字段支持 glob 模式（改 src/api.py 自动加载 src 规则）;3 实践：规则写"做什么"不写"细节"/ paths 精准/ 进 git 团队共享。</p>
+<p>第三、Rules × 5 种扩展机制完整图景——Rules 规范（软规范+硬权限）/ Skills 能力 / Hooks 拦截 / SubAgent 角色 / MCP 桥梁 / Tools 内功；6 者协同工作。</p>
+<p>学完本讲，你应该能写 .claude/rules/*.md 指令规则、能配 permissions 字段 deny/ask/allow、能用 paths 条件匹配自动激活规则、能区分 Rules 和 Hooks 的"软规范 vs 硬约束"边界、能理解 6 种扩展机制的完整图景。</p>
+</div>
+<h2 class="section-anchor">📖 详细内容</h2>
+<h3>Rules 是什么?两套规则系统</h3>
+<p>前 21 讲我们学了 5 种扩展机制（SubAgent / Skills / Hooks / MCP / Tools)、每种机制解决一类问题、但还有一类问题没解决："Claude 行为的规范"——比如团队约定"用 ruff format" / "测试覆盖率 &gt; 80%" / "commit message 用 conventional commits"、这些规范怎么让 Claude 知道?</p>
+<p>答案是 Rules。Rules 是 Claude Code 的"宪法"层——告诉 Claude 该怎么做、能做什么。两套规则系统协同构成"软规范 + 硬约束"。</p>
+<p><strong>规则 1：指令规则（instruction rules)</strong></p>
+<p>配置位置：.claude/rules/*.md（项目级）+ ~/.claude/rules/*.md（用户级）。</p>
+<p>作用：告诉 Claude 该怎么做——团队规范 / 编码风格 / 测试要求 / commit message 规范等。Claude 推理时会看这些规则、被约束在规范内。</p>
+<p>特征：<strong>软规范</strong>——Claude 努力遵守、但不强制（像 Skills 一样）。</p>
+<p><strong>规则 2：权限规则（permission rules)</strong></p>
+<p>配置位置：.claude/settings.json 的 permissions 字段。</p>
+<p>作用：告诉 Claude 能做什么——deny（完全禁止）/ ask（每次询问）/ allow（允许）3 档。Claude 跑工具前会查权限、被约束在允许范围内。</p>
+<p>特征：<strong>硬约束</strong>——Claude 不能跑 deny 的工具；跑 ask 的工具前必须问用户；只有 allow 的工具能直接跑。</p>
+<p><strong>两套规则的协同</strong></p>
+<p>指令规则（软规范）+ 权限规则（硬约束）= 行为约束的纵深防御。</p>
+<p>例：团队规范"用 ruff format"（指令规则、软规范）+ Hook 强制"写完代码自动跑 ruff format"（硬约束）。Claude 看到指令规则后努力用 ruff；即使忘了、Hook 强制执行。这是规则和 Hook 协同的典型。</p>
+<p>两套规则不互斥：指令规则给做事的建议、权限规则给做事的边界。两者配合、Claude 既有章可循、又不越界。</p>
+<h3>指令规则：.claude/rules/*.md 路径匹配自动加载</h3>
+<p>指令规则是 Markdown 文件、放在 .claude/rules/ 目录（项目级）或 ~/.claude/rules/（用户级）。</p>
+<p><strong>基本结构</strong></p>
+<p>每个规则文件 = frontmatter(YAML)+ Markdown 正文。</p>
+<p>frontmatter 字段：paths（路径匹配模式、glob 语法）。</p>
+<p>Markdown 正文：具体的规则描述。</p>
+<p>完整示例见后面"指令规则完整示例"代码块。</p>
+<p><strong>paths 字段的自动加载机制</strong></p>
+<p>paths 字段是 glob 模式（如 <code>*.py</code> / <code>src/api/**</code> / <code>tests/**</code>）。</p>
+<p>自动加载流程：Claude 改文件 file_path → 检查所有规则文件的 paths 字段 → 匹配上的规则被加载到上下文 → Claude 推理时遵守这些规则。</p>
+<p>例：Claude 改 <code>src/api/users.py</code> → 匹配 <code>src/api/*.py</code> 规则 → 加载该规则到上下文 → Claude 看到用 type hints / 写单元测试等规范。</p>
+<p><strong>2 个加载级别</strong></p>
+<p>级别 1：<strong>项目级</strong>(.claude/rules/)——当前项目的规则、进 git、团队共享。例：项目级规则"用 ruff format" / "测试覆盖率 &gt; 80%"。</p>
+<p>级别 2：<strong>用户级</strong>(~/.claude/rules/)——用户的个人规则、跨项目通用、不入 git。例：个人偏好"用中文注释" / "用 EditorConfig 风格"。</p>
+<p>2 级别叠加：项目规则 + 用户规则都加载、合并到 Claude 上下文。项目规则优先（团队规范 &gt; 个人偏好）。</p>
+<p><strong>规则文件命名建议</strong></p>
+<p>建议用"主题"命名：python-style.md / testing-rules.md / git-commit.md / security.md。一目了然、便于维护。</p>
+<h3>权限规则：deny / ask / allow 3 档</h3>
+<p>权限规则配置在 .claude/settings.json 的 permissions 字段、3 档机制。</p>
+<p><strong>3 档语义</strong></p>
+<p>• <strong>deny</strong>（完全禁止）——Claude 不能调这个工具。例：<code>"deny": ["Bash(rm:*)", "Bash(curl:*)"]</code> 禁止所有 rm / curl 命令。</p>
+<p>• <strong>ask</strong>（每次询问）——Claude 跑这个工具前问用户。例：<code>"ask": ["Bash(git push:*)"]</code> 每次 push 前问。</p>
+<p>• <strong>allow</strong>（允许）——Claude 直接跑、不问。例：<code>"allow": ["Read", "Grep", "Glob", "Bash(git:diff)"]</code>。</p>
+<p>3 档叠加形成"白名单收窄 / 黑名单防护 / 灰名单询问"。</p>
+<p><strong>Bash 工具的通配符</strong></p>
+<p>权限规则对 Bash 工具有通配符支持：</p>
+<p>• <code>Bash(git:*)</code>——所有 git 命令。</p>
+<p>• <code>Bash(npm run test:*)</code>——npm run test 开头的命令。</p>
+<p>• <code>Bash(rm:*)</code>——所有 rm 命令。</p>
+<p>• <code>Bash(*)</code>——所有 Bash 命令（粗粒度）。</p>
+<p>完整配置见后面"权限规则完整配置"代码块。</p>
+<p><strong>deny 优先于 ask 优先于 allow</strong></p>
+<p>3 档优先级：deny &gt; ask &gt; allow。例：同一命令 <code>Bash(rm:*)</code> 既在 deny 又在 allow、实际 deny（优先）。这种优先级让"明确禁止的命令"不会被 allow 列表"误放"。</p>
+<p>3 档的设计哲学：deny 给明确禁止，ask 给模糊地带，allow 给明确安全。3 档分清楚、边界清晰。</p>
+<table>
+<thead><tr>
+<th>维度</th>
+<th>指令规则</th>
+<th>权限规则</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>配置位置</td>
+<td>.claude/rules/*.md</td>
+<td>.claude/settings.json permissions</td>
+</tr>
+<tr>
+<td>触发方式</td>
+<td>文件路径匹配（paths glob)</td>
+<td>工具调用时检查</td>
+</tr>
+<tr>
+<td>约束力度</td>
+<td>软规范（LLM 努力遵守）</td>
+<td>硬约束（deny 不能跑、ask 必须问）</td>
+</tr>
+<tr>
+<td>加载机制</td>
+<td>按 paths 自动加载到上下文</td>
+<td>每次工具调用都检查</td>
+</tr>
+<tr>
+<td>典型用途</td>
+<td>编码风格 / 命名规范 / 测试要求</td>
+<td>限制危险命令 / 强制询问 push</td>
+</tr>
+</tbody></table>
+<h3>paths 条件匹配：规则按文件类型自动激活</h3>
+<p>指令规则的 paths 字段是核心特性——按文件路径自动激活规则、节省上下文。</p>
+<p><strong>glob 模式支持</strong></p>
+<p>• <code>*.py</code>——所有 .py 文件（根目录）。</p>
+<p>• <code>**/*.py</code>——所有 .py 文件（任意子目录）。</p>
+<p>• <code>src/api/**</code>——src/api 目录下所有文件。</p>
+<p>• <code>tests/**</code>——tests 目录下所有文件。</p>
+<p>• <code>*.{js,ts}</code>——所有 .js 和 .ts 文件。</p>
+<p>5 种 glob 模式覆盖大部分场景。</p>
+<p><strong>加载顺序</strong></p>
+<p>1. 用户级规则（~/.claude/rules/）先加载。</p>
+<p>2. 项目级规则（.claude/rules/）后加载（覆盖用户级）。</p>
+<p>3. paths 匹配当前 file_path 的规则被激活。</p>
+<p>4. 不匹配的规则不加载（节省上下文）。</p>
+<p>加载顺序：用户级 &lt; 项目级、通用规则 &lt; 专项规则。</p>
+<p><strong>多 paths 模式</strong></p>
+<p>paths 字段支持数组、多个模式 OR 匹配：</p>
+<pre><code class="lang-yaml">---
+paths:
+  - "src/api/**"
+  - "src/lib/**"
+---
+</code></pre>
+<p>这个规则在改 src/api/ 或 src/lib/ 时激活。</p>
+<p>完整加载机制见后面"paths 条件匹配规则加载机制"代码块。</p>
+<h3>Rules 的 3 个最佳实践 + 与 Hooks 的边界</h3>
+<p>会用规则是基础、精通规则需要 3 个最佳实践。</p>
+<p><strong>最佳实践 1：规则写"做什么"不写"做什么细节"</strong></p>
+<p>规则是给 LLM 看的、要给推理空间、不要给死规定。</p>
+<p>反例（细节太死）:"用 ruff format 时必须 --line-length 100、必须 --indent-size 4"。LLM 看不到全局、反而被限制。</p>
+<p>正例（给推理空间）:"用 ruff format 保持代码风格一致"。LLM 自己跑 ruff format、具体参数用默认。</p>
+<p>规则 vs 配置：规则给建议、配置给硬值。规则要给建议、不要把配置写成规则。</p>
+<p><strong>最佳实践 2：paths 精准（不要 "*.py" 覆盖所有）</strong></p>
+<p>paths 太宽、所有 .py 文件都加载规则、上下文浪费。paths 太窄、规则覆盖不到。</p>
+<p>反例（太宽）：<code>paths: "**/*.py"</code> ——改测试时也加载主代码规则。</p>
+<p>正例（精准）：主代码规则 <code>paths: "src/**"</code> + 测试规则 <code>paths: "tests/**"</code> 分开。</p>
+<p>精准 paths = 节省上下文 = 更高效。</p>
+<p><strong>最佳实践 3：进 git 团队共享</strong></p>
+<p>项目级规则 (.claude/rules/) 一定要进 git、团队成员共享规范。否则各人维护各人的规则、规范不一致。</p>
+<p>判断标准：.claude/rules/ 目录在 git 跟踪吗?没在、赶紧入 git。</p>
+<p><strong>Rules vs Hooks 边界</strong></p>
+<p>Rules 是软规范(LLM 看 description 推理时遵守、不强制）;Hooks 是硬约束(exit 2 强制执行）。</p>
+<p>边界判断：这件事是"建议 Claude 做"吗?是 → Rules。这件事是"必须强制"吗?是 → Hooks。</p>
+<p>典型协同：规则说"用 ruff format"（软建议）+ Hook 强制"写完代码自动跑 ruff format"（硬约束）。两层防御。</p>
+<h3>Rules × Skills × Hooks × SubAgent × MCP × Tools 6 种扩展机制完整图景</h3>
+<p>前 22 讲我们学了 6 种扩展机制（本讲加入 Rules 作为第 6 种）。6 者的工程定位不同、协同工作形成完整图景。</p>
+<p><strong>6 者的工程定位</strong></p>
+<p>• <strong>Rules</strong>：宪法——软规范 + 硬权限、告诉 Claude 该怎么做 / 能做什么。</p>
+<p>• <strong>Skills</strong>：招式——LLM 推理该用就用、渐进披露。负责"本地能力"。</p>
+<p>• <strong>SubAgent</strong>：分身——独立上下文、@name 显式调。负责"复杂任务隔离"。</p>
+<p>• <strong>Hooks</strong>：门卫——事件驱动、硬约束。负责"瞬间检查"。</p>
+<p>• <strong>MCP</strong>：桥梁——连接外部 API、标准化协议。负责"调用外部世界"。</p>
+<p>• <strong>Tools</strong>：内功——原子操作、LLM 调用的最底层。负责"做原子动作"。</p>
+<p>6 者的"工作层次"不同：Rules 在"宪法层"（最顶层规范）,Skills 在"招式层"(LLM 推理）,HW 在"门卫层"（事件）,MCP 在"桥梁层"（外部 API),SubAgent 在"角色层"（独立上下文）,Tools 在"内功层"（最底层原子）。</p>
+<table>
+<thead><tr>
+<th>维度</th>
+<th>Rules</th>
+<th>Skills</th>
+<th>Hooks</th>
+<th>SubAgent</th>
+<th>MCP</th>
+<th>Tools</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>工作层次</td>
+<td>宪法层</td>
+<td>招式层</td>
+<td>门卫层</td>
+<td>角色层</td>
+<td>桥梁层</td>
+<td>内功层</td>
+</tr>
+<tr>
+<td>约束类型</td>
+<td>软规范 + 硬权限</td>
+<td>软规范</td>
+<td>硬约束</td>
+<td>独立上下文</td>
+<td>外部 API</td>
+<td>原子操作</td>
+</tr>
+<tr>
+<td>触发</td>
+<td>paths 匹配 / 工具调用</td>
+<td>description 匹配</td>
+<td>工具前后 / Stop</td>
+<td>@name 显式</td>
+<td>LLM 推理</td>
+<td>LLM 推理</td>
+</tr>
+<tr>
+<td>配置位置</td>
+<td>.claude/rules/ + permissions</td>
+<td>.claude/skills/</td>
+<td>.claude/settings.json hooks</td>
+<td>.claude/agents/</td>
+<td>.mcp.json</td>
+<td>内置 + .mcp.json</td>
+</tr>
+<tr>
+<td>典型用途</td>
+<td>团队规范 / 权限边界</td>
+<td>本地能力描述</td>
+<td>危险拦截 / 自动格式化</td>
+<td>复杂任务隔离</td>
+<td>外部 API</td>
+<td>读 / 写 / 搜 / 执行</td>
+</tr>
+<tr>
+<td>调试</td>
+<td>看 rules 内容 / 权限错误</td>
+<td>看 SKILL.md description</td>
+<td>看 stderr 输出</td>
+<td>看 subagent 报告</td>
+<td>mcp-inspector</td>
+<td>看工具输出</td>
+</tr>
+</tbody></table>
+<p><strong>6 者的协同</strong></p>
+<p>典型完整工作流：用户说话 → Rules 加载（路径匹配激活）→ Claude 推理（遵守 Rules 软规范）→ 调 Tools 原子操作 → PreToolUse Hook 拦截（硬约束）→ 调用 SubAgent（独立上下文）→ 触发 Skills 自动发现（软规范）→ 通过 MCP 调外部 API（桥梁）→ 返回结果 → PostToolUse Hook 记录 → Stop Hook 质量门控 → 返回用户。</p>
+<p>6 种机制在 Claude 的一次任务中可能全部触发、各自负责不同的层次、形成"完整的工程化体系"。</p>
+<div class="flow-diagram">
+  <div class="flow-note" style="font-size:14px;font-weight:600;color:var(--link);font-style:normal;margin-bottom:10px">Rules × 5 种扩展机制完整图景（6 层工作流）</div>
+
+  <div class="flow-actor">
+    <div class="flow-actor-label">用户说话</div>
+    <div class="flow-actor-desc">意图："改 src/api/users.py"</div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg" style="border-color:var(--link)">
+    <div class="flow-box-title">① Rules 层（软规范 + 硬权限）</div>
+    <ul>
+      <li>路径匹配 <code>src/**/*.py</code></li>
+      <li>加载 <code>.claude/rules/python-style.md</code></li>
+      <li><code>permissions</code> 字段：deny / ask / allow</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box">
+    <div class="flow-box-title">Claude 推理（遵守软规范）</div>
+    <div class="flow-box-sub">type hints / 写测试 / ruff format</div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">② Tools 层（原子操作）</div>
+    <ul>
+      <li><code>Read</code> src/api/users.py</li>
+      <li><code>Edit</code> 改代码</li>
+      <li><code>Bash</code> pytest / ruff</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg" style="border-color:var(--warn-border)">
+    <div class="flow-box-title" style="color:var(--warn-border)">③ PreToolUse Hook（硬约束拦截）</div>
+    <ul>
+      <li>权限检查（deny / ask / allow）</li>
+      <li>白名单命令检查</li>
+      <li>危险命令拦截</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"><span class="flow-arrow-label">放行</span></div>
+  <div class="flow-box"><div class="flow-box-title">工具执行</div></div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">④ PostToolUse Hook（记录审计）</div>
+    <ul>
+      <li>audit-log 记录命令</li>
+      <li>auto-format 自动格式化</li>
+      <li>触发 Skills 自动发现</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">⑤ SubAgent 调起（复杂任务隔离）</div>
+    <div class="flow-box-sub" style="text-align:left">@code-reviewer 跑代码审查，独立上下文，完成报告</div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">⑥ Skills 触发（软规范能力）</div>
+    <div class="flow-box-sub" style="text-align:left">自动发现 commit-skill · 用 conventional commits 规范</div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">⑦ MCP 调用（连接外部世界）</div>
+    <div class="flow-box-sub" style="text-align:left"><code>mcp__github__create_pr</code> 自动化创建 PR</div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg" style="border-color:var(--ok-border)">
+    <div class="flow-box-title" style="color:var(--ok-border)">⑧ Stop Hook（质量门控）</div>
+    <ul>
+      <li>check-uncommitted</li>
+      <li>check-tests</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-actor flow-actor-final"><div class="flow-actor-label">返回用户</div></div>
+</div>
+<h2 class="section-anchor">🛠️ 实战代码</h2>
+<p><strong>📄 第 22 讲配套：指令规则完整示例（.claude/rules/python-style.md 含 frontmatter paths 字段 + Markdown 正文 5 条规则）</strong></p>
+<pre><code class="lang-markdown"># .claude/rules/python-style.md
+# 项目级指令规则(进 git,团队共享)
+---
+paths:
+  - "src/**/*.py"
+  - "tests/**/*.py"
+---
+
+# Python 编码规范
+
+## 1. 类型提示(Type Hints)
+所有函数必须有类型提示:
+```python
+def get_user(user_id: int) -&gt; User:
+    ...
+```
+
+## 2. 文档字符串(Docstrings)
+所有 public 函数必须有 docstring(Google 风格):
+```python
+def get_user(user_id: int) -&gt; User:
+    """根据用户 ID 获取用户对象。
+
+    Args:
+        user_id: 用户 ID
+
+    Returns:
+        User 对象
+
+    Raises:
+        UserNotFoundError: 用户不存在
+    """
+    ...
+```
+
+## 3. 错误处理
+- 不要吞异常(except: pass)
+- 抛出具体异常,不要用 Exception
+- 资源用 with 上下文管理
+
+## 4. 测试覆盖
+- 所有 public 函数必须有单元测试
+- 测试覆盖率 ≥ 80%
+- 用 pytest,不用 unittest
+
+## 5. 代码风格
+- 用 ruff format(自动格式化)
+- 用 mypy(类型检查)
+- import 顺序: 标准库 / 第三方 / 本地
+
+# === 自动加载机制 ===
+# Claude 改 src/api/users.py 时:
+# 1. 检查所有 .claude/rules/*.md 的 paths
+# 2. src/**/*.py 匹配 → 加载本规则
+# 3. Claude 看到 5 条规范,推理时遵守
+
+# === 规则 vs 死规定 ===
+# 这 5 条都是"软规范",给 LLM 推理空间
+# 不要写"必须 line-length 100" 这种死规定
+# 留给 ruff 自己配(在 pyproject.toml)</code></pre>
+<p><strong>📄 第 22 讲配套：权限规则完整配置（.claude/settings.json 的 permissions 字段 + deny / ask / allow 3 档配置 + Bash 工具通配符）</strong></p>
+<pre><code class="lang-json">// .claude/settings.json(权限规则完整配置)
+{
+  "permissions": {
+    "deny": [
+      // 危险命令:完全禁止
+      "Bash(rm -rf:*)",
+      "Bash(rm -fr:*)",
+      "Bash(curl | sh:*)",
+      "Bash(curl | bash:*)",
+      "Bash(wget | sh:*)",
+      "Bash(chmod 777:*)",
+      "Bash(dd:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)"
+    ],
+    "ask": [
+      // 模糊地带:每次问用户
+      "Bash(git push:*)",
+      "Bash(git reset:*)",
+      "Bash(git rebase:*)",
+      "Bash(npm publish:*)",
+      "Bash(docker push:*)",
+      "Bash(sudo:*)"
+    ],
+    "allow": [
+      // 明确安全:直接跑
+      "Read",
+      "Glob",
+      "Grep",
+      "Edit",
+      "Write",
+      "Bash(git:diff)",
+      "Bash(git:status)",
+      "Bash(git:log)",
+      "Bash(git:add)",
+      "Bash(git:commit)",
+      "Bash(pytest:*)",
+      "Bash(ruff:format)",
+      "Bash(ruff:check)",
+      "Bash(mypy:*)",
+      "Bash(npm run test)",
+      "Bash(npm run lint)",
+      "Bash(ls:*)",
+      "Bash(cat:*)"
+    ]
+  }
+}
+
+// === 3 档语义 ===
+// deny: 完全禁止, Claude 不能跑
+// ask:  每次问用户, 用户确认才跑
+// allow: 直接跑, 不问
+
+// === 优先级 ===
+// deny &gt; ask &gt; allow
+// 同一命令在多个档位, deny 生效
+
+// === Bash 通配符 ===
+// Bash(git:*)        所有 git 命令
+// Bash(rm -rf:*)     所有 rm -rf 开头
+// Bash(npm run:*)    npm run 开头的命令
+
+// === 跨工具 ===
+// 不只 Bash, 所有工具都能 deny/ask/allow
+// Edit / Write / Read / Glob / Grep 都能配</code></pre>
+<p><strong>📄 第 22 讲配套：paths 条件匹配规则加载机制（3 个规则文件 + glob 模式 + 加载顺序）</strong></p>
+<pre><code class="lang-markdown"># paths 条件匹配规则加载机制
+
+# === 规则文件 1:主代码规则 ===
+# .claude/rules/src-style.md
+---
+paths:
+  - "src/**/*.py"
+---
+# src 目录的 Python 代码规范
+- 用 type hints
+- 用 ruff format
+- 写单元测试
+
+# === 规则文件 2:测试规则 ===
+# .claude/rules/test-style.md
+---
+paths:
+  - "tests/**/*.py"
+---
+# tests 目录的测试规范
+- 一个测试一个断言(尽量)
+- 用 pytest fixture
+- 命名 test_xxx
+- 覆盖率 ≥ 80%
+
+# === 规则文件 3:API 路由规则 ===
+# .claude/rules/api-routes.md
+---
+paths:
+  - "src/api/**/*.py"
+---
+# src/api 目录的 API 规范
+- 用 FastAPI
+- 所有端点有 Pydantic model
+- 错误用 HTTPException
+- 加 /docs 自动文档
+
+# === 加载机制 ===
+# Claude 改 src/api/users.py:
+# 1. 检查所有规则文件的 paths
+# 2. 规则 1 (src/**/*.py) 匹配 ✓ 加载
+# 3. 规则 2 (tests/**/*.py) 不匹配 ✗ 不加载
+# 4. 规则 3 (src/api/**/*.py) 匹配 ✓ 加载
+# 5. Claude 看到规则 1 + 规则 3 的内容, 推理时遵守
+
+# === 加载顺序 ===
+# 1. 用户级规则 (~/.claude/rules/) 先加载
+# 2. 项目级规则 (.claude/rules/) 后加载(覆盖)
+# 3. paths 匹配当前 file_path 的规则被激活
+# 4. 不匹配的规则不加载(节省上下文)
+
+# === 多 paths 模式 ===
+---
+paths:
+  - "src/api/**"
+  - "src/lib/**"
+  - "src/utils/**"
+---
+# 改这三个目录任一时,规则都激活</code></pre>
+<p><strong>📄 第 22 讲配套：Rules 与 Hooks 协同：软规范 + 硬约束（指令规则说"用 ruff format" + Hook 强制"写完代码自动跑 ruff format")</strong></p>
+<pre><code class="lang-markdown"># Rules 与 Hooks 协同:软规范 + 硬约束
+
+# === 规则层(软规范)===
+# .claude/rules/python-style.md
+---
+paths:
+  - "**/*.py"
+---
+# Python 编码规范
+- 用 ruff format 保持代码风格一致
+- 所有函数写 type hints
+- 写单元测试
+
+# === Hook 层(硬约束)===
+# .claude/settings.json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          // Hook 强制:写完代码自动 ruff format
+          {"type": "command", "command": "bash .claude/hooks/auto-format.sh"}
+        ]
+      }
+    ]
+  }
+}
+
+# .claude/hooks/auto-format.sh
+#!/usr/bin/env bash
+INPUT=$(cat)
+FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // ""')
+if [[ "$FILE_PATH" == *.py ]]; then
+  ruff format "$FILE_PATH" 2&gt;/dev/null || true
+  echo "✅ 已自动格式化: $FILE_PATH"
+fi
+exit 0
+
+# === 协同效果 ===
+# 1. Claude 看到规则"用 ruff format"(软规范,努力遵守)
+# 2. 即使 Claude 忘了,Hook 强制 ruff format(硬约束)
+# 3. 两层防御,代码风格始终一致
+
+# === 二选一或分层 ===
+# 不是说 Hooks 一定能替代 Rules,而是:
+# - "建议 Claude 做" → Rules
+# - "必须强制" → Hooks
+# - 两者结合 → 软规范 + 硬约束,纵深防御
+
+# === 反协同(不要重复) ===
+# 规则说"不要用 rm -rf"(软规范,LLM 推理时不跑)
+# Hook 拦 rm -rf(硬约束,即使 Claude 跑了也拦)
+# 这是"重复拦截",不必要 — 二选一(用 Hook 更保险)
+
+# === 协同清单 ===
+# 规则: 编码风格 / 命名规范 / 测试要求 / commit 规范
+# Hook: 危险命令拦截 / 自动格式化 / 质量门控 / 审计日志
+# 规则 + Hook: 软规范 + 硬约束, 完整行为规范</code></pre>
+<h2 class="section-anchor">⚠️ 常见坑</h2>
+<div class="callout warn">
+<strong>⚠️ 指令规则 paths 写太宽（写 *.py 覆盖所有 Python 文件、改测试时也加载主代码规则、改用 src/** 和 tests/** 分开）</strong>
+<p>"paths 覆盖太宽"陷阱：指令规则 paths 写 <code>**/*.py</code> 覆盖所有 Python 文件、改测试时也加载主代码规则、上下文浪费。修正：paths 精准——主代码规则 <code>paths: "src/**"</code>、测试规则 <code>paths: "tests/**"</code> 分开、各自只加载相关规则。判断标准：你的规则 paths 是宽泛 <code>*.py</code> 还是精准分目录?宽泛、改精准。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 权限规则 deny 太多（把常用命令都 deny,Claude 跑什么都不方便、只 deny 真正危险的）</strong>
+<p>"deny 过多反噬"陷阱：权限规则 deny 列表加太多命令（<code>Bash(rm:*)</code> / <code>Bash(curl:*)</code> / <code>Bash(npm:*)</code> / <code>Bash(docker:*)</code> 等）、结果 Claude 跑什么都不方便、频繁问用户。修正：deny 只放真正危险的（<code>rm -rf</code> / <code>curl | sh</code> / <code>dd</code> / <code>chmod 777</code> / <code>git push --force</code>)、常用命令（<code>git status</code> / <code>npm test</code> / <code>pytest</code>）放 allow。判断标准：你的 deny 列表 &gt; 10 条?精简到 &lt; 5 条真正危险的。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 规则不进 git（团队成员各自维护规则、规范不一致、进 git 团队共享）</strong>
+<p>"规则孤岛"陷阱：项目级 .claude/rules/ 没进 git、团队成员各自维护、规范不一致（有的用 ruff、有的用 black；有的要 type hints、有的不要）。修正：进 git 团队共享——<code>git add .claude/rules/</code> + commit + push。PR 时 review 规则变更。判断标准：.claude/rules/ 在 git 跟踪吗?没在、赶紧入 git。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ Rules 和 Hooks 重复拦截（规则说"不要用 rm -rf",Hook 拦 rm -rf、做无用功、二选一或分层）</strong>
+<p>"软硬重复"陷阱：规则说"不要用 rm -rf"（软规范、LLM 推理时不跑）+ Hook 拦 rm -rf（硬约束、即使 Claude 跑了也拦）。这是"重复拦截"、做无用功。修正：二选一或分层——重要操作（rm -rf / curl | sh）用 Hook 拦截（LLM 不可靠、必须硬约束）；建议性规范（用 ruff format / 写 type hints）用规则（LLM 努力遵守）；危险操作不要依赖规则（LLM 可能忘、必须 Hook）。判断标准：你的规则和 Hook 都在拦截同一类东西吗?重复了、精简。</p>
+</div>
+<h2 class="section-anchor">💡 一句话备忘</h2>
+<blockquote>Rules 是 Claude Code 行为的"宪法"——两套规则系统协同（指令规则软规范 + 权限规则硬约束）,paths 条件匹配自动激活、6 种扩展机制完整图景（Rules 宪法 / Skills 招式 / Hooks 门卫 / SubAgent 角色 / MCP 桥梁 / Tools 内功）。</blockquote>
+<hr>
+<p class="breadcrumb">← 回到 <a href="#top">本讲网页顶部</a></p>
+</main>
+<script>
+  (function () {
+    var STORAGE_KEY = "***";
+    var root = document.documentElement;
+    var btn  = document.getElementById("themeToggle");
+    var icon = document.getElementById("themeIcon");
+    var lbl  = document.getElementById("themeLabel");
+    function apply(theme) {
+      root.setAttribute("data-theme", theme);
+      if (theme === "dark") {
+        icon.innerHTML = "&#9728;&#65039;";
+        lbl.textContent  = "亮色";
+      } else {
+        icon.innerHTML = "&#127769;";
+        lbl.textContent  = "暗色";
+      }
+    }
+    var saved = null;
+    try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    if (saved === "light" || saved === "dark") {
+      apply(saved);
+    } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      apply("dark");
+    } else {
+      apply("light");
+    }
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") || "light";
+      var next = cur === "dark" ? "light" : "dark";
+      apply(next);
+      try { localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>
