@@ -1,0 +1,773 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 23 讲 · 登堂入室 · Agent SDK 基础</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fff; --fg: #222; --muted: #555; --link: #1a73e8;
+    --code-bg: #f4f4f4; --code-fg: inherit;
+    --pre-bg: #1e1e1e; --pre-fg: #eaeaea;
+    --border: #ddd; --th-bg: #f5f5f5; --zebra: #fafafa;
+    --hover-row: #e8f0fe; --hover-th: #eef2f7;
+    --blockquote-bg: #fafafa; --blockquote-border: #ddd;
+    --hr: #eee;
+    --toggle-bg: #f5f5f5; --toggle-fg: #333; --toggle-border: #ddd;
+    --tag-bg: #eef4ff; --tag-fg: #1a73e8;
+    --callout-bg: #fffbe6; --callout-border: #fadb14;
+    --warn-bg: #fff1f0; --warn-border: #ff4d4f;
+    --ok-bg: #f6ffed; --ok-border: #52c41a;
+    --code-block-bg: #f8f9fa;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1115; --fg: #e6e6e6; --muted: #9aa0a6; --link: #8ab4f8;
+    --code-bg: #1e1f24; --code-fg: #e6e6e6;
+    --pre-bg: #1a1d23; --pre-fg: #e6e6e6;
+    --border: #303136; --th-bg: #1c1f25; --zebra: #16181d;
+    --hover-row: #1f2733; --hover-th: #262c36;
+    --blockquote-bg: #181a20; --blockquote-border: #303136;
+    --hr: #2a2d33;
+    --toggle-bg: #1c1f25; --toggle-fg: #e6e6e6; --toggle-border: #303136;
+    --tag-bg: #1a2540; --tag-fg: #8ab4f8;
+    --callout-bg: #2a261a; --callout-border: #b89333;
+    --warn-bg: #2a1a1a; --warn-border: #a84545;
+    --ok-bg: #1a261a; --ok-border: #4a8a4a;
+    --code-block-bg: #16181d;
+  }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 "PingFang SC", "Microsoft YaHei", "Helvetica Neue",
+                 Arial, sans-serif;
+    font-size: 15px; line-height: 1.7;
+    transition: background-color .2s ease, color .2s ease;
+  }
+  main {
+    max-width: 1100px;
+    width: calc(100% - 32px);
+    margin: 0 auto;
+    padding: 24px 0 64px 0;
+    box-sizing: border-box;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    line-height: 1.3; margin: 1.5em 0 .6em;
+  }
+  h1 { font-size: 1.9em; border-bottom: 2px solid var(--hr); padding-bottom: .3em; }
+  h2 { font-size: 1.45em; border-bottom: 1px solid var(--hr); padding-bottom: .25em; margin-top: 2em; }
+  h3 { font-size: 1.18em; color: var(--link); margin-top: 1.5em; }
+  h4 { font-size: 1.05em; margin-top: 1.2em; color: var(--fg); font-weight: 600; }
+  p, ul, ol, blockquote, pre, table { margin: .7em 0; }
+  ul, ol { padding-left: 1.6em; }
+  li { margin: .3em 0; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  blockquote {
+    margin: .8em 0; padding: .6em 1em;
+    border-left: 4px solid var(--blockquote-border);
+    color: var(--muted); background: var(--blockquote-bg);
+  }
+  .callout {
+    background: var(--callout-bg);
+    border-left: 4px solid var(--callout-border);
+    padding: 12px 16px; margin: 1.2em 0; border-radius: 4px;
+  }
+  .callout.warn { background: var(--warn-bg); border-left-color: var(--warn-border); }
+  .callout.ok   { background: var(--ok-bg);   border-left-color: var(--ok-border); }
+  code {
+    font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: .9em; background: var(--code-bg); color: var(--code-fg);
+    padding: 1px 5px; border-radius: 3px;
+  }
+  pre {
+    background: var(--pre-bg); color: var(--pre-fg);
+    padding: 14px 16px; border-radius: 6px;
+    overflow-x: auto; font-size: 13px; line-height: 1.55;
+    margin: 1em 0;
+  }
+  pre code { background: transparent; padding: 0; color: inherit; }
+  pre.lang-flow {
+    background: var(--code-block-bg); color: var(--fg);
+    border: 1px solid var(--border);
+  }
+  :root[data-theme="dark"] pre.lang-flow {
+    background: #0a0b0d; color: #d4d4d4;
+  }
+  table {
+    width: 100% !important; border-collapse: collapse;
+    table-layout: auto; margin: 1em 0;
+    font-size: 14px; display: table;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left; vertical-align: top;
+    transition: background-color .15s ease;
+  }
+  th { background: var(--th-bg); font-weight: 600; }
+  tbody tr:nth-child(even) td { background: var(--zebra); }
+  tbody tr:hover td, tbody tr:hover th { background: var(--hover-row) !important; }
+  thead th:hover { background: var(--hover-th) !important; }
+  :root[data-theme="dark"] tbody tr:hover td,
+  :root[data-theme="dark"] tbody tr:hover th,
+  :root[data-theme="dark"] thead th:hover { color: #fff; }
+  hr { border: none; border-top: 1px solid var(--hr); margin: 2em 0; }
+  img { max-width: 100%; height: auto; }
+
+  .tag {
+    display: inline-block; padding: 2px 8px; margin-right: 6px;
+    background: var(--tag-bg); color: var(--tag-fg);
+    border-radius: 12px; font-size: 12px; font-weight: 500;
+  }
+  .breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 1em; }
+  .breadcrumb a { color: var(--muted); }
+  .breadcrumb a:hover { color: var(--link); }
+
+  .theme-toggle {
+    position: fixed; top: 12px; right: 12px; z-index: 9999;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: var(--toggle-bg); color: var(--toggle-fg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 6px; font-size: 13px; font-family: inherit;
+    cursor: pointer; user-select: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    transition: background-color .2s ease, transform .1s ease;
+  }
+  .theme-toggle:hover { background: var(--hover-row); }
+  .theme-toggle:active { transform: scale(.97); }
+  .theme-toggle .icon { font-size: 15px; line-height: 1; }
+
+  .lesson-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, #1a73e8, #6f42c1);
+    color: #fff; font-size: 24px; font-weight: 700;
+    margin-right: 14px; vertical-align: middle;
+  }
+
+  .section-anchor { scroll-margin-top: 60px; }
+</style>
+<link rel="stylesheet" href="assets/flow.css">
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="切换暗色模式">
+  <span class="icon" id="themeIcon">&#127769;</span>
+  <span id="themeLabel">暗色</span>
+</button>
+<main>
+<div class="breadcrumb">课程导航： « <a href="lesson-22.html">第 22 讲</a>  ·  <a href="lesson-24.html">第 24 讲</a> »</div>
+<h1><span class="lesson-badge">23</span>第 23 讲 · 登堂入室 · Agent SDK 基础</h1>
+<p>
+  <span class="tag">正课</span>
+  <span class="tag">第 23 / 33 讲</span>
+  <span class="tag">Claude Code 工程化实战</span>
+  <span class="tag">Agent SDK 系列开篇</span>
+</p>
+<div class="callout ok">
+<strong>📌 本讲摘要</strong>
+<p>前 22 讲我们学的所有扩展机制——SubAgent、Skills、Hooks、MCP、Tools、Rules、Headless——都是"配置式"的：在 <code>.claude/</code> 目录写配置、由 Claude Code 加载后使用。本讲我们将进入"编程式"——Agent SDK：把 Claude Code 的能力拆解为可编程接口（<code>query()</code> + <code>ClaudeCodeOptions</code>），让你像调用普通函数一样驱动 AI Agent。从 5 行代码的 Hello Agent 到代码分析 Agent，从交互式 / Headless 模式到 Python 编程调用，把 Claude Code 集成到任何应用——Web 服务、CLI 工具、数据 pipeline，都不再困难。</p>
+<p>本讲的三条主线：第一，"Agent SDK 是什么？为什么需要它？"——配置式 vs 编程式、<code>query()</code> 函数 + <code>ClaudeCodeOptions</code> 类、SDK 适用场景（Web / CLI / 数据 pipeline）、SDK 与 MCP 的关系（SDK 用的是 Claude Code 能力，MCP 用的是 Claude Code 工具）。</p>
+<p>第二，"Hello Agent + ClaudeCodeOptions 完整配置"——5 行代码跑通最小 Agent，详解 <code>ClaudeCodeOptions</code> 的 11 个配置项（<code>allowed_tools</code> / <code>system_prompt</code> / <code>cwd</code> / <code>mcp_servers</code> / <code>max_turns</code> 等）。</p>
+<p>第三，"消息分类处理 + 3 个实战场景"——4 类消息（<code>AssistantMessage</code> / <code>UserMessage</code> / <code>SystemMessage</code> / <code>ResultMessage</code>），3 个场景（Hello、代码分析、Flask Web 服务）由浅入深。</p>
+<p>学完本讲，你应该能用 SDK 写出最小 Agent、能配 <code>ClaudeCodeOptions</code>、能处理 4 类消息、能用 SDK 把 Claude Code 集成到 Flask Web 服务或 CLI 工具、能清楚区分编程式与 Headless 的工程定位。</p>
+</div>
+<h2 class="section-anchor">📖 详细内容</h2>
+<h3>Agent SDK 是什么？为什么需要它？</h3>
+<p>前 22 讲我们学的所有扩展机制——SubAgent、Skills、Hooks、MCP、Tools、Rules、Headless——都是"配置式"的：在 <code>.claude/</code> 目录里写配置，由 Claude Code 加载后使用。这种方式适合"开发者用 Claude Code"——人启动 Claude、Claude 跑任务、人看输出。</p>
+<p>但有些场景需要"应用集成 Claude Code"——Web 服务提供 chat API、CLI 工具自动化、数据 pipeline 调用 Claude 处理任务。这些场景要求"编程式"调用：把 Claude Code 的能力当作 Python 函数，被其他代码调用。</p>
+<p>Agent SDK 就是为这种场景设计的：把 Claude Code 的能力拆解为可编程接口。</p>
+<p><strong>SDK 的 2 个核心 API</strong></p>
+<p><strong>API 1：<code>query()</code> 函数</strong>——核心入口，接受 <code>prompt</code> + <code>options</code>，返回消息流（异步 generator）。用法：<code>async for msg in query(prompt, options): ...</code>。</p>
+<p><strong>API 2：<code>ClaudeCodeOptions</code> 类</strong>——配置 <code>query()</code> 行为，11 个字段（<code>allowed_tools</code> / <code>system_prompt</code> / <code>cwd</code> / <code>mcp_servers</code> / <code>max_turns</code> 等）。</p>
+<p>这 2 个 API 构成了 SDK 的主体。SDK 还提供 4 类消息类型（Assistant / User / System / Result）用于处理 Claude 的输出。</p>
+<p><strong>SDK 的 4 个适用场景</strong></p>
+<p><strong>场景 1：Web 服务</strong>——Flask / FastAPI 接入 SDK，提供 chat API，用户通过 HTTP 调用 Claude。</p>
+<p><strong>场景 2：CLI 工具</strong>——把 Claude Code 集成到 CLI，程序员在终端调用 <code>claude-code</code> 跑任务。</p>
+<p><strong>场景 3：数据 pipeline</strong>——Airflow / Prefect / Dagster 调度 SDK，做数据批处理或跑分析任务。</p>
+<p><strong>场景 4：嵌入式应用</strong>——把 Claude Code 集成到 IDE 插件、编辑器或桌面应用。</p>
+<p>这 4 个场景都是"程序调用 SDK"，而不是"人启动 Claude"。SDK 把 Claude Code 的能力"暴露"为 Python API，供任何应用集成。</p>
+<p><strong>SDK vs MCP 的关系</strong></p>
+<p>SDK 是"用 Claude Code 的能力"——<code>query()</code> 调起 Claude 推理，由 Claude 跑任务。SDK 站在"调用者"一侧。</p>
+<p>MCP 是"用 Claude Code 的工具"——MCP server 把工具暴露给 Claude 调用。MCP 站在"工具提供"一侧。</p>
+<p>SDK 调 Claude，MCP 扩展 Claude 工具，二者正交：SDK 可以 + MCP（把 server 加载到 <code>options.mcp_servers</code>），MCP 也可以 + SDK（server 启动后 Claude 用 SDK 调用）。</p>
+<p>SDK + MCP 协同示例：Web 服务用 SDK 跑 Claude → Claude 通过 MCP server 调用 GitHub / 数据库 → SDK 接收结果 → 返回 HTTP 响应。</p>
+<h3>Hello Agent：5 行代码跑 Claude</h3>
+<p>最简的 Agent 用 SDK 只需 5 行代码——<code>pip install</code> + 1 个 <code>query()</code> 调用 + 1 个 <code>print</code>。</p>
+<p>完整代码见后面的"Hello Agent 5 行代码"代码块。</p>
+<p>这 5 行代码构成了最小 Agent：装 SDK、调 <code>query</code>、接收消息、打印结果、异步运行。</p>
+<p><strong>同步 vs 异步</strong></p>
+<p>SDK 异步优先——<code>query()</code> 是 async generator，需要用 <code>async for</code> 消费消息。</p>
+<p>采用异步的原因：Claude 推理是 IO 密集型（网络请求 + 工具调用），异步既能避免阻塞，也支持高并发（单个进程跑多个 <code>query</code>）。</p>
+<p>同步包装：如果你的代码是同步的（不是 async 函数），可以用 <code>asyncio.run(query(...))</code> 进行包装。</p>
+<p>异步 vs 同步：异步适合 Web 服务（高并发）、数据 pipeline（批处理）；同步适合简单 CLI 工具（一次性任务）。</p>
+<p><strong>跑通后看输出</strong></p>
+<p>跑 <code>python hello_agent.py</code>，会看到：</p>
+<p>1. SDK 启动 Claude Code 子进程。</p>
+<p>2. Claude 收到 "Hello, Claude" 提示。</p>
+<p>3. Claude 推理并输出 "Hello! How can I help you today?"。</p>
+<p>4. SDK 接收消息流并打印到 stdout。</p>
+<p>5. SDK 关闭子进程后退出。</p>
+<p>这 5 步形成了"最小 Agent"——5 行代码跑通。</p>
+<div class="flow-diagram">
+  <div class="flow-note" style="font-size:14px;font-weight:600;color:var(--link);font-style:normal;margin-bottom:10px">Agent SDK 调用流程</div>
+
+  <div class="flow-actor">
+    <div class="flow-actor-label">应用代码</div>
+    <div class="flow-actor-desc">Flask / CLI / pipeline</div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">query(prompt, options)</div>
+    <ul>
+      <li><code>prompt</code> — 任务描述</li>
+      <li><code>options</code> — ClaudeCodeOptions 11 字段</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box"><div class="flow-box-title">SDK 启动 Claude Code 子进程</div></div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">Claude Code 加载配置</div>
+    <ul>
+      <li><code>.claude/settings.json</code></li>
+      <li><code>.claude/skills/</code></li>
+      <li><code>.claude/agents/</code></li>
+      <li><code>.mcp.json</code>（MCP servers）</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">Claude 推理</div>
+    <ul>
+      <li>收到 prompt</li>
+      <li>调工具（<code>allowed_tools</code> 限制）</li>
+      <li>输出消息</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg" style="border-color:var(--link)">
+    <div class="flow-box-title">返回 stream（4 类消息）</div>
+    <ul>
+      <li><strong>AssistantMessage</strong> — Claude 的回复（文本/工具调用）</li>
+      <li><strong>UserMessage</strong> — 工具结果</li>
+      <li><strong>SystemMessage</strong> — 系统事件</li>
+      <li><strong>ResultMessage</strong> — 任务结果 + 元数据（cost / turns / duration）</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">应用代码处理消息</div>
+    <ul>
+      <li>AssistantMessage → 累积输出 / 实时打印</li>
+      <li>UserMessage → 调试打印</li>
+      <li>SystemMessage → 调试打印</li>
+      <li>ResultMessage → 提取费用 / 轮次，上报监控</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-actor flow-actor-final">
+    <div class="flow-actor-label">应用返回结果</div>
+    <div class="flow-actor-desc">HTTP 响应 / CLI 输出 / 数据库写入</div>
+  </div>
+</div>
+<h3>ClaudeCodeOptions 完整配置</h3>
+<p><code>ClaudeCodeOptions</code> 类是 <code>query()</code> 的配置项，11 个字段控制 Claude 的行为。</p>
+<p>完整配置见后面的"ClaudeCodeOptions 完整配置"代码块。</p>
+<p>这 11 个配置项中，最常用的有 5 个：</p>
+<p><strong>配置 1：<code>allowed_tools</code></strong>——限制 Claude 能调用的工具（白名单）。生产环境必须收窄，避免 Claude 跑 <code>rm -rf</code> 这类危险命令。</p>
+<p><strong>配置 2：<code>system_prompt</code></strong>——自定义系统提示（覆盖默认）。多用户共用 SDK 时，每个请求应该有独立的 <code>system_prompt</code>。</p>
+<p><strong>配置 3：<code>cwd</code></strong>——Claude Code 的工作目录（默认当前目录）。SDK 跑在服务里时，要显式指定 <code>cwd</code>，避免文件路径混乱。</p>
+<p><strong>配置 4：<code>mcp_servers</code></strong>——加载 MCP server（把 <code>.mcp.json</code> 的内容传进来），让 SDK 集成 Claude + MCP 一起用。</p>
+<p><strong>配置 5：<code>max_turns</code></strong>——限制 Claude 推理轮次（默认 25）。防止 Claude 死循环、避免影响性能。</p>
+<p>这 5 个常用配置覆盖 80% 的场景。其他 6 个配置项（<code>permission_mode</code> / <code>model</code> / <code>resume</code> / <code>extra_args</code> / <code>settings</code> / <code>env</code>）在高级场景使用。</p>
+<p><strong>配置项的"工程定位"</strong></p>
+<p>每个配置项都对应一个工程问题：</p>
+<p>• <code>allowed_tools</code> 解决"Claude 跑危险命令"的问题。</p>
+<p>• <code>system_prompt</code> 解决"不同用户要不同 prompt"的问题。</p>
+<p>• <code>cwd</code> 解决"SDK 跑在服务里路径混乱"的问题。</p>
+<p>• <code>mcp_servers</code> 解决"SDK 要用 MCP 工具"的问题。</p>
+<p>• <code>max_turns</code> 解决"Claude 死循环"的问题。</p>
+<p>5 个工程问题对应 5 个配置项，一一对应，设计清晰。</p>
+<h3>消息分类处理：AssistantMessage / UserMessage / SystemMessage / ResultMessage</h3>
+<p><code>query()</code> 返回的是"消息流"——多条消息，需要按类型分别处理。SDK 定义了 4 类消息。</p>
+<p>完整处理代码见后面"消息分类处理完整代码"代码块。</p>
+<p><strong>4 类消息</strong></p>
+<p><strong>类型 1：<code>AssistantMessage</code></strong>（Claude 的回复）——Claude 推理后输出的文本或工具调用。例：Claude 说"让我读这个文件" → <code>AssistantMessage(content="...", tool_calls=[...])</code>。</p>
+<p><strong>类型 2：<code>UserMessage</code></strong>（工具结果）——Claude 调用工具后的结果（从 SDK 角度看是"用户消息"，因为 Claude 是"用户"在用工具）。例：Read 工具返回文件内容 → <code>UserMessage(tool_results=[...])</code>。</p>
+<p><strong>类型 3：<code>SystemMessage</code></strong>（系统事件）——SDK 内部事件（初始化、hook 触发、工具调用通知等），一般用于调试。</p>
+<p><strong>类型 4：<code>ResultMessage</code></strong>（任务结果）——任务结束时的元数据，包含以下字段：</p>
+<p>• <code>result</code>（最终输出文本）</p>
+<p>• <code>duration_ms</code>（总耗时）</p>
+<p>• <code>duration_api_ms</code>（API 调用耗时）</p>
+<p>• <code>num_turns</code>（轮次）</p>
+<p>• <code>total_cost_usd</code>（费用，美元）</p>
+<p>• <code>session_id</code>（会话 ID）</p>
+<p>这 6 个字段用于监控和优化。</p>
+<table>
+<thead><tr>
+<th>消息类型</th>
+<th>内容</th>
+<th>来源</th>
+<th>处理方式</th>
+<th>元数据</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>AssistantMessage</td>
+<td>Claude 的回复</td>
+<td>Claude 推理</td>
+<td>累积到 final_output / 实时打印</td>
+<td>content（文本/工具调用）</td>
+</tr>
+<tr>
+<td>UserMessage</td>
+<td>工具结果</td>
+<td>SDK 注入</td>
+<td>一般不用手动处理</td>
+<td>content（工具结果）</td>
+</tr>
+<tr>
+<td>SystemMessage</td>
+<td>系统事件</td>
+<td>SDK 内部</td>
+<td>调试时打印</td>
+<td>subtype（事件类型）</td>
+</tr>
+<tr>
+<td>ResultMessage</td>
+<td>任务结果</td>
+<td>SDK 注入</td>
+<td>提取费用 / 轮次、上报监控</td>
+<td>cost / turns / duration / session_id</td>
+</tr>
+</tbody></table>
+<p><strong>处理循环</strong></p>
+<p>处理循环从 <code>query()</code> 流里读取消息，再按类型分发：</p>
+<p>1. 遇到 <code>AssistantMessage</code> → 累积到最终输出，或实时打印。</p>
+<p>2. 遇到 <code>UserMessage</code> → 处理工具结果（一般不用手动处理，Claude 自己用）。</p>
+<p>3. 遇到 <code>SystemMessage</code> → 调试时打印。</p>
+<p>4. 遇到 <code>ResultMessage</code> → 提取费用 / 轮次 / 时长，记录到日志或上报监控。</p>
+<p>这 4 类消息构成完整的处理循环，SDK 的用法非常清晰。</p>
+<p><strong>ResultMessage 元数据的重要性</strong></p>
+<p><code>ResultMessage</code> 包含费用（美元）和轮次，这两个字段决定了"这个 Agent 跑得多贵 / 多复杂"。生产环境必须读取这些字段，用于：</p>
+<p>• 成本监控（每月花了多少）。</p>
+<p>• 性能分析（平均轮次 / 耗时）。</p>
+<p>• 异常告警（单次跑 &gt; $1 触发告警）。</p>
+<p>• 优化决策（轮次过多说明 prompt 不好，需要优化）。</p>
+<p>不读 <code>ResultMessage</code> = 跑 Claude 不计成本 = 烧钱。</p>
+<h3>编程式 vs Headless 对比</h3>
+<p>第 21 讲我们学了 Headless 模式（<code>claude -p</code> 跑任务），本讲学 SDK（编程式调用）。两者都能"非交互跑 Claude"，但工程定位不同。</p>
+<p>Headless 模式："命令行跑一次性任务"——CI / cron / 批处理场景跑 Claude，任务结束即退出。</p>
+<p>SDK："集成到应用中多次调用"——Web 服务、CLI 工具、数据 pipeline，把 Claude 集成到代码里。</p>
+<p>两者的核心区别：Headless 是"进程级别的一次性调用"，SDK 是"函数级别的多次调用"。</p>
+<p><strong>SDK 的 4 个优势</strong></p>
+<p><strong>优势 1：多轮</strong>——SDK 可以跑多次 <code>query()</code>（每次新会话或 <code>resume</code> 旧会话），Headless 每次都是新进程。</p>
+<p><strong>优势 2：嵌入到任何应用</strong>——SDK 把 Claude 集成到 Flask / FastAPI / Django 等任意框架，Headless 只能 CLI。</p>
+<p><strong>优势 3：与现有代码无缝集成</strong>——SDK 是 Python 函数，可以和数据库 / Redis / 业务逻辑一起使用；Headless 是子进程，集成成本较高。</p>
+<p><strong>优势 4：控制流更细</strong>——SDK 可以拿到每条消息（4 类消息）并实时处理；Headless 只能看到最终 stdout。</p>
+<p>这 4 个优势让 SDK 适合"应用集成"场景，Headless 适合"脚本自动化"场景。</p>
+<p><strong>SDK vs Headless 选择</strong></p>
+<p>选择 1：CI / cron / 一次性脚本 → Headless（<code>claude -p</code>）。</p>
+<p>选择 2：Web 服务 / 多用户系统 / 与业务逻辑集成 → SDK。</p>
+<p>二选一，根据场景决定。</p>
+<table>
+<thead><tr>
+<th>维度</th>
+<th>编程式（SDK）</th>
+<th>Headless 模式</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>集成方式</td>
+<td>Python 函数调用</td>
+<td>命令行（子进程）</td>
+</tr>
+<tr>
+<td>调用次数</td>
+<td>多次（可以 resume）</td>
+<td>一次性（每次新进程）</td>
+</tr>
+<tr>
+<td>适用场景</td>
+<td>Web 服务 / CLI 工具 / pipeline</td>
+<td>CI / cron / 一次性脚本</td>
+</tr>
+<tr>
+<td>控制流</td>
+<td>细（4 类消息流）</td>
+<td>粗（只看到最终 stdout）</td>
+</tr>
+<tr>
+<td>部署</td>
+<td>嵌入应用（Flask / FastAPI）</td>
+<td>单独 CI 步骤</td>
+</tr>
+<tr>
+<td>调试</td>
+<td>Python 日志 / 异常 / traceback</td>
+<td>CI 日志 / 进程退出码</td>
+</tr>
+</tbody></table>
+<h3>3 个实战场景：从 Hello Agent 到代码分析 Agent</h3>
+<p>3 个场景由浅入深地展示 SDK 用法。</p>
+<p><strong>场景 1：Hello Agent（5 行代码）</strong></p>
+<p>最简场景：调 SDK 输出"Hello"。完整代码见前面的"Hello Agent：5 行代码跑 Claude"。</p>
+<p><strong>场景 2：代码分析 Agent（读 PR diff + 输出 markdown 报告）</strong></p>
+<p>中级场景：SDK 调 Claude 读 PR diff，Claude 用 Read / Grep 工具分析代码，并输出 markdown 报告。</p>
+<p>关键点：<code>allowed_tools</code> 配置（<code>["Read", "Grep", "Glob", "Bash(git:diff)"]</code>）收窄权限；<code>system_prompt</code> 自定义（如"你是资深代码审查员"）。</p>
+<p><strong>场景 3：Flask Web 服务（SDK 提供 chat API）</strong></p>
+<p>高级场景：Flask 接入 SDK，提供 <code>POST /chat</code> 端点，用户通过 HTTP 调用 Claude。</p>
+<p>关键点：异步处理（Web 服务高并发）、独立 <code>system_prompt</code>（每个用户不同）、<code>ResultMessage</code> 上报（费用 / 轮次监控）。</p>
+<p>这 3 个场景由浅入深，覆盖了 SDK 的典型用法。完整代码见后面的"3 个实战场景"代码块。</p>
+<h2 class="section-anchor">🛠️ 实战代码</h2>
+<p><strong>📄 第 23 讲配套：Hello Agent 5 行代码（pip install + query + print + async)</strong></p>
+<pre><code class="lang-python">#!/usr/bin/env python3
+# hello_agent.py
+# 最简 Agent(5 行代码)
+import asyncio
+from claude_code_sdk import query, ClaudeCodeOptions
+
+async def main():
+    async for message in query(prompt="Hello, Claude"):
+        print(message)
+
+asyncio.run(main())
+
+# === 5 行代码拆解 ===
+# 1. import asyncio: 异步运行时
+# 2. import query, ClaudeCodeOptions: SDK 核心 API
+# 3. async def main(): 异步主函数
+# 4. async for message in query(...): 消费消息流
+# 5. asyncio.run(main()): 启动异步循环
+
+# === 同步包装(如果不是 async 函数) ===
+# import asyncio
+# result = asyncio.run(query(prompt="Hello, Claude"))
+# for msg in result:
+#     print(msg)
+
+# === 跑通 ===
+# pip install claude-code-sdk
+# export ANTHROPIC_API_KEY=sk-ant-...
+# python hello_agent.py
+# 输出: "Hello! How can I help you today?"</code></pre>
+<p><strong>📄 第 23 讲配套：ClaudeCodeOptions 完整配置（11 个配置项 + 实战示例）</strong></p>
+<pre><code class="lang-python">#!/usr/bin/env python3
+# options_demo.py
+# ClaudeCodeOptions 11 个配置项完整示例
+import asyncio
+from claude_code_sdk import query, ClaudeCodeOptions
+
+async def main():
+    options = ClaudeCodeOptions(
+        # 1. allowed_tools: 限制 Claude 能调用的工具（白名单）
+        allowed_tools=["Read", "Grep", "Glob", "Bash(git:*)"],
+
+        # 2. system_prompt: 自定义系统提示（覆盖默认）
+        system_prompt="你是一名资深 Python 工程师,代码简洁、可读、有测试。",
+
+        # 3. cwd: Claude Code 的工作目录（默认当前目录）
+        cwd="/Users/me/projects/myapp",
+
+        # 4. mcp_servers: 加载 MCP server（传入 .mcp.json 内容）
+        mcp_servers={
+            "github": {
+                "command": "npx",
+                "args": ["-y", "@modelcontextprotocol/server-github"],
+                "env": {"GITHUB_TOKEN": "ghp_..."}
+            }
+        },
+
+        # 5. max_turns: 限制推理轮次（防止死循环）
+        max_turns=10,
+
+        # 6. permission_mode: 权限模式
+        # "default" | "acceptEdits" | "bypassPermissions" | "plan"
+        permission_mode="default",
+
+        # 7. model: 指定模型(默认 claude-sonnet-4-5)
+        model="claude-sonnet-4-5",
+
+        # 8. resume: 恢复旧会话(session_id)
+        resume="session_abc123",
+
+        # 9. extra_args: 额外 CLI 参数
+        extra_args={"verbose": True},
+
+        # 10. settings: 加载 .claude/settings.json 配置
+        settings="/Users/me/.claude/settings.json",
+
+        # 11. env: 传给 Claude 子进程的环境变量
+        env={"MY_VAR": "value"}
+    )
+
+    async for message in query(prompt="审查 src/api/users.py", options=options):
+        print(message)
+
+asyncio.run(main())
+
+# === 11 个配置项的工程定位 ===
+# 1. allowed_tools    限制工具白名单（防危险）
+# 2. system_prompt    自定义 prompt（多用户隔离）
+# 3. cwd              工作目录（避免路径混乱）
+# 4. mcp_servers      加载 MCP（扩展工具）
+# 5. max_turns        限制轮次（防死循环）
+# 6. permission_mode  权限模式
+# 7. model            指定模型
+# 8. resume           恢复会话(多轮)
+# 9. extra_args       额外参数
+# 10. settings        加载配置
+# 11. env             环境变量
+
+# === 最常用的 5 个 ===
+# allowed_tools / system_prompt / cwd / mcp_servers / max_turns</code></pre>
+<p><strong>📄 第 23 讲配套：消息分类处理完整代码（stream 循环 + 4 类消息类型处理 + ResultMessage 元数据）</strong></p>
+<pre><code class="lang-python">#!/usr/bin/env python3
+# message_handling.py
+# 4 类消息分类处理 + ResultMessage 元数据读取
+import asyncio
+from claude_code_sdk import (
+    query, ClaudeCodeOptions,
+    AssistantMessage, UserMessage, SystemMessage, ResultMessage
+)
+
+async def main():
+    options = ClaudeCodeOptions(
+        allowed_tools=["Read", "Grep", "Bash(git:diff)"],
+        max_turns=10
+    )
+
+    final_output = ""
+    total_cost = 0.0
+    total_turns = 0
+
+    async for message in query(prompt="分析这次 PR 的代码", options=options):
+        # 类型 1: AssistantMessage（Claude 的回复）
+        if isinstance(message, AssistantMessage):
+            for block in message.content:
+                if hasattr(block, "text"):
+                    final_output += block.text
+                    print(f"💬 Claude: {block.text}", end="", flush=True)
+                elif hasattr(block, "name"):
+                    # 工具调用
+                    print(f"\n🔧 Claude 调用工具: {block.name}({block.input})")
+
+        # 类型 2: UserMessage（工具结果）
+        elif isinstance(message, UserMessage):
+            for result in message.content:
+                if result.is_error:
+                    print(f"\n❌ 工具错误: {result.content}")
+                else:
+                    print(f"\n✅ 工具结果: {str(result.content)[:200]}...")
+
+        # 类型 3: SystemMessage（系统事件，调试用）
+        elif isinstance(message, SystemMessage):
+            print(f"\n⚙️  系统事件: {message.subtype}")
+
+        # 类型 4: ResultMessage（任务结果 + 元数据）
+        elif isinstance(message, ResultMessage):
+            total_cost = message.total_cost_usd
+            total_turns = message.num_turns
+            print(f"\n\n📊 任务结果:")
+            print(f"  最终输出: {message.result[:200]}...")
+            print(f"  耗时: {message.duration_ms}ms (API: {message.duration_api_ms}ms)")
+            print(f"  轮次: {message.num_turns}")
+            print(f"  费用: ${message.total_cost_usd:.4f}")
+            print(f"  会话 ID: {message.session_id}")
+
+    # 上报监控
+    await report_to_monitoring(
+        cost=total_cost,
+        turns=total_turns,
+        output=final_output
+    )
+
+async def report_to_monitoring(cost: float, turns: int, output: str):
+    """上报监控(生产环境推到 Prometheus / Datadog)"""
+    print(f"\n📈 上报: cost=${cost:.4f}, turns={turns}, output_len={len(output)}")
+
+asyncio.run(main())
+
+# === 4 类消息处理总结 ===
+# AssistantMessage  累积到 final_output / 实时打印
+# UserMessage      一般不用手动处理(Claude 自己用)
+# SystemMessage    调试时打印
+# ResultMessage    提取费用 / 轮次 / 时长,记录 + 上报
+
+# === ResultMessage 元数据的重要性 ===
+# cost / turns / duration 决定"这个 Agent 跑得多贵 / 多复杂"
+# 生产环境必须读,用于:
+# - 成本监控(每月花了多少)
+# - 性能分析(平均轮次 / 耗时)
+# - 异常告警(单次 > $1 触发告警)
+# - 优化决策(轮次过多说明 prompt 不好)</code></pre>
+<p><strong>📄 第 23 讲配套：3 个实战场景（Hello / 代码分析 / Flask Web 服务）完整代码</strong></p>
+<pre><code class="lang-python">#!/usr/bin/env python3
+# three_scenarios.py
+# 3 个实战场景:Hello / 代码分析 / Flask Web 服务
+
+import asyncio
+from claude_code_sdk import query, ClaudeCodeOptions
+
+
+# === 场景 1: Hello Agent（5 行）===
+async def hello_agent():
+    async for msg in query(prompt="Hello, Claude"):
+        print(msg)
+
+
+# === 场景 2: 代码分析 Agent ===
+async def code_review_agent(pr_diff: str):
+    """读 PR diff + 输出 markdown 审查报告"""
+    options = ClaudeCodeOptions(
+        # 收窄权限:只允许读 + git diff
+        allowed_tools=["Read", "Grep", "Glob", "Bash(git:diff)", "Bash(git:log)"],
+        # 自定义 prompt
+        system_prompt="""你是资深代码审查员。审查 PR diff:
+        1. 按严重程度分类问题(🔴 严重 / 🟡 中等 / 🟢 建议)
+        2. 每条问题指出:文件:行号 + 问题描述 + 修复建议
+        3. 输出 markdown 报告""",
+        # 限制轮次
+        max_turns=15,
+        # 指定 cwd
+        cwd="/Users/me/projects/myapp"
+    )
+
+    final_report = ""
+    async for msg in query(
+        prompt=f"请审查以下 PR diff:\n```\n{pr_diff}\n```",
+        options=options
+    ):
+        from claude_code_sdk import AssistantMessage
+        if isinstance(msg, AssistantMessage):
+            for block in msg.content:
+                if hasattr(block, "text"):
+                    final_report += block.text
+
+    return final_report
+
+
+# === 场景 3: Flask Web 服务（SDK 提供 chat API）===
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+
+@app.route("/chat", methods=["POST"])
+async def chat_api():
+    """HTTP 端点:接收用户消息,返回 Claude 响应"""
+    user_message = request.json.get("message", "")
+    user_id = request.json.get("user_id", "anonymous")
+
+    # 关键 1:独立 system_prompt(多用户隔离)
+    options = ClaudeCodeOptions(
+        # 关键 2:异步 + 收窄权限
+        allowed_tools=["Read", "Grep", "Glob"],
+        # 关键 3:每个用户独立 system_prompt
+        system_prompt=f"你是助手,当前用户 ID: {user_id}。回答简洁。",
+        # 关键 4:限制轮次
+        max_turns=5
+    )
+
+    final_text = ""
+    cost = 0.0
+    async for msg in query(prompt=user_message, options=options):
+        from claude_code_sdk import AssistantMessage, ResultMessage
+        if isinstance(msg, AssistantMessage):
+            for block in msg.content:
+                if hasattr(block, "text"):
+                    final_text += block.text
+        elif isinstance(msg, ResultMessage):
+            # 关键 5:ResultMessage 上报(费用 / 轮次监控)
+            cost = msg.total_cost_usd
+            # 推到监控(略)
+            print(f"📊 用户 {user_id} 花了 ${cost:.4f}")
+
+    return jsonify({"response": final_text, "cost": cost})
+
+
+# === 跑 3 个场景 ===
+if __name__ == "__main__":
+    # 场景 1
+    asyncio.run(hello_agent())
+
+    # 场景 2
+    diff = "diff --git a/src/api/users.py ..."
+    report = asyncio.run(code_review_agent(diff))
+    print(f"\n📋 审查报告:\n{report}")
+
+    # 场景 3:启动 Flask
+    # app.run(port=5000)
+    # curl -X POST http://localhost:5000/chat -H "Content-Type: application/json" -d '{"message":"你好","user_id":"user_001"}'
+
+# === 3 场景由浅入深 ===
+# 场景 1: Hello Agent(5 行)              ─ 入门
+# 场景 2: 代码分析 Agent(读 PR + 报告)    ─ 中级
+# 场景 3: Flask Web 服务(HTTP + 监控)     ─ 高级
+
+# === 3 场景的共同关键点 ===
+# 1. allowed_tools 收窄权限
+# 2. system_prompt 自定义
+# 3. max_turns 限制
+# 4. ResultMessage 监控</code></pre>
+<h2 class="section-anchor">⚠️ 常见坑</h2>
+<div class="callout warn">
+<strong>⚠️ 忘了配置 allowed_tools（SDK 默认能跑所有工具，生产环境必须收窄白名单）</strong>
+<p>"SDK 默认全工具"陷阱：SDK 默认 <code>allowed_tools=None</code>（允许所有工具），生产环境跑 SDK 时若没配 <code>allowed_tools</code>，Claude 就能跑 <code>rm -rf</code>、<code>curl | sh</code> 等危险命令。修正：必须配 <code>allowed_tools</code> 白名单——只允许业务需要的工具（如 Read / Grep / Glob 等）（Read / Grep / Glob 等）。判断标准：你的 SDK options 里有 <code>allowed_tools</code> 吗？没有的话，补上白名单。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 异步 query() 没用 async for 消费（运行时拿不到结果，函数立即返回）</strong>
+<p>"async 忘 await"陷阱：<code>query()</code> 是 async generator，必须用 <code>async for</code> 消费。如果在同步函数里直接调用 <code>result = query(prompt, options)</code> 拿到的只是 async generator 对象（不是结果），遍历它也拿不到消息。修正：用 <code>async for</code> 消费；或者用 <code>asyncio.run()</code> 包装。判断标准：你的代码里有 <code>async for</code> 吗？没有的话，加上 <code>async for</code>。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ ResultMessage 元数据没读（费用 / 轮次 / 时长没监控，无法优化成本）</strong>
+<p>"不计成本"陷阱：跑 SDK 不读 ResultMessage 里的 cost / turns / duration，跑 Claude 不计成本。一个月下来发现花了几千美元，却无从下手优化。修正：必须读 ResultMessage，记录到日志或上报到监控（Prometheus / Datadog）。设置告警阈值（单次 &gt; \$1 触发告警 / 每月 &gt; \$500 触发优化）。判断标准：你的 SDK 跑了多少次、每次 cost 多少，能回答吗？不能的话，补上监控。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 系统 prompt 没隔离（多用户共用一个 SDK 实例，提示词互相干扰，每个请求应独立 system_prompt）</strong>
+<p>"多用户 prompt 污染"陷阱：Web 服务用 SDK 提供 chat API、所有用户共用一个 ClaudeCodeOptions（系统 prompt 固定），导致用户 A 的对话历史影响用户 B（因为 Claude 上下文是共享的）。修正：每个请求独立 system_prompt——根据用户 ID / 角色 / 场景生成不同 prompt，每次 query() 都新建 options。判断标准：你的 SDK 每个请求的 system_prompt 独立吗？是根据用户 ID / 角色生成的吗？不是的话，改成独立 prompt。</p>
+</div>
+<h2 class="section-anchor">💡 一句话备忘</h2>
+<blockquote><blockquote>Agent SDK 把 Claude Code 的能力拆解为可编程接口——query() 函数 + ClaudeCodeOptions 11 个配置项 + 4 类消息流（AssistantMessage / UserMessage / SystemMessage / ResultMessage），把 Claude Code 集成到任何应用（Web / CLI / pipeline），实现从「配置式」到「编程式」的升级。</blockquote>
+<hr>
+<p class="breadcrumb">← 回到 <a href="#top">本讲网页顶部</a></p>
+</main>
+<script>
+  (function () {
+    var STORAGE_KEY = "***";
+    var root = document.documentElement;
+    var btn  = document.getElementById("themeToggle");
+    var icon = document.getElementById("themeIcon");
+    var lbl  = document.getElementById("themeLabel");
+    function apply(theme) {
+      root.setAttribute("data-theme", theme);
+      if (theme === "dark") {
+        icon.innerHTML = "&#9728;&#65039;";
+        lbl.textContent  = "亮色";
+      } else {
+        icon.innerHTML = "&#127769;";
+        lbl.textContent  = "暗色";
+      }
+    }
+    var saved = null;
+    try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    if (saved === "light" || saved === "dark") {
+      apply(saved);
+    } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      apply("dark");
+    } else {
+      apply("light");
+    }
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") || "light";
+      var next = cur === "dark" ? "light" : "dark";
+      apply(next);
+      try { localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>
