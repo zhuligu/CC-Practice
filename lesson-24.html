@@ -1,0 +1,880 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 24 讲 · 得心应手 · Agent SDK 高级应用</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fff; --fg: #222; --muted: #555; --link: #1a73e8;
+    --code-bg: #f4f4f4; --code-fg: inherit;
+    --pre-bg: #1e1e1e; --pre-fg: #eaeaea;
+    --border: #ddd; --th-bg: #f5f5f5; --zebra: #fafafa;
+    --hover-row: #e8f0fe; --hover-th: #eef2f7;
+    --blockquote-bg: #fafafa; --blockquote-border: #ddd;
+    --hr: #eee;
+    --toggle-bg: #f5f5f5; --toggle-fg: #333; --toggle-border: #ddd;
+    --tag-bg: #eef4ff; --tag-fg: #1a73e8;
+    --callout-bg: #fffbe6; --callout-border: #fadb14;
+    --warn-bg: #fff1f0; --warn-border: #ff4d4f;
+    --ok-bg: #f6ffed; --ok-border: #52c41a;
+    --code-block-bg: #f8f9fa;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1115; --fg: #e6e6e6; --muted: #9aa0a6; --link: #8ab4f8;
+    --code-bg: #1e1f24; --code-fg: #e6e6e6;
+    --pre-bg: #1a1d23; --pre-fg: #e6e6e6;
+    --border: #303136; --th-bg: #1c1f25; --zebra: #16181d;
+    --hover-row: #1f2733; --hover-th: #262c36;
+    --blockquote-bg: #181a20; --blockquote-border: #303136;
+    --hr: #2a2d33;
+    --toggle-bg: #1c1f25; --toggle-fg: #e6e6e6; --toggle-border: #303136;
+    --tag-bg: #1a2540; --tag-fg: #8ab4f8;
+    --callout-bg: #2a261a; --callout-border: #b89333;
+    --warn-bg: #2a1a1a; --warn-border: #a84545;
+    --ok-bg: #1a261a; --ok-border: #4a8a4a;
+    --code-block-bg: #16181d;
+  }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 "PingFang SC", "Microsoft YaHei", "Helvetica Neue",
+                 Arial, sans-serif;
+    font-size: 15px; line-height: 1.7;
+    transition: background-color .2s ease, color .2s ease;
+  }
+  main {
+    max-width: 1100px;
+    width: calc(100% - 32px);
+    margin: 0 auto;
+    padding: 24px 0 64px 0;
+    box-sizing: border-box;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    line-height: 1.3; margin: 1.5em 0 .6em;
+  }
+  h1 { font-size: 1.9em; border-bottom: 2px solid var(--hr); padding-bottom: .3em; }
+  h2 { font-size: 1.45em; border-bottom: 1px solid var(--hr); padding-bottom: .25em; margin-top: 2em; }
+  h3 { font-size: 1.18em; color: var(--link); margin-top: 1.5em; }
+  h4 { font-size: 1.05em; margin-top: 1.2em; color: var(--fg); font-weight: 600; }
+  p, ul, ol, blockquote, pre, table { margin: .7em 0; }
+  ul, ol { padding-left: 1.6em; }
+  li { margin: .3em 0; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  blockquote {
+    margin: .8em 0; padding: .6em 1em;
+    border-left: 4px solid var(--blockquote-border);
+    color: var(--muted); background: var(--blockquote-bg);
+  }
+  .callout {
+    background: var(--callout-bg);
+    border-left: 4px solid var(--callout-border);
+    padding: 12px 16px; margin: 1.2em 0; border-radius: 4px;
+  }
+  .callout.warn { background: var(--warn-bg); border-left-color: var(--warn-border); }
+  .callout.ok   { background: var(--ok-bg);   border-left-color: var(--ok-border); }
+  code {
+    font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: .9em; background: var(--code-bg); color: var(--code-fg);
+    padding: 1px 5px; border-radius: 3px;
+  }
+  pre {
+    background: var(--pre-bg); color: var(--pre-fg);
+    padding: 14px 16px; border-radius: 6px;
+    overflow-x: auto; font-size: 13px; line-height: 1.55;
+    margin: 1em 0;
+  }
+  pre code { background: transparent; padding: 0; color: inherit; }
+  pre.lang-flow {
+    background: var(--code-block-bg); color: var(--fg);
+    border: 1px solid var(--border);
+  }
+  :root[data-theme="dark"] pre.lang-flow {
+    background: #0a0b0d; color: #d4d4d4;
+  }
+  table {
+    width: 100% !important; border-collapse: collapse;
+    table-layout: auto; margin: 1em 0;
+    font-size: 14px; display: table;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left; vertical-align: top;
+    transition: background-color .15s ease;
+  }
+  th { background: var(--th-bg); font-weight: 600; }
+  tbody tr:nth-child(even) td { background: var(--zebra); }
+  tbody tr:hover td, tbody tr:hover th { background: var(--hover-row) !important; }
+  thead th:hover { background: var(--hover-th) !important; }
+  :root[data-theme="dark"] tbody tr:hover td,
+  :root[data-theme="dark"] tbody tr:hover th,
+  :root[data-theme="dark"] thead th:hover { color: #fff; }
+  hr { border: none; border-top: 1px solid var(--hr); margin: 2em 0; }
+  img { max-width: 100%; height: auto; }
+
+  .tag {
+    display: inline-block; padding: 2px 8px; margin-right: 6px;
+    background: var(--tag-bg); color: var(--tag-fg);
+    border-radius: 12px; font-size: 12px; font-weight: 500;
+  }
+  .breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 1em; }
+  .breadcrumb a { color: var(--muted); }
+  .breadcrumb a:hover { color: var(--link); }
+
+  .theme-toggle {
+    position: fixed; top: 12px; right: 12px; z-index: 9999;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: var(--toggle-bg); color: var(--toggle-fg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 6px; font-size: 13px; font-family: inherit;
+    cursor: pointer; user-select: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    transition: background-color .2s ease, transform .1s ease;
+  }
+  .theme-toggle:hover { background: var(--hover-row); }
+  .theme-toggle:active { transform: scale(.97); }
+  .theme-toggle .icon { font-size: 15px; line-height: 1; }
+
+  .lesson-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, #1a73e8, #6f42c1);
+    color: #fff; font-size: 24px; font-weight: 700;
+    margin-right: 14px; vertical-align: middle;
+  }
+
+  .section-anchor { scroll-margin-top: 60px; }
+</style>
+<link rel="stylesheet" href="assets/flow.css">
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="切换暗色模式">
+  <span class="icon" id="themeIcon">&#127769;</span>
+  <span id="themeLabel">暗色</span>
+</button>
+<main>
+<div class="breadcrumb">课程导航： « <a href="lesson-23.html">第 23 讲</a>  ·  <a href="lesson-25.html">第 25 讲</a> »</div>
+<h1><span class="lesson-badge">24</span>第 24 讲 · 得心应手 · Agent SDK 高级应用</h1>
+<p>
+  <span class="tag">正课</span>
+  <span class="tag">第 24 / 33 讲</span>
+  <span class="tag">Claude Code 工程化实战</span>
+  <span class="tag">Agent SDK 系列 · 高级</span>
+</p>
+<div class="callout ok">
+<strong>📌 本讲摘要</strong>
+<p>第 23 讲学了 SDK 基础——query() / ClaudeCodeOptions 11 字段 / 4 类消息 / 3 个基础场景。本讲进入高级应用：自定义工具（@tool 装饰器 + create_sdk_mcp_server）、多 Agent 编排（主 Agent + SubAgent 协同）、流式会话（resume 多轮 + 流式输出）、错误处理（try/except + 重试 + fallback）。项目实战：自动化测试修复 Agent（分析 → 修复两阶段工作流）、4 层权限管理（只读分析 → 编辑修复 → Hook 拦截 → 审计日志）。</p>
+<p>本讲的三条主线：</p>
+<p>第一、自定义工具 + 多 Agent 编排——@tool 装饰器把 Python 函数变 Claude 工具（自动生成 JSON schema）、create_sdk_mcp_server 打包 in-process MCP server；主 Agent 调 SubAgent 协同。</p>
+<p>第二、流式会话 + 错误处理——resume 续跑旧会话 / 流式输出（逐块打印）/ 3 层错误处理（try/except + 指数退避重试 + fallback）。</p>
+<p>第三、自动化测试修复 Agent 实战——分析（只读、plan 模式）→ 修复（acceptEdits 模式、Edit 改代码 + 跑测试）；4 层权限管理（只读 / 编辑 / Hook / 日志）。</p>
+<p>学完本讲、你应该能用 @tool 装饰器写自定义工具、能用 create_sdk_mcp_server 打包 in-process MCP server、能用 resume 续跑多轮对话、能做 3 层错误处理、能写完整的测试修复 Agent 两阶段工作流。</p>
+</div>
+<h2 class="section-anchor">📖 详细内容</h2>
+<h3>自定义工具：@tool 装饰器 + create_sdk_mcp_server</h3>
+<p>第 19 讲学了 MCP server——用 npx 启动 stdio 进程暴露工具。本讲学 in-process MCP server——用 @tool 装饰器把 Python 函数直接变成工具、在 SDK 进程内运行、无需 npx / 进程隔离。</p>
+<p><strong>@tool 装饰器</strong></p>
+<p>@tool 装饰器是 SDK 提供的装饰器、把 Python 函数变成 Claude 可调用的工具、自动生成 JSON schema（从 type hints 推断参数类型）。</p>
+<p>用法：</p>
+<pre><code class="lang-python">from claude_code_sdk import tool
+
+@tool
+def get_user(user_id: int) -> dict:
+    """根据用户 ID 获取用户对象。"""
+    return db.query("SELECT * FROM users WHERE id = ?", user_id)</code></pre>
+<p>装饰器自动：</p>
+<p>1. 从 type hints 推断参数 schema（<code>user_id: int</code> → <code>{"type": "integer"}</code>）。</p></p>
+<p>2. 从 docstring 推断工具 description（给 Claude 看）。</p>
+<p>3. 注册到 SDK 工具列表、Claude 推理时能看到 <code>get_user(user_id: int)</code> 工具。</p>
+<p><strong>create_sdk_mcp_server</strong></p>
+<p>create_sdk_mcp_server 把多个 @tool 打包成 in-process MCP server、无需 stdio 进程。</p>
+<p>用法：</p>
+<pre><code class="lang-python">from claude_code_sdk import create_sdk_mcp_server
+
+server = create_sdk_mcp_server(
+    name="my-tools",
+    version="1.0.0",
+    tools=[get_user, create_user, update_user]
+)</code></pre>
+<p>然后在 ClaudeCodeOptions.mcp_servers 里引用这个 server，Claude 就能调 my-tools 暴露的所有工具。</p>
+<p><strong>in-process MCP vs stdio MCP</strong></p>
+<p>in-process 优势：无需 npx / 启动快（进程内函数调用）/ 易调试（普通 Python 调试器）/ 单语言（纯 Python）。</p>
+<p>stdio 优势：跨语言（任何语言写 server）、跨进程（隔离）、跨机器（远程 MCP）。</p>
+<p>选择：工具用 Python 写 + 不需要跨进程 → in-process（本讲重点）。工具用其他语言写 + 需要隔离 / 跨机器 → stdio。</p>
+<table>
+<thead><tr>
+<th>维度</th>
+<th>@tool 装饰器（in-process）</th>
+<th>stdio MCP server</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>集成方式</td>
+<td>Python 装饰器（同进程）</td>
+<td>命令行启动独立进程（npx / uvx）</td>
+</tr>
+<tr>
+<td>性能</td>
+<td>~ms 级（进程内函数调用）</td>
+<td>~5-10ms(stdio IPC 开销）</td>
+</tr>
+<tr>
+<td>部署</td>
+<td>同 Python 进程一起打包</td>
+<td>需要 npm / npx 启动</td>
+</tr>
+<tr>
+<td>调试</td>
+<td>普通 Python 调试器（pdb / pydev）</td>
+<td>stdio echo + mcp-inspector</td>
+</tr>
+<tr>
+<td>适用场景</td>
+<td>工具用 Python 写 / 不需要跨进程</td>
+<td>工具用其他语言写 / 需要隔离 / 跨机器</td>
+</tr>
+</tbody></table>
+<h3>多 Agent 编排：主 Agent + SubAgent 协同</h3>
+<p>第 6 讲学过 SubAgent——独立上下文角色。本讲用 SDK 编排主 Agent + SubAgent——主 Agent 负责整体流程、SubAgent 负责隔离任务。</p>
+<p><strong>2 种协同模式</strong></p>
+<p>模式 1：<strong>顺序协同</strong>——主 Agent 调 SubAgent A → 等 A 完成 → 调 SubAgent B → 汇总结果。例：主 Agent 调 code-reviewer SubAgent 做代码审查 → 调 test-runner SubAgent 跑测试 → 汇总报告。</p>
+<p>模式 2：<strong>并行协同</strong>——主 Agent 调多个 SubAgent 同时跑（用 asyncio.gather）→ 等所有完成 → 汇总结果。例：主 Agent 同时调 3 个 SubAgent（lint / format / test）→ 3 个并行跑 → 汇总报告、快 3 倍。</p>
+<p>2 种模式的选择：SubAgent 之间有依赖（A 完成后 B 才能跑）→ 顺序。SubAgent 之间独立 → 并行。</p>
+<p><strong>主 Agent 汇总 SubAgent 报告</strong></p>
+<p>主 Agent 调 SubAgent 后、SubAgent 完成会输出报告（写到 .claude/state/&lt;name&gt;.json 或 stdout）。主 Agent 读报告、整合到自己的输出。</p>
+<p>3 个 SubAgent 报告整合：code-reviewer 报告（代码问题）+ test-runner 报告（测试结果）+ lint 报告（代码风格）→ 主 Agent 输出统一报告。</p>
+<p>完整代码见后面多 Agent 编排完整代码代码块。</p>
+<div class="flow-diagram">
+  <div class="flow-note" style="font-size:14px;font-weight:600;color:var(--link);font-style:normal;margin-bottom:10px">Agent SDK 高级应用完整图景</div>
+
+  <div class="flow-actor">
+    <div class="flow-actor-label">应用代码</div>
+    <div class="flow-actor-desc">Flask / CLI / pipeline</div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg" style="border-color:var(--link)">
+    <div class="flow-box-title">SDK 启动 · 加载 .claude/ 配置</div>
+    <ul>
+      <li><code>rules/</code>（软规范）</li>
+      <li><code>skills/</code>（本地能力）</li>
+      <li><code>agents/</code>（SubAgent）</li>
+      <li><code>settings.json</code>（Hooks + permissions）</li>
+      <li><code>.mcp.json</code>（MCP server）</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">Claude 推理（主 Agent）</div>
+    <ul>
+      <li>调自定义工具（<code>@tool</code> 装饰器）：get_user / send_email / ...</li>
+      <li>调 SubAgent：@code-reviewer / @test-runner / @linter</li>
+      <li>调 MCP server：<code>mcp__github__create_issue</code> · in-process SDK MCP server</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">流式返回消息</div>
+    <div class="flow-box-sub" style="text-align:left">Assistant · User · System · Result (cost / turns / session_id)</div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg" style="border-color:var(--warn-border)">
+    <div class="flow-box-title" style="color:var(--warn-border)">错误处理（3 层）</div>
+    <ol style="padding-left:1.2em;font-size:13px">
+      <li>try / except 捕获 4 种异常</li>
+      <li>指数退避重试（≤ 3 次）</li>
+      <li>fallback 降级（简单规则）</li>
+    </ol>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">主 Agent 汇总 SubAgent 报告</div>
+    <ul>
+      <li>code-reviewer 报告</li>
+      <li>test-runner 报告</li>
+      <li>linter 报告</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-actor flow-actor-final"><div class="flow-actor-label">返回应用</div></div>
+</div>
+<h3>流式会话：resume + 流式输出</h3>
+<p>第 23 讲讲过 query() 是 async generator、本节深入两个高级用法：resume + 流式输出。</p>
+<p><strong>resume：续跑旧会话</strong></p>
+<p>query() 用 <code>resume=session_id</code> 续跑旧会话（从 ResultMessage 拿到 session_id）。</p>
+<p>用法：<code>query(prompt="继续上次的任务", options=ClaudeCodeOptions(resume="session_abc123")</code>。Claude 加载旧会话的上下文（之前的对话 / 工具结果 / 推理状态）、继续执行。</p>
+<p>适用场景：</p>
+<p>• 多轮对话——用户多次问、Claude 累加上下文。</p>
+<p>• 中断续跑——长任务跑一半中断（超时 / 错误）、后续跑时 resume 旧会话。</p>
+<p>• 会话持久化——把 session_id 存数据库、下次读出来 resume。</p>
+<p><strong>流式输出：逐块打印</strong></p>
+<p>query() 异步流式返回 AssistantMessage、每条消息包含多个 content block（文本 / 工具调用）。逐块处理 = 实时反馈。</p>
+<p>典型代码：<code>async for msg in query(...): print(msg.content[0].text, end="", flush=True)</code>——逐字符打印、用户实时看到 Claude 输出。</p>
+<p>流式 vs 非流式：流式反馈好（用户等得不焦虑）/ 适合长任务；非流式简单 / 适合短任务。</p>
+<p><strong>中断与续跑</strong></p>
+<p>长任务（timeout / 错误）中断时、捕获 session_id 存数据库。下次调用时 resume 旧会话、从断点继续。避免长任务中断重头跑。</p>
+<p>完整代码见后面流式会话 + 错误处理完整代码代码块。</p>
+<h3>错误处理：try/except + 重试 + fallback</h3>
+<p>SDK 跑 Claude 不可避免遇到错误（网络超时 / API 报错 / 任务失败）。生产环境必须有 3 层错误处理。</p>
+<p><strong>第 1 层：try/except 捕获异常</strong></p>
+<p>SDK 抛的异常类型：</p>
+<p>• <code>CLINotFoundError</code>——Claude Code CLI 没安装。</p>
+<p>• <code>ProcessError</code>——Claude Code 子进程错误。</p>
+<p>• <code>CLIJSONDecodeError</code>——消息 JSON 解析失败。</p>
+<p>• <code>TimeoutError</code>——超时（asyncio.TimeoutError）。</p>
+<p>用 try/except 捕获、记录到日志 + 友好错误提示用户。</p>
+<p><strong>第 2 层：指数退避重试</strong></p>
+<p>网络超时 / API 临时错误（5xx）适合重试。指数退避策略：第 1 次重试等 1 秒、第 2 次等 2 秒、第 3 次等 4 秒……避免雪崩。</p>
+<p>限制：重试 ≤ 3 次、过多会导致长任务变超长任务。</p>
+<p><strong>第 3 层：fallback 降级</strong></p>
+<p>Claude 跑失败（超过重试次数）时、降级到简单规则：</p>
+<p>• 跑代码审查失败 → 回退到提示用户人工 review。</p>
+<p>• 跑测试修复失败 → 回退到列出失败原因、让人修。</p>
+<p>• 跑自动 commit 失败 → 回退到提示用户 commit。</p>
+<p>fallback 不是放弃、而是用简单方式解决。3 层叠加 = 健壮的错误处理。</p>
+<h3>项目实战：自动化测试修复 Agent</h3>
+<p>综合运用 24 讲学的所有内容、做一个完整项目——自动化测试修复 Agent。</p>
+<p>完整代码见后面自动化测试修复 Agent 完整代码代码块。</p>
+<p><strong>两阶段工作流</strong></p>
+<p>阶段 1：<strong>分析（只读）</strong>——用 plan 模式（只读不写），Claude 读测试失败信息 + 读代码 + 分析失败原因、输出修复计划。</p>
+<p>阶段 2：<strong>修复（编辑）</strong>——用 acceptEdits 模式（允许 Edit），Claude 根据修复计划 Edit 改代码 + 跑测试验证。</p>
+<p>2 阶段工作流：先分析后修复、避免边改边分析导致乱改。</p>
+<p><strong>4 层权限管理</strong></p>
+<p>层 1：<strong>只读分析</strong>——阶段 1 用 <code>permission_mode="plan"</code>（plan 模式只读），Claude 只能 Read / Grep / Glob、不能 Edit / Write / Bash。</p>
+<p>层 2：<strong>编辑修复</strong>——阶段 2 用 <code>permission_mode="acceptEdits"</code>（自动接受 Edit），Claude 能 Edit / Write / Bash（白名单）。</p>
+<p>层 3：<strong>Hook 拦截</strong>——用 .claude/settings.json 的 PreToolUse HW 拦危险命令（rm -rf / curl | sh），即使 acceptEdits 模式也拦。</p>
+<p>层 4：<strong>审计日志</strong>——PostToolUse HW 记录所有 Edit / Write / Bash 到 audit log、出事后可追溯。</p>
+<p>4 层叠加形成纵深防御——只读分析 → 编辑修复 → Hook 拦截 → 审计日志、任何一层失效其他层兜底。</p>
+<table>
+<thead><tr>
+<th>权限层</th>
+<th>机制</th>
+<th>作用</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>层 1：只读分析</td>
+<td>permission_mode="plan"</td>
+<td>阶段 1 只读不写、只输出修复计划</td>
+</tr>
+<tr>
+<td>层 2：编辑修复</td>
+<td>permission_mode="acceptEdits"</td>
+<td>阶段 2 允许 Edit/Write、实际改代码</td>
+</tr>
+<tr>
+<td>层 3：HW 拦截</td>
+<td>PreToolUse deny-pipe-exec / deny-extra-dangerous</td>
+<td>危险命令根本跑不出来、纵深防御</td>
+</tr>
+<tr>
+<td>层 4：审计日志</td>
+<td>PostToolUse audit-log</td>
+<td>所有 Edit/Write/Bash 记录到日志、出事后可追溯</td>
+</tr>
+</tbody></table>
+<h3>SDK × 5 种扩展机制协同</h3>
+<p>SDK 是调用者侧——Python 代码调 Claude。5 种扩展机制是被调用者侧——Claude 推理时用。SDK + 5 种机制协同工作。</p>
+<p>• <strong>SDK + Skills</strong>——SDK 启动时加载 .claude/skills/ 的 SKILL.md，Claude 推理时自动发现本地能力。</p>
+<p>• <strong>SDK + SubAgent</strong>——SDK 启动时加载 .claude/agents/ 的 *.md，Claude 推理时用 @name 调 SubAgent。</p>
+<p>• <strong>SDK + Hooks</strong>——SDK 启动时加载 .claude/settings.json 的 hooks 字段、工具调用前后触发拦截 / 记录。</p>
+<p>• <strong>SDK + MCP</strong>——SDK 启动时加载 .mcp.json，Claude 推理时调 mcp__xxx__yyy 工具。</p>
+<p>• <strong>SDK + Rules</strong>——SDK 启动时加载 .claude/rules/ 的 *.md，Claude 推理时遵守软规范。</p>
+<p>SDK + 5 机制 = 完整工程化体系。SDK 是骨架，5 机制是血肉。</p>
+<h2 class="section-anchor">🛠️ 实战代码</h2>
+<p><strong>📄 第 24 讲配套：自定义工具 + in-process MCP server 完整代码（@tool 装饰器 + 2 个 tool + create_sdk_mcp_server）</strong></p>
+<pre><code class="lang-python">#!/usr/bin/env python3
+# custom_tools.py
+# 自定义工具 + in-process MCP server
+import asyncio
+from claude_code_sdk import (
+    query, ClaudeCodeOptions, tool, create_sdk_mcp_server
+)
+
+
+# === 自定义工具 1:查数据库 ===
+@tool
+def get_user(user_id: int) -&gt; dict:
+    """根据用户 ID 获取用户对象。
+
+    Args:
+        user_id: 用户 ID(整数)
+
+    Returns:
+        包含 id, name, email 的字典
+    """
+    return {
+        "id": user_id,
+        "name": f"User {user_id}",
+        "email": f"user{user_id}@example.com"
+    }
+
+
+# === 自定义工具 2:发邮件 ===
+@tool
+def send_email(to: str, subject: str, body: str) -&gt; str:
+    """发送邮件。
+
+    Args:
+        to: 收件人邮箱
+        subject: 邮件主题
+        body: 邮件正文
+
+    Returns:
+        发送结果("success" 或错误信息)
+    """
+    # 实际场景调 SMTP
+    return f"Email sent to {to} with subject '{subject}'"
+
+
+# === 打包成 in-process MCP server ===
+custom_server = create_sdk_mcp_server(
+    name="my-custom-tools",
+    version="1.0.0",
+    tools=[get_user, send_email]
+)
+
+
+async def main():
+    options = ClaudeCodeOptions(
+        # 加载 in-process MCP server
+        mcp_servers={
+            "my-custom-tools": custom_server
+        },
+        max_turns=5
+    )
+
+    # Claude 调 get_user(1) 工具
+    async for msg in query(
+        prompt="查询用户 ID 1 的信息",
+        options=options
+    ):
+        from claude_code_sdk import AssistantMessage
+        if isinstance(msg, AssistantMessage):
+            for block in msg.content:
+                if hasattr(block, "text"):
+                    print(block.text, end="", flush=True)
+
+
+asyncio.run(main()
+
+# === @tool 装饰器自动做的事 ===
+# 1. 从 type hints 推断参数 schema
+#    user_id: int → {"type": "integer"}
+#    to: str → {"type": "string"}
+# 2. 从 docstring 推断 description
+#    "根据用户 ID 获取用户对象" → tool description
+# 3. 注册到 SDK 工具列表
+#    Claude 看到 mcp__my-custom-tools__get_user(user_id: int)
+
+# === in-process MCP vs stdio MCP ===
+# in-process: 进程内函数调用,启动快,易调试,单语言
+# stdio:      跨进程,跨语言,跨机器,隔离</code></pre>
+<p><strong>📄 第 24 讲配套：多 Agent 编排完整代码（主 Agent + code-reviewer SubAgent + test-runner SubAgent + 汇总）</strong></p>
+<pre><code class="lang-python">#!/usr/bin/env python3
+# multi_agent.py
+# 多 Agent 编排:主 Agent + 3 个 SubAgent
+import asyncio
+from claude_code_sdk import query, ClaudeCodeOptions, AssistantMessage
+
+
+async def run_subagent(name: str, prompt: str, options: ClaudeCodeOptions) -&gt; str:
+    """跑一个 SubAgent,返回报告"""
+    report = ""
+    async for msg in query(prompt=prompt, options=options):
+        if isinstance(msg, AssistantMessage):
+            for block in msg.content:
+                if hasattr(block, "text"):
+                    report += block.text
+    return report
+
+
+async def main():
+    # === 阶段 1:并行调 3 个 SubAgent(快 3 倍)===
+    code_review_task = run_subagent(
+        name="code-reviewer",
+        prompt="审查 src/api/users.py 的代码",
+        options=ClaudeCodeOptions(
+            allowed_tools=["Read", "Grep"],
+            system_prompt="你是 code-reviewer,只输出代码问题",
+            max_turns=10
+        )
+    )
+
+    test_runner_task = run_subagent(
+        name="test-runner",
+        prompt="跑 pytest tests/test_users.py,报告结果",
+        options=ClaudeCodeOptions(
+            allowed_tools=["Bash(pytest:*)", "Read"],
+            system_prompt="你是 test-runner,只输出测试结果",
+            max_turns=10
+        )
+    )
+
+    lint_task = run_subagent(
+        name="linter",
+        prompt="跑 ruff check src/api/users.py,报告问题",
+        options=ClaudeCodeOptions(
+            allowed_tools=["Bash(ruff:*)"],
+            system_prompt="你是 linter,只输出 lint 问题",
+            max_turns=5
+        )
+    )
+
+    # 并行跑(asyncio.gather)
+    review_report, test_report, lint_report = await asyncio.gather(
+        code_review_task,
+        test_runner_task,
+        lint_task
+    )
+
+    # === 阶段 2:主 Agent 汇总 ===
+    print("=== code-reviewer 报告 ===")
+    print(review_report)
+    print("\n=== test-runner 报告 ===")
+    print(test_report)
+    print("\n=== linter 报告 ===")
+    print(lint_report)
+
+    # 写到 .claude/state/reports/latest.md
+    with open(".claude/state/reports/latest.md", "w") as f:
+        f.write(f"# 综合报告\n\n")
+        f.write(f"## 代码审查\n{review_report}\n\n")
+        f.write(f"## 测试\n{test_report}\n\n")
+        f.write(f"## Lint\n{lint_report}\n\n")
+
+
+asyncio.run(main()
+
+# === 2 种协同模式 ===
+# 顺序: A 完成后 B,等所有完成
+# 并行: asyncio.gather 并行跑,快 N 倍
+
+# === 主 Agent 汇总 SubAgent 报告 ===
+# 1. SubAgent 写报告到 .claude/state/&lt;name&gt;.json
+# 2. 主 Agent 读报告
+# 3. 主 Agent 整合到自己的输出
+# 4. SubAgentStop HW 验证报告完整性(第 18 讲)</code></pre>
+<p><strong>📄 第 24 讲配套：流式会话 + 错误处理完整代码（resume 续跑 + 流式输出 + try/except + 指数退避重试 + fallback）</strong></p>
+<pre><code class="lang-python">#!/usr/bin/env python3
+# streaming_errors.py
+# 流式会话 + 错误处理(resume + 流式输出 + 3 层错误处理)
+import asyncio
+import time
+from claude_code_sdk import (
+    query, ClaudeCodeOptions,
+    AssistantMessage, ResultMessage,
+    CLINotFoundError, ProcessError, CLIJSONDecodeError
+)
+
+
+async def stream_query(prompt: str, options: ClaudeCodeOptions):
+    """流式 query():逐块打印 AssistantMessage"""
+    async for msg in query(prompt=prompt, options=options):
+        if isinstance(msg, AssistantMessage):
+            for block in msg.content:
+                if hasattr(block, "text"):
+                    # 流式输出:逐字符打印 + flush
+                    print(block.text, end="", flush=True)
+        elif isinstance(msg, ResultMessage):
+            # 返回 session_id 供下次 resume
+            return msg.session_id, msg.total_cost_usd
+
+
+async def query_with_retry(
+    prompt: str,
+    options: ClaudeCodeOptions,
+    max_retries: int = 3
+):
+    """3 层错误处理:try/except + 指数退避重试 + fallback"""
+    for attempt in range(max_retries):
+        try:
+            # 尝试跑
+            session_id, cost = await stream_query(prompt, options)
+            return session_id, cost
+
+        except (ProcessError, CLIJSONDecodeError) as e:
+            # 临时错误,指数退避重试
+            if attempt &lt; max_retries - 1:
+                wait_time = 2 ** attempt  # 1s, 2s, 4s
+                print(f"\n⚠️ 第 {attempt + 1} 次失败: {e}")
+                print(f"   {wait_time}秒后重试...")
+                await asyncio.sleep(wait_time)
+            else:
+                # 重试耗尽,fallback
+                print(f"\n❌ 重试 {max_retries} 次仍失败,fallback")
+                return await fallback_handler(prompt)
+
+        except CLINotFoundError as e:
+            # CLI 没安装,不能重试
+            print(f"\n❌ Claude Code CLI 没安装: {e}")
+            return None, 0.0
+
+        except asyncio.TimeoutError as e:
+            # 超时
+            print(f"\n⚠️ 超时: {e}")
+            if attempt &lt; max_retries - 1:
+                await asyncio.sleep(2 ** attempt)
+            else:
+                return await fallback_handler(prompt)
+
+
+async def fallback_handler(prompt: str):
+    """Fallback:降级到简单规则"""
+    print(f"\n🔄 Fallback:Claude 跑失败,降级到简单规则")
+    # 例:如果任务是代码审查,fallback 是"列出文件让人工审"
+    if "审查" in prompt:
+        return "session_fallback", 0.0  # 标记是 fallback
+    return "session_fallback", 0.0
+
+
+async def main():
+    options = ClaudeCodeOptions(
+        allowed_tools=["Read", "Grep"],
+        max_turns=10
+    )
+
+    # 第 1 次:流式跑(实时反馈)
+    session_id, cost = await query_with_retry(
+        prompt="分析这个项目结构",
+        options=options
+    )
+
+    if session_id == "session_fallback":
+        print("使用了 fallback,跳过 resume")
+        return
+
+    # 第 2 次:resume 续跑(用第 1 次的 session_id)
+    options_resume = ClaudeCodeOptions(
+        resume=session_id,  # ← 关键:续跑旧会话
+        allowed_tools=["Read", "Grep"],
+        max_turns=10
+    )
+
+    print("\n\n=== 续跑(基于上轮上下文)===\n")
+    session_id_2, cost_2 = await query_with_retry(
+        prompt="继续:具体说说 main.py 做了什么",
+        options=options_resume
+    )
+
+    print(f"\n\n📊 累计 cost: ${(cost + cost_2):.4f}")
+
+
+asyncio.run(main()
+
+# === resume 续跑 ===
+# 1. 第 1 次 query() 拿到 session_id(ResultMessage.session_id)
+# 2. 第 2 次 query() 用 resume=session_id 续跑
+# 3. Claude 加载旧会话的上下文(对话历史 / 工具结果 / 推理状态)
+
+# === 3 层错误处理 ===
+# 第 1 层: try/except 捕获异常(4 种异常类型)
+# 第 2 层: 指数退避重试(1s, 2s, 4s, ≤ 3 次)
+# 第 3 层: fallback 降级(简单规则处理)
+
+# === 流式输出 ===
+# print(block.text, end="", flush=True)
+# flush=True 关键,否则等缓冲区满才输出</code></pre>
+<p><strong>📄 第 24 讲配套：自动化测试修复 Agent 完整代码（两阶段工作流 + 4 层权限管理 + 完整 Python）</strong></p>
+<pre><code class="lang-python">#!/usr/bin/env python3
+# test_fixer_agent.py
+# 自动化测试修复 Agent(两阶段工作流 + 4 层权限管理)
+import asyncio
+from claude_code_sdk import query, ClaudeCodeOptions, AssistantMessage
+
+
+async def analyze_phase(test_output: str) -&gt; str:
+    """阶段 1:分析(只读,plan 模式)"""
+    options = ClaudeCodeOptions(
+        # 层 1:只读权限(plan 模式)
+        permission_mode="plan",
+        allowed_tools=["Read", "Grep", "Glob", "Bash(pytest:*)"],
+        system_prompt="""你是测试分析专家。分析测试失败原因:
+1. 读测试输出,理解失败模式
+2. 读相关源码,定位 bug
+3. 输出修复计划(具体到 file:line + 修复方案)
+不要修改任何文件,只分析。""",
+        max_turns=10
+    )
+
+    plan = ""
+    async for msg in query(
+        prompt=f"分析这个测试失败:\n{test_output}",
+        options=options
+    ):
+        if isinstance(msg, AssistantMessage):
+            for block in msg.content:
+                if hasattr(block, "text"):
+                    plan += block.text
+
+    return plan
+
+
+async def fix_phase(plan: str) -&gt; bool:
+    """阶段 2:修复(编辑,acceptEdits 模式)"""
+    options = ClaudeCodeOptions(
+        # 层 2:编辑权限(acceptEdits 模式)
+        permission_mode="acceptEdits",
+        allowed_tools=["Read", "Edit", "Write", "Bash(pytest:*)", "Bash(ruff:*)"],
+        system_prompt="""你是测试修复专家。根据修复计划:
+1. 用 Edit 改代码(只改 plan 提到的位置)
+2. 改完跑 pytest 验证
+3. 如果测试还失败,继续修(最多 5 轮)
+不要做 plan 之外的事。""",
+        max_turns=20  # 给修复更多轮次
+        # 层 3:HW 拦截(在 .claude/settings.json 配置 PreToolUse)
+        # 层 4:HW 审计日志(PostToolUse 记录所有 Edit/Write)
+    )
+
+    print("=== 阶段 2:修复 ===\n")
+    async for msg in query(
+        prompt=f"根据这个修复计划修复代码:\n\n{plan}",
+        options=options
+    ):
+        from claude_code_sdk import AssistantMessage
+        if isinstance(msg, AssistantMessage):
+            for block in msg.content:
+                if hasattr(block, "text"):
+                    print(block.text, end="", flush=True)
+                elif hasattr(block, "name"):
+                    # 工具调用
+                    print(f"\n🔧 工具: {block.name}")
+
+    # 验证测试通过
+    print("\n\n=== 验证 ===")
+    proc = await asyncio.create_subprocess_exec(
+        "pytest", "tests/", "-q",
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE
+    )
+    stdout, stderr = await proc.communicate()
+    return proc.returncode == 0
+
+
+async def main():
+    # 1. 跑测试,看失败
+    proc = await asyncio.create_subprocess_exec(
+        "pytest", "tests/", "-q",
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE
+    )
+    stdout, stderr = await proc.communicate()
+    test_output = stdout.decode() + stderr.decode()
+
+    if proc.returncode == 0:
+        print("✅ 所有测试通过,无需修复")
+        return
+
+    print(f"❌ 测试失败,启动修复 Agent\n")
+
+    # 2. 阶段 1:分析
+    print("=== 阶段 1:分析(只读) ===\n")
+    plan = await analyze_phase(test_output)
+    print(f"\n\n📋 修复计划:\n{plan}\n")
+
+    # 3. 阶段 2:修复
+    success = await fix_phase(plan)
+
+    if success:
+        print("\n✅ 测试修复成功")
+    else:
+        print("\n❌ 修复失败,需要人工介入")
+
+
+asyncio.run(main()
+
+# === 配套 .claude/settings.json(层 3 + 层 4)===
+# {
+#   "hooks": {
+#     "PreToolUse": [
+#       {
+#         "matcher": "Bash",
+#         "hooks": [
+#           {"type": "command", "command": "bash .claude/hooks/deny-pipe-exec.sh"},
+#           {"type": "command", "command": "bash .claude/hooks/deny-extra-dangerous.sh"}
+#         ]
+#       }
+#     ],
+#     "PostToolUse": [
+#       {
+#         "matcher": "Edit|Write",
+#         "hooks": [
+#           {"type": "command", "command": "bash .claude/hooks/audit-log.sh"}
+#         ]
+#       }
+#     ]
+#   }
+# }
+
+# === 4 层权限管理 ===
+# 层 1: 只读分析(permission_mode="plan")
+# 层 2: 编辑修复(permission_mode="acceptEdits")
+# 层 3: HW 拦截(PreToolUse deny-pipe-exec / deny-extra-dangerous)
+# 层 4: 审计日志(PostToolUse audit-log)
+
+# === 两阶段工作流 ===
+# 阶段 1: 只读分析(plan 模式)→ 输出修复计划
+# 阶段 2: 编辑修复(acceptEdits 模式)→ Edit 改代码 + 跑测试</code></pre>
+<h2 class="section-anchor">⚠️ 常见坑</h2>
+<div class="callout warn">
+<strong>⚠️ @tool 装饰器忘写 type hints（Claude 看不到参数 schema、工具无法调用、所有参数必须 type hints + docstring）</strong>
+<p>type hints 缺失陷阱：@tool 装饰器依赖 type hints 生成 JSON schema，如果函数参数没写 type hints（<code>def get_user(user_id)</code> 而非 <code>def get_user(user_id: int)</code>），Claude 看不到参数类型、工具无法调用。修正：所有 @tool 函数必须 type hints（参数 + 返回值）+ docstring（描述工具用途）。判断标准：你的 @tool 函数有 type hints + docstring 吗？参数 / 返回值都标了吗？没标、补 type hints。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 流式输出忘 flush（实时反馈没生效、用户等很久才看到结果、print 加 flush=True）</strong>
+<p>流式变全量陷阱：流式输出时 print 没加 <code>flush=True</code>，Python print 默认行缓冲（等换行才输出），如果 Claude 输出的文本没换行、用户等很久才看到结果（等缓冲区满才输出）。修正：流式输出必须 <code>print(block.text, end="", flush=True)</code>——end="" 避免换行、flush=True 立即输出。判断标准：你的流式 print 有 flush=True 吗？没有、加 flush。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 重试没限次数（网络持续失败导致死循环、重试 ≤ 3 次后 fallback）</strong>
+<p>死循环重试陷阱：网络持续失败时（Anthropic API 持续 5xx）、无限重试导致长任务变超长任务——用户等几小时还看不到结果。修正：重试 ≤ 3 次、第 4 次 fallback 降级。指数退避：1s / 2s / 4s、避免持续打 API。判断标准：你的重试有限次数吗？≤ 3 次？无限 = 改限次。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ SubAgent 报告没汇总（主 Agent 看不到 SubAgent 完整结果、SubAgentStop HW + 显式汇总）</strong>
+<p>SubAgent 报告丢失陷阱：主 Agent 调 3 个 SubAgent 并行跑、3 个 SubAgent 完成、主 Agent 只看到任务完成信号、看不到具体报告（报告写在 .claude/state/&lt;name&gt;.json 但主 Agent 没读）。修正：主 Agent 显式读 .claude/state/&lt;name&gt;.json + 汇总；或者配 SubAgentStop HW 验证报告完整性 + 自动汇总。判断标准：你的 SubAgent 报告汇总了吗？主 Agent 看到完整结果吗？没有、显式汇总。</p>
+</div>
+<h2 class="section-anchor">💡 一句话备忘</h2>
+<blockquote>Agent SDK 高级应用把 SDK 从基础调用升级到工程化项目——@tool 装饰器 + create_sdk_mcp_server 自定义工具、主 Agent + SubAgent 多 Agent 编排、resume + 流式输出 + 3 层错误处理、自动化测试修复 Agent（分析 → 修复两阶段 + 4 层权限管理）是完整项目实战。</blockquote>
+<hr>
+<p class="breadcrumb">← 回到 <a href="#top">本讲网页顶部</a></p>
+</main>
+<script>
+  (function () {
+    var STORAGE_KEY = "***";
+    var root = document.documentElement;
+    var btn  = document.getElementById("themeToggle");
+    var icon = document.getElementById("themeIcon");
+    var lbl  = document.getElementById("themeLabel");
+    function apply(theme) {
+      root.setAttribute("data-theme", theme);
+      if (theme === "dark") {
+        icon.innerHTML = "&#9728;&#65039;";
+        lbl.textContent  = "亮色";
+      } else {
+        icon.innerHTML = "&#127769;";
+        lbl.textContent  = "暗色";
+      }
+    }
+    var saved = null;
+    try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    if (saved === "light" || saved === "dark") {
+      apply(saved);
+    } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      apply("dark");
+    } else {
+      apply("light");
+    }
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") || "light";
+      var next = cur === "dark" ? "light" : "dark";
+      apply(next);
+      try { localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>
