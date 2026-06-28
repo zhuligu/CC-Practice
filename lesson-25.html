@@ -1,0 +1,794 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 25 讲 · 化零为整 · Plugins 插件打包与分发</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fff; --fg: #222; --muted: #555; --link: #1a73e8;
+    --code-bg: #f4f4f4; --code-fg: inherit;
+    --pre-bg: #1e1e1e; --pre-fg: #eaeaea;
+    --border: #ddd; --th-bg: #f5f5f5; --zebra: #fafafa;
+    --hover-row: #e8f0fe; --hover-th: #eef2f7;
+    --blockquote-bg: #fafafa; --blockquote-border: #ddd;
+    --hr: #eee;
+    --toggle-bg: #f5f5f5; --toggle-fg: #333; --toggle-border: #ddd;
+    --tag-bg: #eef4ff; --tag-fg: #1a73e8;
+    --callout-bg: #fffbe6; --callout-border: #fadb14;
+    --warn-bg: #fff1f0; --warn-border: #ff4d4f;
+    --ok-bg: #f6ffed; --ok-border: #52c41a;
+    --code-block-bg: #f8f9fa;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1115; --fg: #e6e6e6; --muted: #9aa0a6; --link: #8ab4f8;
+    --code-bg: #1e1f24; --code-fg: #e6e6e6;
+    --pre-bg: #1a1d23; --pre-fg: #e6e6e6;
+    --border: #303136; --th-bg: #1c1f25; --zebra: #16181d;
+    --hover-row: #1f2733; --hover-th: #262c36;
+    --blockquote-bg: #181a20; --blockquote-border: #303136;
+    --hr: #2a2d33;
+    --toggle-bg: #1c1f25; --toggle-fg: #e6e6e6; --toggle-border: #303136;
+    --tag-bg: #1a2540; --tag-fg: #8ab4f8;
+    --callout-bg: #2a261a; --callout-border: #b89333;
+    --warn-bg: #2a1a1a; --warn-border: #a84545;
+    --ok-bg: #1a261a; --ok-border: #4a8a4a;
+    --code-block-bg: #16181d;
+  }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 "PingFang SC", "Microsoft YaHei", "Helvetica Neue",
+                 Arial, sans-serif;
+    font-size: 15px; line-height: 1.7;
+    transition: background-color .2s ease, color .2s ease;
+  }
+  main {
+    max-width: 1100px;
+    width: calc(100% - 32px);
+    margin: 0 auto;
+    padding: 24px 0 64px 0;
+    box-sizing: border-box;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    line-height: 1.3; margin: 1.5em 0 .6em;
+  }
+  h1 { font-size: 1.9em; border-bottom: 2px solid var(--hr); padding-bottom: .3em; }
+  h2 { font-size: 1.45em; border-bottom: 1px solid var(--hr); padding-bottom: .25em; margin-top: 2em; }
+  h3 { font-size: 1.18em; color: var(--link); margin-top: 1.5em; }
+  h4 { font-size: 1.05em; margin-top: 1.2em; color: var(--fg); font-weight: 600; }
+  p, ul, ol, blockquote, pre, table { margin: .7em 0; }
+  ul, ol { padding-left: 1.6em; }
+  li { margin: .3em 0; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  blockquote {
+    margin: .8em 0; padding: .6em 1em;
+    border-left: 4px solid var(--blockquote-border);
+    color: var(--muted); background: var(--blockquote-bg);
+  }
+  .callout {
+    background: var(--callout-bg);
+    border-left: 4px solid var(--callout-border);
+    padding: 12px 16px; margin: 1.2em 0; border-radius: 4px;
+  }
+  .callout.warn { background: var(--warn-bg); border-left-color: var(--warn-border); }
+  .callout.ok   { background: var(--ok-bg);   border-left-color: var(--ok-border); }
+  code {
+    font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: .9em; background: var(--code-bg); color: var(--code-fg);
+    padding: 1px 5px; border-radius: 3px;
+  }
+  pre {
+    background: var(--pre-bg); color: var(--pre-fg);
+    padding: 14px 16px; border-radius: 6px;
+    overflow-x: auto; font-size: 13px; line-height: 1.55;
+    margin: 1em 0;
+  }
+  pre code { background: transparent; padding: 0; color: inherit; }
+  pre.lang-flow {
+    background: var(--code-block-bg); color: var(--fg);
+    border: 1px solid var(--border);
+  }
+  :root[data-theme="dark"] pre.lang-flow {
+    background: #0a0b0d; color: #d4d4d4;
+  }
+  table {
+    width: 100% !important; border-collapse: collapse;
+    table-layout: auto; margin: 1em 0;
+    font-size: 14px; display: table;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left; vertical-align: top;
+    transition: background-color .15s ease;
+  }
+  th { background: var(--th-bg); font-weight: 600; }
+  tbody tr:nth-child(even) td { background: var(--zebra); }
+  tbody tr:hover td, tbody tr:hover th { background: var(--hover-row) !important; }
+  thead th:hover { background: var(--hover-th) !important; }
+  :root[data-theme="dark"] tbody tr:hover td,
+  :root[data-theme="dark"] tbody tr:hover th,
+  :root[data-theme="dark"] thead th:hover { color: #fff; }
+  hr { border: none; border-top: 1px solid var(--hr); margin: 2em 0; }
+  img { max-width: 100%; height: auto; }
+
+  .tag {
+    display: inline-block; padding: 2px 8px; margin-right: 6px;
+    background: var(--tag-bg); color: var(--tag-fg);
+    border-radius: 12px; font-size: 12px; font-weight: 500;
+  }
+  .breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 1em; }
+  .breadcrumb a { color: var(--muted); }
+  .breadcrumb a:hover { color: var(--link); }
+
+  .theme-toggle {
+    position: fixed; top: 12px; right: 12px; z-index: 9999;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: var(--toggle-bg); color: var(--toggle-fg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 6px; font-size: 13px; font-family: inherit;
+    cursor: pointer; user-select: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    transition: background-color .2s ease, transform .1s ease;
+  }
+  .theme-toggle:hover { background: var(--hover-row); }
+  .theme-toggle:active { transform: scale(.97); }
+  .theme-toggle .icon { font-size: 15px; line-height: 1; }
+
+  .lesson-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, #1a73e8, #6f42c1);
+    color: #fff; font-size: 24px; font-weight: 700;
+    margin-right: 14px; vertical-align: middle;
+  }
+
+  .section-anchor { scroll-margin-top: 60px; }
+</style>
+<link rel="stylesheet" href="assets/flow.css">
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="切换暗色模式">
+  <span class="icon" id="themeIcon">&#127769;</span>
+  <span id="themeLabel">暗色</span>
+</button>
+<main>
+<div class="breadcrumb">课程导航： « <a href="lesson-24.html">第 24 讲</a>  ·  <a href="lesson-26.html">第 26 讲</a> »</div>
+<h1><span class="lesson-badge">25</span>第 25 讲 · 化零为整 · Plugins 插件打包与分发</h1>
+<p>
+  <span class="tag">正课</span>
+  <span class="tag">第 25 / 33 讲</span>
+  <span class="tag">Claude Code 工程化实战</span>
+  <span class="tag">Plugins 打包</span>
+</p>
+<div class="callout ok">
+<strong>📌 本讲摘要</strong>
+<p>前 24 讲我们学了 6 种扩展机制（Skills / SubAgent / Hooks / MCP / Tools / Rules）以及 Headless、Agent SDK，这些都是散装零件——单独配置在 .claude/ 目录。本讲进入 Plugins，把多种零件打包成可安装、可分享、可复用的整体。核心要点：</p>
+<ul>
+<li><strong>plugin.json manifest 规范</strong>：描述插件的元数据与依赖</li>
+<li><strong>标准目录结构</strong>：.claude-plugin/ 根目录 + skills/ / agents/ / commands/ / hooks/ / .mcp.json 五个子目录</li>
+<li><strong>团队能力包</strong>：把团队沉淀的 Skills / SubAgent / Hooks 打包成一个 plugin</li>
+<li><strong>marketplace 分发</strong>：把 plugin 推到 GitHub / 公司内部 registry / Anthropic 官方 marketplace</li>
+</ul>
+<p><strong>本讲的三条主线：</strong></p>
+<ul>
+<li>第一、<strong>Plugin 是什么 + 目录结构 + manifest 规范</strong>——把 6 种扩展机制打包成整体，类比 npm 包；plugin.json 含 6 字段（name / version / description / author / dependencies / minClaudeVersion）；目录结构为 .claude-plugin/ 根 + 5 子目录。</li>
+<li>第二、<strong>团队能力包 + Plugin 安装加载</strong>——把代码审查全家桶（SubAgent + Skill + Hook）打包成 1 个 plugin；<code>claude plugin install</code> 一行命令完成 onboarding；3 种安装方式（从 name / git URL / 本地路径）。</li>
+<li>第三、<strong>marketplace 分发 + 5 个最佳实践</strong>——marketplace 是 plugin 商店（5 种类型）；5 个实践：写通用能力、进 git 共享、写 README、配版本号、CI 测试。</li>
+</ul>
+<p><strong>学完本讲你应该能：</strong>写 plugin.json manifest、配 Plugin 完整目录结构、打包团队能力包、熟练使用 <code>claude plugin install</code> / <code>publish</code> 等 5 个核心命令，并能清晰区分 Plugin 与散装配置的工程定位。</p>
+</div>
+<h2 class="section-anchor">📖 详细内容</h2>
+<h3>Plugin 是什么？为什么需要它？</h3>
+<p>前 24 讲我们学的 6 种扩展机制（Skills / SubAgent / Hooks / MCP / Tools / Rules）是散装零件——每种都要单独配置在 <code>.claude/</code> 目录下。这种方式适合自己用或小团队用，但不适合团队通用能力沉淀和跨团队分享。</p>
+<p><strong>举个例子：</strong>假设团队花了 3 个月沉淀出一套代码审查全家桶，包含 code-reviewer SubAgent（独立上下文审查）+ review-checklist Skill（检查清单）+ pre-commit Hook（提交前跑 lint）。这 3 个零件散装在 <code>.claude/</code> 目录，新成员 onboarding 要走 4 步：</p>
+<ol>
+<li>复制 SubAgent 文件到 <code>.claude/agents/</code>。</li>
+<li>复制 Skill 文件到 <code>.claude/skills/</code>。</li>
+<li>配置 Hook 到 <code>.claude/settings.json</code>。</li>
+<li>写 README 解释怎么用。</li>
+</ol>
+<p>4 步繁琐、容易遗漏、新成员 onboarding 慢。Plugin 正是为了解决这个痛点而生：把 3 个零件 + README + manifest 打包成 1 个 plugin，新成员只需一行命令 <code>claude plugin install code-review-suite</code> 即可搞定。</p>
+<p><strong>Plugin 的 5 个核心价值</strong></p>
+<ul>
+<li><strong>可安装</strong>——一行命令安装，不用手动复制配置。</li>
+<li><strong>可分享</strong>——推到 GitHub / 内部 registry / Anthropic marketplace，跨团队、跨公司分享。</li>
+<li><strong>可复用</strong>——同一份 plugin 在多个项目使用，不用每个项目重写。</li>
+<li><strong>可版本管理</strong>——plugin 有版本号，可以升级、回滚、锁定。</li>
+<li><strong>可依赖管理</strong>——plugin 声明依赖，装 plugin 时自动装依赖。</li>
+</ul>
+<p>这 5 个价值让 Plugin 成为团队能力沉淀的标准方式。</p>
+<p><strong>类比 npm 包 / pip 包</strong></p>
+<p>Plugin 之于 Claude Code ≈ npm 包之于 Node.js / pip 包之于 Python。npm 包是 JS 库的打包方式，Plugin 是 Claude Code 扩展机制的打包方式。同样的包概念，不同的生态。</p>
+<h3>Plugin 目录结构 + plugin.json manifest 规范</h3>
+<p>Plugin 有标准的目录结构和 manifest 文件，任何 plugin 作者按规范编写，任何 Claude Code 用户按规范安装。</p>
+<p><strong>Plugin 完整目录结构</strong></p>
+<pre><code class="lang-bash">code-review-suite/                 ← plugin 根目录（与 plugin 同名）
+├── .claude-plugin/                ← plugin 元数据目录
+│   └── plugin.json                ← manifest 文件（必填）
+├── skills/                        ← Skill 目录（可选）
+│   └── review-checklist/
+│       └── SKILL.md               ← 检查清单 Skill
+├── agents/                        ← SubAgent 目录（可选）
+│   └── code-reviewer.md           ← 代码审查 SubAgent
+├── commands/                      ← Command 目录（可选）
+│   └── review.md                  ← /review 命令
+├── hooks/                         ← Hook 脚本目录（可选）
+│   └── pre-commit.sh              ← 提交前跑 lint
+├── .mcp.json                      ← MCP server 配置（可选）
+└── README.md                      ← 用法说明（推荐）</code></pre>
+<p>.claude-plugin/ 根目录加上 5 个扩展机制子目录，恰好覆盖前 24 讲学的所有扩展机制。Plugin 作者按需填写，不必 5 个子目录都填——例如纯 Skill plugin 只用 skills/ + plugin.json，纯 Hook plugin 只用 hooks/ + plugin.json。</p>
+<p><strong>plugin.json manifest 规范</strong></p>
+<p>plugin.json 共 6 个必填/选填字段：</p>
+<ul>
+<li><strong>name</strong>——plugin 名称（英文、小写、连字符）。例：<code>"code-review-suite"</code>。</li>
+<li><strong>version</strong>——语义化版本。例：<code>"1.0.0"</code>（major.minor.patch）。</li>
+<li><strong>description</strong>——plugin 描述（给安装者看的简要说明）。</li>
+<li><strong>author</strong>——作者信息（姓名 + 邮箱）。</li>
+<li><strong>dependencies</strong>——依赖列表（其他 plugin / 工具）。</li>
+<li><strong>minClaudeVersion</strong>——最低 Claude Code 版本要求。</li>
+</ul>
+<p>完整示例见后面完整 plugin.json manifest 示例代码块。</p>
+<h3>团队能力包：从散装配置到打包分发</h3>
+<p>团队能力包 = 把团队沉淀的多种零件（Skills / SubAgent / Hooks / MCP）打包成 1 个 plugin，只需 3 个步骤。</p>
+<p><strong>step 1：识别团队通用能力</strong></p>
+<p>团队能力 ≠ 项目专属配置。识别团队通用能力有 3 个判断标准：</p>
+<ol>
+<li><strong>多项目共用</strong>——这个能力在 2+ 个项目使用，是团队通用能力。</li>
+<li><strong>多成员共用</strong>——多个团队成员都会用到，值得打包。</li>
+<li><strong>相对稳定</strong>——不经常变化（每月 &lt; 1 次更新），适合打包。</li>
+</ol>
+<p>3 个条件全部满足 → 属于团队通用能力 → 适合打包成 plugin。</p>
+<p><strong>step 2：打包到 .claude-plugin/ 目录</strong></p>
+<p>把已有的散装文件复制到 plugin 目录结构中：</p>
+<ul>
+<li><code>.claude/agents/code-reviewer.md</code> → <code>code-review-suite/agents/code-reviewer.md</code></li>
+<li><code>.claude/skills/review-checklist/SKILL.md</code> → <code>code-review-suite/skills/review-checklist/SKILL.md</code></li>
+<li><code>.claude/hooks/pre-commit.sh</code> → <code>code-review-suite/hooks/pre-commit.sh</code></li>
+</ul>
+<p>3 个文件复制完成后，加上 plugin.json 和 README.md，一个 plugin 就成型了。</p>
+<p><strong>step 3：新成员 onboarding 一行命令搞定</strong></p>
+<p>新成员只需执行 <code>claude plugin install code-review-suite</code>，3 个零件和配置全部装好，无需手动复制。</p>
+<p>完整代码见后面团队能力包：code-review-suite 完整 plugin 代码块。</p>
+<p><strong>团队能力包 vs 项目专属配置</strong></p>
+<p><strong>团队能力包（打包分发）：</strong>code-reviewer SubAgent、review-checklist Skill、pre-commit Hook 等团队通用、跨项目使用的能力。</p>
+<p><strong>项目专属配置（散装存放）：</strong>本项目的 src/ 路径、本项目的数据库名、本项目的部署脚本等只在本项目使用的配置。</p>
+<p>Plugin 适合前者，散装适合后者。</p>
+<h3>Plugin 安装与加载机制</h3>
+<p>Plugin 支持 3 种安装方式、3 级加载、1 个卸载命令，覆盖完整的生命周期管理。</p>
+<p><strong>3 种安装方式</strong></p>
+<ul>
+<li><strong>方式 1：从名字装（从 marketplace 搜索）</strong>——<code>claude plugin install code-review-suite</code>。Claude Code 从配置的 marketplace 搜索并安装最新版本。</li>
+<li><strong>方式 2：从 git URL 装（直接装 GitHub 仓库）</strong>——<code>claude plugin install https://github.com/your-team/code-review-suite</code>。执行 git clone 仓库并安装到本地。</li>
+<li><strong>方式 3：从本地路径装（开发调试用）</strong>——<code>claude plugin install /path/to/code-review-suite</code>。从本地目录直接加载，适合开发阶段测试。</li>
+</ul>
+<p>3 种方式覆盖用户装、团队装、开发装 3 个典型场景。</p>
+<p><strong>3 级加载</strong></p>
+<ul>
+<li><strong>级别 1：项目级 plugin</strong>——位于 <code>.claude/plugins/</code>（项目根目录），只在本项目生效。</li>
+<li><strong>级别 2：全局 plugin</strong>——位于 <code>~/.claude/plugins/</code>（用户家目录），所有项目共享。</li>
+<li><strong>级别 3：用户级 plugin</strong>——位于 <code>~/.claude/plugins/&lt;user&gt;/</code>（特定用户目录），个人专属。</li>
+</ul>
+<p>3 级叠加机制：项目级、全局级、用户级都会加载，并合并到 Claude Code 配置。优先级规则：<strong>项目级 &gt; 全局级 &gt; 用户级</strong>（项目级覆盖）。</p>
+<p><strong>卸载</strong></p>
+<p><code>claude plugin uninstall code-review-suite</code>——删除 .claude-plugin/ 目录并清理相关配置。</p>
+<p>完整命令清单见后面 Plugin 安装/发布命令完整清单代码块。</p>
+<h3>marketplace 分发：从内部使用到社区分享</h3>
+<p>Plugin 写好不能只在本地，需要推到 marketplace 才能让别人安装。marketplace 就是 plugin 的商店——托管 plugin 列表，提供 <code>claude plugin install &lt;name&gt;</code> 的搜索后端。</p>
+<p><strong>5 种 marketplace 类型</strong></p>
+<ul>
+<li><strong>类型 1：GitHub 仓库</strong>——plugin 推到 GitHub，Claude Code 直接 clone 仓库安装。最简单，适合小团队或个人。</li>
+<li><strong>类型 2：公司内部 registry</strong>——公司搭建私有 registry（类似 npm 私有源），托管公司内部 plugin。安全可控。</li>
+<li><strong>类型 3：Anthropic 官方 marketplace</strong>——Anthropic 维护的官方 plugin 商店（类似 Apple App Store），托管社区贡献的 plugin。经过质量审核，适合公开发布。</li>
+<li><strong>类型 4：第三方平台</strong>——类似 plugin.ai 之类的第三方平台，托管社区 plugin，自由度高。</li>
+<li><strong>类型 5：本地文件</strong>——plugin 不推任何地方，只在本地文件中加载，适合开发调试。</li>
+</ul>
+<p>5 种类型覆盖个人、团队、公开 3 个使用范围。</p>
+<p><strong>发布命令</strong></p>
+<p><code>claude plugin publish</code>——在 plugin 根目录执行，plugin 被推到配置的 marketplace（默认 Anthropic 官方）。发布前需要先登录（<code>claude plugin login</code>）。</p>
+<p><strong>发布流程：</strong>写 plugin → 测试 → 写 README → 配版本号 → <code>claude plugin login</code> → <code>claude plugin publish</code> → 用户 <code>claude plugin install</code>。</p>
+<table>
+<thead><tr>
+<th>类型</th>
+<th>托管方式</th>
+<th>适用</th>
+<th>安全性</th>
+<th>发现性</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>GitHub 仓库</td>
+<td>git clone 仓库</td>
+<td>个人 / 小团队</td>
+<td>中（代码可见）</td>
+<td>低（靠搜）</td>
+</tr>
+<tr>
+<td>公司内部 registry</td>
+<td>私有 npm-style 源</td>
+<td>企业私有 plugin</td>
+<td>高（私有）</td>
+<td>中（团队内可搜）</td>
+</tr>
+<tr>
+<td>Anthropic 官方 marketplace</td>
+<td>官方审核发布</td>
+<td>公开发布</td>
+<td>高（审核）</td>
+<td>高（官方商店）</td>
+</tr>
+<tr>
+<td>第三方平台</td>
+<td>第三方托管</td>
+<td>社区自由发布</td>
+<td>中（平台审核）</td>
+<td>中（平台内可搜）</td>
+</tr>
+<tr>
+<td>本地文件</td>
+<td>本地路径</td>
+<td>开发调试</td>
+<td>高（本地）</td>
+<td>无（自己用）</td>
+</tr>
+</tbody></table>
+<h3>Plugin 开发的 5 个最佳实践 + Plugin vs 散装配置边界</h3>
+<p>会用 Plugin 是基础，精通 Plugin 开发还需要掌握 5 个最佳实践。</p>
+<p><strong>最佳实践 1：Plugin 写团队通用能力，不写项目专属</strong></p>
+<p>Plugin 应是通用能力，而不是项目专属配置。反例：plugin 写死项目路径 <code>/Users/me/projects/myapp/</code>，换个项目就用不了。正例：plugin 写代码审查通用能力，不绑死项目路径。</p>
+<p><strong>判断标准：</strong>这个 plugin 换个项目还能用吗？能用 → 通用能力，适合打包；不能用 → 散装配置，适合放在 <code>.claude/</code> 目录。</p>
+<p><strong>最佳实践 2：进 git 团队共享</strong></p>
+<p>Plugin 仓库进 git，团队成员都能 clone / pull / push。配合 CI 跑 plugin 集成测试，确保 plugin 改动不会破坏其他项目。</p>
+<p><strong>判断标准：</strong>plugin 在 git 跟踪吗？没在跟踪，赶紧入 git。</p>
+<p><strong>最佳实践 3：写 README 说明用法</strong></p>
+<p>README 是必填项——plugin 装完怎么用？提供什么 Skill / SubAgent / Hook？有没有示例代码？必填 5 段内容：简介、安装、用法、配置、卸载。</p>
+<p><strong>最佳实践 4：配版本号语义化</strong></p>
+<p>版本号采用 semver 规范（<code>major.minor.patch</code>）：</p>
+<ul>
+<li><strong>major</strong>——不兼容的重大改动。</li>
+<li><strong>minor</strong>——向后兼容的新功能。</li>
+<li><strong>patch</strong>——向后兼容的 bug 修复。</li>
+</ul>
+<p>用户可以根据 major 版本决定是否升级，根据 minor / patch 自动升级。</p>
+<p><strong>最佳实践 5：在 CI 跑集成测试</strong></p>
+<p>Plugin 改完后，在 CI 跑集成测试——装 plugin → 跑示例代码 → 验证 Skill / SubAgent / Hook 都能正常使用。CI 失败不 merge，确保 plugin 质量。</p>
+<p><strong>Plugin vs 散装配置边界</strong></p>
+<p><strong>Plugin 适合的场景：</strong></p>
+<ul>
+<li>团队通用能力（2+ 项目共用）。</li>
+<li>跨成员共享（2+ 成员共用）。</li>
+<li>跨团队 / 跨公司分享（推到 marketplace）。</li>
+<li>需要版本管理（升级 / 回滚）。</li>
+</ul>
+<p><strong>散装配置适合的场景：</strong></p>
+<ul>
+<li>项目专属配置（本项目专用）。</li>
+<li>个人偏好（用户级配置）。</li>
+<li>一次性脚本（用完即弃）。</li>
+</ul>
+<p><strong>边界判断：</strong>这个配置是通用还是专属？通用 → Plugin；专属 → 散装。</p>
+<table>
+<thead><tr>
+<th>维度</th>
+<th>Plugin</th>
+<th>散装配置</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>打包形式</td>
+<td>整体（.claude-plugin/ 目录 + 5 子目录 + plugin.json)</td>
+<td>单文件（.claude/ 下散装）</td>
+</tr>
+<tr>
+<td>分享方式</td>
+<td>claude plugin install（从 marketplace / git URL / 本地路径）</td>
+<td>手动复制文件</td>
+</tr>
+<tr>
+<td>版本管理</td>
+<td>有（plugin.json version 字段、semver)</td>
+<td>无（手动升级 / 回滚）</td>
+</tr>
+<tr>
+<td>依赖管理</td>
+<td>有（plugin.json dependencies 字段）</td>
+<td>无（手动处理依赖）</td>
+</tr>
+<tr>
+<td>加载机制</td>
+<td>claude plugin install 后自动加载</td>
+<td>手动放 .claude/ 目录</td>
+</tr>
+<tr>
+<td>适用场景</td>
+<td>团队通用能力（2+ 项目 / 2+ 成员）</td>
+<td>项目专属配置（本项目用）</td>
+</tr>
+</tbody></table>
+<h2 class="section-anchor">🛠️ 实战代码</h2>
+<p><strong>📄 第 25 讲配套：完整 plugin.json manifest 示例（name / version / description / author / dependencies / minClaudeVersion 6 字段 + 完整 plugin)</strong></p>
+<pre><code class="lang-json">// .claude-plugin/plugin.json
+// 完整 manifest 示例(code-review-suite)
+{
+  "name": "code-review-suite",
+  "version": "1.2.0",
+  "description": "代码审查全家桶:code-reviewer SubAgent + review-checklist Skill + pre-commit Hook。一次安装,全团队用。",
+  "author": {
+    "name": "黄佳",
+    "email": "huangjia@example.com"
+  },
+  "dependencies": [
+    "claude-code &gt;= 1.5.0",
+    "@anthropic-ai/sdk &gt;= 0.20.0"
+  ],
+  "minClaudeVersion": "1.5.0"
+}
+
+// === 6 字段详解 ===
+// 1. name: plugin 名(英文,小写,连字符)
+//    例: "code-review-suite"
+//    用作 `claude plugin install code-review-suite`
+// 2. version: 语义化版本
+//    major.minor.patch
+//    1.0.0 → 首次发布
+//    1.1.0 → 加新功能(兼容)
+//    1.1.1 → 修 bug
+//    2.0.0 → 不兼容改动
+// 3. description: 一句话描述(给安装者看)
+//    应该写"做什么" + "对谁有用"
+// 4. author: 作者信息(姓名 + 邮箱)
+// 5. dependencies: 依赖列表
+//    其他 plugin / npm 包 / 系统工具
+// 6. minClaudeVersion: 最低 Claude Code 版本
+//    老版本 Claude Code 不支持新 plugin 字段
+//    配这个字段,装 plugin 时检查版本
+
+// === 可选字段(扩展)===
+// keywords: ["review", "code-quality", "team"]
+// repository: "https://github.com/your-team/code-review-suite"
+// license: "MIT"
+// homepage: "https://your-plugin-docs.com"</code></pre>
+<p><strong>📄 第 25 讲配套：Plugin 完整目录结构（.claude-plugin/ 根 + skills/ + agents/ + commands/ + hooks/ + .mcp.json 5 子目录）</strong></p>
+<pre><code class="lang-bash">#!/usr/bin/env bash
+# Plugin 完整目录结构
+# (以 code-review-suite 为例)
+
+code-review-suite/                 ← plugin 根目录
+├── .claude-plugin/                ← plugin 元数据目录(必填)
+│   └── plugin.json                ← manifest 文件(必填)
+├── skills/                        ← Skill 目录(可选)
+│   ├── review-checklist/
+│   │   └── SKILL.md               ← 检查清单 Skill
+│   └── conventional-commits/
+│       └── SKILL.md               ← commit 规范 Skill
+├── agents/                        ← SubAgent 目录(可选)
+│   ├── code-reviewer.md           ← 代码审查 SubAgent
+│   ├── security-reviewer.md       ← 安全审查 SubAgent
+│   └── test-runner.md             ← 测试运行 SubAgent
+├── commands/                      ← Command 目录(可选)
+│   ├── review.md                  ← /review 命令(用户主动审查)
+│   ├── lint.md                    ← /lint 命令
+│   └── test.md                    ← /test 命令
+├── hooks/                         ← Hook 脚本目录(可选)
+│   ├── pre-commit.sh              ← 提交前跑 lint
+│   ├── auto-format.sh             ← 写完代码自动 ruff format
+│   └── audit-log.sh               ← 审计日志
+├── .mcp.json                      ← MCP server 配置(可选)
+└── README.md                      ← 用法说明(推荐)
+
+// === 6 子目录对应 6 种扩展机制 ===
+// .claude-plugin/  →  plugin.json(元数据)
+// skills/          →  Skills(自动发现本地能力)
+// agents/          →  SubAgent(独立上下文角色)
+// commands/        →  Commands(用户主动命令)
+// hooks/           →  Hooks(事件驱动拦截)
+// .mcp.json        →  MCP(连接外部 API)
+
+// === 6 子目录都是可选的 ===
+// plugin.json 必填, 5 子目录按需填
+// 例: 纯 Skill plugin 只有 skills/ + plugin.json
+// 例: 纯 Hook plugin 只有 hooks/ + plugin.json
+
+// === 加载机制 ===
+// Claude Code 启动时, 加载 plugin 的 5 子目录
+// - skills/   → 加载到 .claude/skills/
+// - agents/   → 加载到 .claude/agents/
+// - commands/ → 加载到 .claude/commands/
+// - hooks/    → 合并到 .claude/settings.json 的 hooks
+// - .mcp.json → 合并到 .mcp.json</code></pre>
+<p><strong>📄 第 25 讲配套：团队能力包：code-review-suite 完整 plugin（包含 code-reviewer SubAgent + review-checklist Skill + pre-commit Hook)</strong></p>
+<pre><code class="lang-bash">#!/usr/bin/env bash
+# 团队能力包:code-review-suite 完整 plugin
+# 假设团队已经写了 3 个散装文件:
+# - .claude/agents/code-reviewer.md
+# - .claude/skills/review-checklist/SKILL.md
+# - .claude/hooks/pre-commit.sh
+
+# === step 1:创建 plugin 目录结构 ===
+mkdir -p code-review-suite/.claude-plugin
+mkdir -p code-review-suite/skills/review-checklist
+mkdir -p code-review-suite/agents
+mkdir -p code-review-suite/hooks
+
+# === step 2:复制已有散装文件到 plugin ===
+cp .claude/agents/code-reviewer.md code-review-suite/agents/
+cp .claude/skills/review-checklist/SKILL.md code-review-suite/skills/review-checklist/
+cp .claude/hooks/pre-commit.sh code-review-suite/hooks/
+chmod +x code-review-suite/hooks/pre-commit.sh
+
+# === step 3:写 plugin.json ===
+cat &gt; code-review-suite/.claude-plugin/plugin.json &lt;&lt; 'EOF'
+{
+  "name": "code-review-suite",
+  "version": "1.0.0",
+  "description": "团队代码审查全家桶:SubAgent + Skill + Hook 一次装齐",
+  "author": {
+    "name": "黄佳",
+    "email": "huangjia@example.com"
+  },
+  "minClaudeVersion": "1.5.0"
+}
+EOF
+
+# === step 4:写 README.md ===
+cat &gt; code-review-suite/README.md &lt;&lt; 'EOF'
+# code-review-suite
+
+团队代码审查全家桶。
+
+## 安装
+
+\`\`\`bash
+claude plugin install code-review-suite
+\`\`\`
+
+## 用法
+
+装完提供 3 个能力:
+
+### 1. code-reviewer SubAgent
+
+\`\`\`
+@code-reviewer 审查 src/api/users.py
+\`\`\`
+
+### 2. review-checklist Skill
+
+Claude 改代码时自动触发检查清单。
+
+### 3. pre-commit Hook
+
+git commit 时自动跑 ruff + mypy。
+
+## 卸载
+
+\`\`\`bash
+claude plugin uninstall code-review-suite
+\`\`\`
+EOF
+
+# === step 5:本地测试 ===
+cd code-review-suite
+claude plugin install .  # 从本地路径装
+claude plugin list        # 确认装上
+@code-reviewer 审查 src/api/users.py  # 验证能用
+
+# === step 6:推到 git ===
+cd ..
+git init code-review-suite
+cd code-review-suite
+git add .
+git commit -m "feat: code-review-suite v1.0.0"
+git remote add origin https://github.com/your-team/code-review-suite
+git push -u origin main
+
+# === step 7:发布到 marketplace ===
+claude plugin login
+claude plugin publish  # 推到 Anthropic 官方 marketplace
+
+# === 团队新成员 onboarding ===
+# 新成员:
+# claude plugin install code-review-suite
+# 一行命令, 3 个能力全装好</code></pre>
+<p><strong>📄 第 25 讲配套：Plugin 安装/发布命令完整清单（install / uninstall / list / update / publish 5 命令）</strong></p>
+<pre><code class="lang-bash">#!/usr/bin/env bash
+# Plugin 安装/发布命令完整清单
+
+# === 命令 1:install(安装)===
+# 从 marketplace 装
+claude plugin install code-review-suite
+
+# 从 git URL 装
+claude plugin install https://github.com/your-team/code-review-suite
+
+# 从本地路径装(开发调试)
+claude plugin install /path/to/code-review-suite
+
+# 装指定版本
+claude plugin install code-review-suite@1.2.0
+
+# === 命令 2:uninstall(卸载)===
+claude plugin uninstall code-review-suite
+
+# === 命令 3:list(列出已装)===
+claude plugin list
+
+# 输出示例:
+# NAME                  VERSION  SOURCE
+# code-review-suite     1.2.0    marketplace
+# my-team-tools         2.0.0    local:/Users/me/plugins/my-team
+# test-helpers          0.5.0    git:https://github.com/me/test-helpers
+
+# === 命令 4:update(更新)===
+# 更新指定 plugin
+claude plugin update code-review-suite
+
+# 更新所有 plugin
+claude plugin update --all
+
+# === 命令 5:publish(发布)===
+# 发布到 marketplace
+# 前提:在 plugin 根目录,已 login
+cd code-review-suite
+claude plugin login  # 第一次发布前要登录
+claude plugin publish
+
+# 发布到指定 marketplace
+claude plugin publish --marketplace company-internal
+
+# === 命令 6:search(搜索)===
+# 在 marketplace 搜 plugin
+claude plugin search code-review
+
+# === 命令 7:info(查 plugin 信息)===
+claude plugin info code-review-suite
+# 输出: name / version / description / dependencies / 安装次数
+
+# === 命令 8:enable / disable(临时启停)===
+# 临时禁用(不卸载)
+claude plugin disable code-review-suite
+
+# 重新启用
+claude plugin enable code-review-suite
+
+# === 5 个最常用命令 ===
+# install / uninstall / list / update / publish</code></pre>
+<h2 class="section-anchor">📊 流程图</h2>
+<div class="flow-diagram">
+  <div class="flow-note" style="font-size:14px;font-weight:600;color:var(--link);font-style:normal;margin-bottom:10px">Plugin 完整生命周期（从开发到使用）</div>
+
+  <div class="flow-actor"><div class="flow-actor-label">Plugin 作者</div></div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">① 编写 plugin</div>
+    <ul>
+      <li><code>plugin.json</code> — manifest（必填）</li>
+      <li><code>skills/</code> — Skill 文件</li>
+      <li><code>agents/</code> — SubAgent 文件</li>
+      <li><code>commands/</code> — Command 文件</li>
+      <li><code>hooks/</code> — Hook 脚本</li>
+      <li><code>.mcp.json</code> — MCP server 配置</li>
+      <li><code>README.md</code> — 用法说明</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box"><div class="flow-box-title">② 本地测试</div><div class="flow-box-sub">claude plugin install .</div></div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box"><div class="flow-box-title">③ 配版本号 + 推 git</div><div class="flow-box-sub">semver: 1.0.0 → git push</div></div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box"><div class="flow-box-title">④ 登录并发布</div><div class="flow-box-sub">login → publish</div></div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg" style="border-color:var(--link)">
+    <div class="flow-box-title">⑤ Marketplace（5 种类型）</div>
+    <ul>
+      <li>GitHub 仓库</li>
+      <li>公司内部 registry</li>
+      <li>Anthropic 官方 marketplace</li>
+      <li>第三方平台</li>
+      <li>本地文件</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box">
+    <div class="flow-box-title">⑥ 用户安装</div>
+    <div class="flow-box-sub">claude plugin install &lt;name&gt;</div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">⑦ Claude Code 加载 plugin</div>
+    <ul>
+      <li>skills/ → .claude/skills/</li>
+      <li>agents/ → .claude/agents/</li>
+      <li>commands/ → .claude/commands/</li>
+      <li>hooks/ → .claude/settings.json</li>
+      <li>.mcp.json → .mcp.json</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">⑧ 团队使用</div>
+    <ul>
+      <li>@code-reviewer 审查代码</li>
+      <li>Skill 自动触发</li>
+      <li>Hook 拦截 / 记录</li>
+      <li>MCP 调外部 API</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-actor flow-actor-final">
+    <div class="flow-actor-label">⑨ 更新 / 卸载</div>
+    <div class="flow-actor-desc">claude plugin update · uninstall</div>
+  </div>
+</div>
+<h2 class="section-anchor">⚠️ 常见坑</h2>
+<div class="callout warn">
+<strong>⚠️ 把项目路径写死在 plugin 里，导致换个项目就用不了</strong>
+<p><strong>陷阱：</strong>写 plugin 时把项目路径写死（如 <code>/Users/me/projects/myapp/</code>）或绑定项目专属命令（如 <code>deploy-to-staging</code> 只对当前项目有效），换个项目就用不了。</p>
+<p><strong>修正：</strong>Plugin 应写通用能力——不绑死项目路径，使用相对路径或参数化；不绑死项目命令，写通用操作（如代码审查、测试、部署）。</p>
+<p><strong>判断标准：</strong>你的 plugin 换个项目还能用吗？能用 → 通用能力、适合打包；不能用 → 散装配置、放在 <code>.claude/</code> 目录。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ plugin.json 缺少 minClaudeVersion 字段，老版本不兼容</strong>
+<p><strong>陷阱：</strong>plugin 用了新版本 Claude Code 才支持的字段（如新的 frontmatter 字段），老版本 Claude Code 装上后不识别，加载失败。</p>
+<p><strong>修正：</strong>plugin.json 中配置 <code>minClaudeVersion</code> 字段，装 plugin 时检查 Claude Code 版本，版本不够则提示升级。</p>
+<p><strong>判断标准：</strong>你的 plugin.json 有 minClaudeVersion 字段吗？没有的话，赶紧加上（先查当前 Claude Code 版本）。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 多个 plugin 名字冲突，后装的覆盖先装的</strong>
+<p><strong>陷阱：</strong>装了 2 个 plugin 都有 <code>code-reviewer</code> skill，Claude Code 加载时冲突，后装的覆盖先装的，或报 duplicate skill 错误。</p>
+<p><strong>修正：</strong>plugin 名加命名空间前缀（如 <code>team-a-code-reviewer</code> / <code>team-b-code-reviewer</code>），或 plugin 内的 skill / agent 加 plugin 名后缀（如 <code>code-reviewer-team-a</code>）。</p>
+<p><strong>判断标准：</strong>你装多个 plugin 时遇到过冲突吗？遇到过的话，赶紧加命名空间前缀。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ Plugin 不进 git 团队共享，形成 plugin 孤岛</strong>
+<p><strong>陷阱：</strong>plugin 写在本地，不进 git 也不推 marketplace，只有作者自己能用。其他成员要装，必须手动复制文件，容易出错。</p>
+<p><strong>修正：</strong>plugin 进 git 团队共享，配合 CI 跑集成测试（plugin 改完跑测试，确保不破坏其他成员的使用）。</p>
+<p><strong>判断标准：</strong>你的 plugin 在 git 跟踪吗？有 CI 测试吗？都没有的话，赶紧入 git 并配置 CI。</p>
+</div>
+<h2 class="section-anchor">💡 一句话备忘</h2>
+<blockquote>Plugin 把 6 种扩展机制打包成可分享的整体：plugin.json manifest 6 字段定义元数据、.claude-plugin/ + 5 子目录承载能力、一次 `claude plugin install` 完成团队 onboarding、5 种 marketplace 分发实现跨团队复用。从散装配置到 Plugin，是 Claude Code 能力从个人使用走向团队资产的关键一步。</blockquote>
+<hr>
+<p class="breadcrumb">← 回到 <a href="#top">本讲网页顶部</a></p>
+</main>
+<script>
+  (function () {
+    var STORAGE_KEY = "***";
+    var root = document.documentElement;
+    var btn  = document.getElementById("themeToggle");
+    var icon = document.getElementById("themeIcon");
+    var lbl  = document.getElementById("themeLabel");
+    function apply(theme) {
+      root.setAttribute("data-theme", theme);
+      if (theme === "dark") {
+        icon.innerHTML = "&#9728;&#65039;";
+        lbl.textContent  = "亮色";
+      } else {
+        icon.innerHTML = "&#127769;";
+        lbl.textContent  = "暗色";
+      }
+    }
+    var saved = null;
+    try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    if (saved === "light" || saved === "dark") {
+      apply(saved);
+    } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      apply("dark");
+    } else {
+      apply("light");
+    }
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") || "light";
+      var next = cur === "dark" ? "light" : "dark";
+      apply(next);
+      try { localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>
