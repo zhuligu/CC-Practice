@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 26 讲 · 直播回放 · 不止 Skills,1 小时带你解锁 Claude Code 高级用法</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fff; --fg: #222; --muted: #555; --link: #1a73e8;
+    --code-bg: #f4f4f4; --code-fg: inherit;
+    --pre-bg: #1e1e1e; --pre-fg: #eaeaea;
+    --border: #ddd; --th-bg: #f5f5f5; --zebra: #fafafa;
+    --hover-row: #e8f0fe; --hover-th: #eef2f7;
+    --blockquote-bg: #fafafa; --blockquote-border: #ddd;
+    --hr: #eee;
+    --toggle-bg: #f5f5f5; --toggle-fg: #333; --toggle-border: #ddd;
+    --tag-bg: #eef4ff; --tag-fg: #1a73e8;
+    --callout-bg: #fffbe6; --callout-border: #fadb14;
+    --warn-bg: #fff1f0; --warn-border: #ff4d4f;
+    --ok-bg: #f6ffed; --ok-border: #52c41a;
+    --code-block-bg: #f8f9fa;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1115; --fg: #e6e6e6; --muted: #9aa0a6; --link: #8ab4f8;
+    --code-bg: #1e1f24; --code-fg: #e6e6e6;
+    --pre-bg: #1a1d23; --pre-fg: #e6e6e6;
+    --border: #303136; --th-bg: #1c1f25; --zebra: #16181d;
+    --hover-row: #1f2733; --hover-th: #262c36;
+    --blockquote-bg: #181a20; --blockquote-border: #303136;
+    --hr: #2a2d33;
+    --toggle-bg: #1c1f25; --toggle-fg: #e6e6e6; --toggle-border: #303136;
+    --tag-bg: #1a2540; --tag-fg: #8ab4f8;
+    --callout-bg: #2a261a; --callout-border: #b89333;
+    --warn-bg: #2a1a1a; --warn-border: #a84545;
+    --ok-bg: #1a261a; --ok-border: #4a8a4a;
+    --code-block-bg: #16181d;
+  }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 "PingFang SC", "Microsoft YaHei", "Helvetica Neue",
+                 Arial, sans-serif;
+    font-size: 15px; line-height: 1.7;
+    transition: background-color .2s ease, color .2s ease;
+  }
+  main {
+    max-width: 1100px;
+    width: calc(100% - 32px);
+    margin: 0 auto;
+    padding: 24px 0 64px 0;
+    box-sizing: border-box;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    line-height: 1.3; margin: 1.5em 0 .6em;
+  }
+  h1 { font-size: 1.9em; border-bottom: 2px solid var(--hr); padding-bottom: .3em; }
+  h2 { font-size: 1.45em; border-bottom: 1px solid var(--hr); padding-bottom: .25em; margin-top: 2em; }
+  h3 { font-size: 1.18em; color: var(--link); margin-top: 1.5em; }
+  h4 { font-size: 1.05em; margin-top: 1.2em; color: var(--fg); font-weight: 600; }
+  p, ul, ol, blockquote, pre, table { margin: .7em 0; }
+  ul, ol { padding-left: 1.6em; }
+  li { margin: .3em 0; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  blockquote {
+    margin: .8em 0; padding: .6em 1em;
+    border-left: 4px solid var(--blockquote-border);
+    color: var(--muted); background: var(--blockquote-bg);
+  }
+  .callout {
+    background: var(--callout-bg);
+    border-left: 4px solid var(--callout-border);
+    padding: 12px 16px; margin: 1.2em 0; border-radius: 4px;
+  }
+  .callout.warn { background: var(--warn-bg); border-left-color: var(--warn-border); }
+  .callout.ok   { background: var(--ok-bg);   border-left-color: var(--ok-border); }
+  code {
+    font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: .9em; background: var(--code-bg); color: var(--code-fg);
+    padding: 1px 5px; border-radius: 3px;
+  }
+  pre {
+    background: var(--pre-bg); color: var(--pre-fg);
+    padding: 14px 16px; border-radius: 6px;
+    overflow-x: auto; font-size: 13px; line-height: 1.55;
+    margin: 1em 0;
+  }
+  pre code { background: transparent; padding: 0; color: inherit; }
+  pre.lang-flow {
+    background: var(--code-block-bg); color: var(--fg);
+    border: 1px solid var(--border);
+  }
+  :root[data-theme="dark"] pre.lang-flow {
+    background: #0a0b0d; color: #d4d4d4;
+  }
+  table {
+    width: 100% !important; border-collapse: collapse;
+    table-layout: auto; margin: 1em 0;
+    font-size: 14px; display: table;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left; vertical-align: top;
+    transition: background-color .15s ease;
+  }
+  th { background: var(--th-bg); font-weight: 600; }
+  tbody tr:nth-child(even) td { background: var(--zebra); }
+  tbody tr:hover td, tbody tr:hover th { background: var(--hover-row) !important; }
+  thead th:hover { background: var(--hover-th) !important; }
+  :root[data-theme="dark"] tbody tr:hover td,
+  :root[data-theme="dark"] tbody tr:hover th,
+  :root[data-theme="dark"] thead th:hover { color: #fff; }
+  hr { border: none; border-top: 1px solid var(--hr); margin: 2em 0; }
+  img { max-width: 100%; height: auto; }
+
+  .tag {
+    display: inline-block; padding: 2px 8px; margin-right: 6px;
+    background: var(--tag-bg); color: var(--tag-fg);
+    border-radius: 12px; font-size: 12px; font-weight: 500;
+  }
+  .breadcrumb { font-size: 13px; color: var(--muted); margin-bottom: 1em; }
+  .breadcrumb a { color: var(--muted); }
+  .breadcrumb a:hover { color: var(--link); }
+
+  .theme-toggle {
+    position: fixed; top: 12px; right: 12px; z-index: 9999;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: var(--toggle-bg); color: var(--toggle-fg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 6px; font-size: 13px; font-family: inherit;
+    cursor: pointer; user-select: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    transition: background-color .2s ease, transform .1s ease;
+  }
+  .theme-toggle:hover { background: var(--hover-row); }
+  .theme-toggle:active { transform: scale(.97); }
+  .theme-toggle .icon { font-size: 15px; line-height: 1; }
+
+  .lesson-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, #1a73e8, #6f42c1);
+    color: #fff; font-size: 24px; font-weight: 700;
+    margin-right: 14px; vertical-align: middle;
+  }
+
+  .section-anchor { scroll-margin-top: 60px; }
+</style>
+<link rel="stylesheet" href="assets/flow.css">
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="切换暗色模式">
+  <span class="icon" id="themeIcon">&#127769;</span>
+  <span id="themeLabel">暗色</span>
+</button>
+<main>
+<div class="breadcrumb">课程导航： « <a href="lesson-25.html">第 25 讲</a>  ·  <a href="lesson-27.html">第 27 讲</a> »</div>
+<h1><span class="lesson-badge">26</span>第 26 讲 · 直播回放 · 不止 Skills,1 小时带你解锁 Claude Code 高级用法</h1>
+<p>
+  <span class="tag">直播回放</span>
+  <span class="tag">第 26 / 33 讲</span>
+  <span class="tag">Claude Code 工程化实战</span>
+  <span class="tag">1 小时鸟瞰</span>
+</p>
+<div class="callout ok">
+<strong>📌 本讲摘要</strong>
+<p>这是课程的"直播回放"—— 1 小时带你走完 Claude Code 的"高阶地形图"。本讲不展开新内容、而是把前 25 讲做一次"鸟瞰式"总结、适合复习 + 知识串联。核心 4 块：①Claude Code 本质（从工具到工程系统的跃迁）;②核心概念解析（把 Skills / SubAgent / Hooks / MCP / Rules / Plugins 6 机制做成"四层架构"模型）;③企业级应用展望（Agent 化转型 / 团队协作 / 工作流沉淀）;④学习与实践建议（学习路径图 / 重点章节 / 配套资源）。本讲适合"看完前 25 讲想再串一遍"或"刚开始学想知道全貌"的同学。</p>
+<p>本讲的三条主线：</p>
+<p>第一、Claude Code 本质 + 6 机制回顾——Claude Code 是工程系统不是聊天工具，有5 特征（可扩展/可观测/可控/可分享/可版本）;6 机制一句话总结。</p>
+<p>第二、四层架构模型 + 企业 Agent 化——抽象 4 层架构（交互/能力/协控/扩展）,3 阶段转型路径（工具化/流程化/平台化）。</p>
+<p>第三、学习路径图 + 实战建议——4 阶段学习（基础/扩展/集成/分发）,3 个"少走弯路"建议（CLAUDE.md 起步 / 配 Hooks / 装社区 Plugin）。</p>
+<p>学完本讲、你应该能从"鸟瞰视角"理解 Claude Code 全貌、能用四层架构模型抽象自己的项目、能画出企业 Agent 化转型路径、知道学习路径图（从哪讲开始到哪讲结束）。</p>
+</div>
+<h2 class="section-anchor">📖 详细内容</h2>
+<h3>Claude Code 本质：从工具到工程系统的跃迁</h3>
+<p>很多人第一次接触 Claude Code 觉得它"就是 AI 聊天 + 改代码"、但实际它是一个"工程系统"——不仅能改代码、还能：</p>
+<p>• 持续记忆（CLAUDE.md 跨会话保留知识）。</p>
+<p>• 多角色协同（主 Agent + SubAgent 分工）。</p>
+<p>• 事件驱动拦截（Hooks 自动跑 lint / 测试）。</p>
+<p>• 外部系统连接（MCP 接 GitHub / 数据库）。</p>
+<p>• 软规范遵守（Rules 描述团队规约）。</p>
+<p>• 能力打包分发（Plugins 团队复用）。</p>
+<p>6 个能力把 Claude Code 从"工具"升级为"工程系统"——它像 git / docker 一样成为"开发流程的一部分"、而不是"额外加的工具"。</p>
+<p><strong>2 大类能力</strong></p>
+<p>类 1：<strong>编程协作</strong>——读代码 / 改代码 / 跑命令 / 写测试 / 调试 bug / 重构。这是 Claude Code 的"基本盘"。</p>
+<p>类 2：<strong>工程化定制</strong>——记忆系统 / 多 Agent 协同 / Hooks / MCP / Rules / Plugins。这是 Claude Code 的"工程化扩展"。</p>
+<p>2 大类能力 = 工具（基本盘）+ 扩展（工程化）。本课程 25 讲学的就是"工程化扩展"。</p>
+<p><strong>5 个核心特征</strong></p>
+<p>特征 1：<strong>可扩展</strong>——通过 Skills / SubAgent / MCP / Plugins 任意扩展能力。</p>
+<p>特征 2：<strong>可观测</strong>——通过 Hooks(PreToolUse / PostToolUse）记录所有工具调用、出事后可追溯。</p>
+<p>特征 3：<strong>可控</strong>——通过 Rules 软规范 + Hooks 硬约束 + permissions 白名单、精确控制 Claude 行为。</p>
+<p>特征 4：<strong>可分享</strong>——通过 Plugins 打包团队能力、新成员一行命令 onboarding。</p>
+<p>特征 5：<strong>可版本</strong>——通过 semver + git + marketplace、能力可升级 / 回滚 / 锁定。</p>
+<p>5 个特征 = 一个工程系统的标志。</p>
+<p><strong>3 个判断标准</strong></p>
+<p>标准 1：它是否改变了软件开发流程?——是（自动化代码审查 / 自动修测试 / 自动 commit）。</p>
+<p>标准 2：它是否改变了团队协作方式?——是（新成员 onboarding 一行命令 / 团队规范通过 Rules 沉淀）。</p>
+<p>标准 3：它是否创造了业务价值?——是（节省时间 / 减少 bug / 提升质量）。</p>
+<p>3 条件全满足 → Claude Code 是"工程系统"不是"工具"。</p>
+<div class="flow-diagram">
+  <div class="flow-note" style="font-size:14px;font-weight:600;color:var(--link);font-style:normal;margin-bottom:10px">Claude Code 工程化全景图</div>
+
+  <div class="flow-actor"><div class="flow-actor-label">用户</div></div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg" style="border-color:var(--link)">
+    <div class="flow-box-title">层 1 · 交互层</div>
+    <ul>
+      <li>REPL 交互式</li>
+      <li>Headless（<code>claude -p</code>）</li>
+      <li>Agent SDK（<code>query()</code>）</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg" style="border-color:var(--link)">
+    <div class="flow-box-title">层 2 · 能力层</div>
+    <ul>
+      <li>Skills（本地能力）</li>
+      <li>SubAgent（隔离角色）</li>
+      <li>Tools（原子操作）</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg" style="border-color:var(--link)">
+    <div class="flow-box-title">层 3 · 协控层</div>
+    <ul>
+      <li>Hooks（事件拦截）</li>
+      <li>Rules（软规范）</li>
+      <li>permissions（权限）</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg" style="border-color:var(--link)">
+    <div class="flow-box-title">层 4 · 扩展层</div>
+    <ul>
+      <li>MCP（外部 API）</li>
+      <li>Plugins（打包分发）</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-actor flow-actor-final">
+    <div class="flow-actor-label">企业级应用</div>
+    <div class="flow-actor-desc">工具化 → 流程化 → 平台化</div>
+  </div>
+</div>
+<h3>核心概念解析：6 种扩展机制回顾</h3>
+<p>前 25 讲学的 6 种扩展机制（Skills / SubAgent / Hooks / MCP / Rules / Plugins）各自的本质 + 适用场景 + 一句话总结。</p>
+<p>机制 1：<strong>Skills</strong>——告诉 Claude "怎么做"。SKILL.md 用 frontmatter 描述能力、Claude 推理时自动匹配触发。典型场景：项目规范 / 检查清单 / 工作流模板。</p>
+<p>机制 2：<strong>SubAgent</strong>——隔离上下文的角色。独立 .claude/agents/&lt;name&gt;.md 配 system_prompt + tools,Claude 调 @name 触发。典型场景：代码审查 / 测试运行 / 安全审计。</p>
+<p>机制 3：<strong>Hooks</strong>——事件驱动的拦截 / 自动化。.claude/settings.json 配 PreToolUse / PostToolUse / UserPromptSubmit / Stop、事件触发跑脚本。典型场景：自动 lint / 自动 commit / 审计日志。</p>
+<p>机制 4：<strong>MCP</strong>——外部 API 桥接。.mcp.json 配 server,Claude 调 mcp__server__tool 调外部 API。典型场景：接 GitHub / 数据库 / 内部系统。</p>
+<p>机制 5：<strong>Rules</strong>——软规范。.claude/rules/*.md 配 paths 条件匹配、Claude 推理时遵守。典型场景：代码风格 / 命名规范 / 提交规约。</p>
+<p>机制 6：<strong>Plugins</strong>——打包分发。.claude-plugin/ 目录 + plugin.json,6 机制打包成整体。典型场景：团队能力包 / 社区贡献 / 内部公司 registry。</p>
+<p>6 机制一句话总结：</p>
+<p>• Skills = 告诉 Claude 怎么做</p>
+<p>• SubAgent = 隔离上下文</p>
+<p>• Hooks = 事件拦截</p>
+<p>• MCP = 外部 API 桥</p>
+<p>• Rules = 软规范</p>
+<p>• Plugins = 打包分发</p>
+<p>完整对比见后面"6 种扩展机制速查表"代码块。</p>
+<table>
+<thead><tr>
+<th>机制</th>
+<th>本质</th>
+<th>加载方式</th>
+<th>适用场景</th>
+<th>学习曲线</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Skills</td>
+<td>告诉 Claude 怎么做</td>
+<td>SKILL.md frontmatter description 匹配</td>
+<td>项目规范 / 检查清单 / 工作流</td>
+<td>低（写 markdown)</td>
+</tr>
+<tr>
+<td>SubAgent</td>
+<td>隔离上下文角色</td>
+<td>.claude/agents/&lt;name&gt;.md + @name 调</td>
+<td>代码审查 / 测试 / 安全审计</td>
+<td>中（理解上下文隔离）</td>
+</tr>
+<tr>
+<td>Hooks</td>
+<td>事件驱动拦截</td>
+<td>.claude/settings.json hooks 字段</td>
+<td>自动 lint / commit / 审计</td>
+<td>中（理解事件 + shell)</td>
+</tr>
+<tr>
+<td>MCP</td>
+<td>外部 API 桥</td>
+<td>.mcp.json + 启动 server 进程</td>
+<td>接 GitHub / 数据库 / 内部</td>
+<td>中（理解 MCP 协议）</td>
+</tr>
+<tr>
+<td>Rules</td>
+<td>软规范</td>
+<td>.claude/rules/&lt;name&gt;.md + paths 匹配</td>
+<td>代码风格 / 命名 / 提交规约</td>
+<td>低（写 markdown)</td>
+</tr>
+<tr>
+<td>Plugins</td>
+<td>打包分发</td>
+<td>.claude-plugin/plugin.json + 5 子目录</td>
+<td>团队能力包 / 社区贡献</td>
+<td>高（理解 6 机制协同）</td>
+</tr>
+</tbody></table>
+<h3>四层架构模型：把 Claude Code 抽象成 4 层</h3>
+<p>前 25 讲学的内容多且散、本节用"四层架构"模型把它们抽象成清晰的 4 层、方便理解全貌。</p>
+<p><strong>层 1：交互层（用户怎么和 Claude Code 交互）</strong></p>
+<p>• REPL 交互式（Claude Code 命令行）。</p>
+<p>• Headless 模式（<code>claude -p "..."</code> 一次跑）。</p>
+<p>• Agent SDK(query() 函数编程式调用）。</p>
+<p>3 种交互方式、从"手动"到"半自动"到"全自动"。</p>
+<p><strong>层 2：能力层（Claude 能做什么）</strong></p>
+<p>• Skills（本地能力描述）。</p>
+<p>• SubAgent（独立角色）。</p>
+<p>• Tools（原子操作:Read / Edit / Bash）。</p>
+<p>3 类能力、Skills 描述"做什么",SubAgent 包装"谁来做",Tools 提供"原子操作"。</p>
+<p><strong>层 3：协控层（怎么控制 Claude 行为）</strong></p>
+<p>• Hooks（事件拦截 / 自动化）。</p>
+<p>• Rules（软规范）。</p>
+<p>• permissions（权限白名单 / 黑名单）。</p>
+<p>3 类协控、Hooks 是"硬约束",Rules 是"软规范",permissions 是"权限控制"。</p>
+<p><strong>层 4：扩展层（怎么连接外部 / 怎么打包分发）</strong></p>
+<p>• MCP（连接外部 API）。</p>
+<p>• Plugins（打包 + 分发）。</p>
+<p>2 类扩展、MCP 是"运行时扩展",Plugins 是"分发时扩展"。</p>
+<p><strong>4 层协同</strong></p>
+<p>层 1（用户）→ 层 2(Claude 调用 Skills / SubAgent / Tools)→ 层 3（协控机制触发 Hooks / 遵守 Rules)→ 层 4(MCP 连接外部 + Plugins 加载）。</p>
+<p>4 层从"用户"到"内部"到"协控"到"外部"、形成完整链路。</p>
+<table>
+<thead><tr>
+<th>层名</th>
+<th>职责</th>
+<th>包含机制</th>
+<th>选型决策</th>
+<th>调试方法</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>层 1：交互层</td>
+<td>用户接入</td>
+<td>REPL / Headless / SDK</td>
+<td>个人用 → REPL / 自动化 → Headless / 集成 → SDK</td>
+<td>看 Claude 实时输出 / ResultMessage</td>
+</tr>
+<tr>
+<td>层 2：能力层</td>
+<td>提供"做什么"能力</td>
+<td>Skills / SubAgent / Tools</td>
+<td>静态知识 → Skills / 隔离任务 → SubAgent / 原子操作 → Tools</td>
+<td>claude --debug / .claude/state/</td>
+</tr>
+<tr>
+<td>层 3：协控层</td>
+<td>控制 Claude 行为</td>
+<td>Hooks / Rules / permissions</td>
+<td>强制 → Hooks / 建议性 → Rules / 权限 → permissions</td>
+<td>Hook stdout / audit log</td>
+</tr>
+<tr>
+<td>层 4：扩展层</td>
+<td>连接外部 + 打包分发</td>
+<td>MCP / Plugins</td>
+<td>运行时外部 → MCP / 团队复用 → Plugins</td>
+<td>mcp-inspector / claude plugin list</td>
+</tr>
+</tbody></table>
+<h3>企业级应用展望：Agent 化转型</h3>
+<p>Claude Code 不只是"个人开发工具"、在企业级可以推动"Agent 化转型"——把开发流程的多个环节自动化。</p>
+<p><strong>3 个阶段</strong></p>
+<p>阶段 1：<strong>工具化</strong>——工程师个人用 Claude Code、提升个人生产力（节省时间 / 减少重复）。这个阶段是"个人"层面、没有团队沉淀。</p>
+<p>阶段 2：<strong>流程化</strong>——团队把 Claude Code 集成到开发流程（自动代码审查 / 自动 commit / 自动测试）、沉淀团队 Skills / SubAgent / Hooks。这个阶段是"团队"层面。</p>
+<p>阶段 3：<strong>平台化</strong>——公司把 Claude Code 能力封装成内部平台（类似内部 Copilot)、所有团队都能用、有专门的 Platform 团队维护。这个阶段是"公司"层面。</p>
+<p>3 阶段：个人 → 团队 → 公司、逐步升级。</p>
+<p><strong>2 个落地路径</strong></p>
+<p>路径 1：<strong>自上而下</strong>——管理层推动、公司投入资源（培训 / 平台建设）、适合大型企业 / 传统行业。优势：资源足、推进快。劣势：基层抵触、使用率低。</p>
+<p>路径 2：<strong>自下而上</strong>——工程师自发用、逐步影响团队 / 公司、适合互联网公司 / 技术驱动型组织。优势：使用率高、真实需求。劣势：推进慢、资源有限。</p>
+<p>2 路径各有优劣、大多数公司是"自下而上起步、自上而下加速"。</p>
+<p><strong>3 个典型场景</strong></p>
+<p>场景 1：<strong>代码审查自动化</strong>——Claude 跑 lint / 跑测试 / 审查代码、自动生成 PR 描述、reviewer 只看关键问题。</p>
+<p>场景 2：<strong>文档生成</strong>——Claude 读代码自动生成 API 文档 / 架构图 / README、保持文档和代码同步。</p>
+<p>场景 3：<strong>客户支持</strong>——Claude 接 Slack / 邮件、自动回答常见问题、复杂问题转人工。</p>
+<p>3 场景覆盖"开发 / 文档 / 业务"3 个方向。</p>
+<h3>学习路径图：从入门到精通的 4 个阶段</h3>
+<p>本课程 33 讲内容多、推荐 4 阶段学习路径、从入门到精通逐步深入。</p>
+<p><strong>阶段 1：基础（第 1-3 讲）</strong></p>
+<p>第 1 讲（过目不忘 · CLAUDE.md 记忆系统）+ 第 2 讲（分而治之 · SubAgent 核心概念）+ 第 3 讲（明察秋毫 · 只读型子代理）。3 讲打基础、理解"记忆 + 多角色" 2 大核心机制。</p>
+<p>重点:CLAUDE.md 怎么写、SubAgent 怎么配、只读型 SubAgent 怎么用。</p>
+<p><strong>阶段 2：扩展（第 4-18 讲）</strong></p>
+<p>第 4-9 讲（SubAgent 专题 6 讲）+ 第 10-16 讲（Skills 专题 7 讲）+ 第 17-18 讲（Hooks 专题 2 讲）。15 讲学 3 大扩展机制、理解"可扩展"。</p>
+<p>重点：可写型 SubAgent / 任务型 Skills / 渐进式披露 / Hooks 事件拦截。</p>
+<p><strong>阶段 3：集成（第 19-24 讲）</strong></p>
+<p>第 19 讲（MCP 协议）+ 第 20 讲（Tools 工具系统）+ 第 21 讲（Headless 模式 + CI/CD)+ 第 22 讲（Rules 规则系统）+ 第 23-24 讲（Agent SDK 基础 + 高级）。6 讲学集成能力、理解"可集成 + 可编程"。</p>
+<p>重点:MCP 接外部 / Tools 原子操作 / Headless CI/CD / Rules 软规范 / SDK 编程式调用。</p>
+<p><strong>阶段 4：分发（第 25 讲）</strong></p>
+<p>第 25 讲（Plugins 插件打包与分发）+ 第 26 讲（直播回放）。2 讲学团队协作、理解"可分享 + 可复用"。</p>
+<p>重点:plugin.json manifest / 团队能力包 / marketplace 分发。</p>
+<p><strong>3 个配套资源</strong></p>
+<p>资源 1：<strong>黄佳老师课程</strong>——《Claude Code 工程化实战》（极客时间）。</p>
+<p>资源 2：<strong>配套书</strong>——《Claude Code 实战》（京东 item.jd.com/15374814.html）。</p>
+<p>资源 3：<strong>GitHub 仓库</strong>——huangjia2019/claude-code-engineering（官方示例）+ shanraisshan/claude-code-best-practice（全功能地图）。</p>
+<h3>实战建议：1 小时直播的重点回顾</h3>
+<p>1 小时直播涉及 4 个高阶主题：高级 Skills（渐进式披露 + 组合实战）/ 复杂 SubAgent（多 Agent 协同）/ Hooks 串联（PreToolUse + PostToolUse + Stop)/ MCP 集成（GitHub / 数据库 / 内部系统）。</p>
+<p><strong>3 个"少走弯路"建议</strong></p>
+<p>建议 1：<strong>从 CLAUDE.md 起步</strong>——先写好项目记忆系统、把项目背景 / 团队规范 / 常用命令写到 CLAUDE.md、其他扩展都基于这个起步。</p>
+<p>建议 2：<strong>配 Hooks 拦截</strong>——CLAUDE.md 起步后、加 PreToolUse Hooks 拦截危险命令（rm -rf / curl | sh)、确保 Claude 不会乱跑命令。</p>
+<p>建议 3：<strong>装社区 Plugin 起步</strong>——自己写 Plugin 之前、先装 1-2 个社区 Plugin(code-review-suite / test-helpers)、了解 Plugin 长什么样。</p>
+<p><strong>2 个"实战优先"原则</strong></p>
+<p>原则 1：<strong>项目驱动学习</strong>——不是"看完 33 讲再去用"、而是"用着用着学"。从 1 个真实项目开始、用到什么学什么、效率最高。</p>
+<p>原则 2：<strong>边学边用</strong>——看完 1 讲就配 1 讲、不要"囤积"知识。配完用起来、用起来再调优、形成"学习 - 实践 - 反馈"循环。</p>
+<p>2 原则核心：不要"看完再动"、要"边看边动"。</p>
+<h2 class="section-anchor">⚠️ 常见坑</h2>
+<div class="callout warn">
+<strong>⚠️ 学完就忘（没项目驱动、看 1-2 个讲就丢一边、从 1 个真实项目学更有效）</strong>
+<p>"学完就忘"陷阱：看 1-2 个讲觉得"懂了"、但没真项目用、过 1 周全忘。修正：项目驱动学习——选 1 个真实项目、从第 1 讲开始配、用到什么学什么。判断标准：你学完 3 讲有真实项目在用吗?没有、赶紧开 1 个项目。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 工具崇拜（把 Skills / SubAgent 装了 20 个但用不到、先做"少而精"再扩）</strong>
+<p>"工具崇拜"陷阱：看到社区有 20 个 Skills / SubAgent 全装上、实际用不到 3 个、反而增加认知负担 + 加载慢。修正：少而精——只装项目真用得到的 1-2 个 Skills + 1-2 个 SubAgent、用熟再扩。判断标准：你装的 Skills / SubAgent 真在用吗?有 50% 没用、精简。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 配置即终点（把 .claude/ 配完不调优、配只是起点、需要根据使用反馈调）</strong>
+<p>"配置即终点"陷阱：把 .claude/ 配完觉得"搞定"、但 Claude 推理效果不好、以为是 Claude 不行、实际是配置没调优。修正：配置只是起点——配完跑 1-2 周真实任务、看 Claude 哪里理解错 / 哪里效率低、根据反馈调 description / system_prompt / allowed_tools。判断标准：你的 .claude/ 配完跑过真实任务吗?Claude 推理效果如何?不好、调优。</p>
+</div>
+<div class="callout warn">
+<strong>⚠️ 缺审计（Hooks 不开 audit log 出事追溯不了、PostToolUse 必开 audit-log)</strong>
+<p>"缺审计"陷阱:Hooks 只配了 PreToolUse 拦截危险命令、没配 PostToolUse 记录 audit log、出事后不知道 Claude 跑过什么命令 / 改过什么文件。修正:PostToolUse 必开 audit-log 钩子、所有 Edit / Write / Bash 记录到日志。判断标准：你的 Hooks 有 audit-log 吗?没有、加 PostToolUse 钩子。</p>
+</div>
+<h2 class="section-anchor">💡 一句话备忘</h2>
+<blockquote>1 小时直播带你看 Claude Code 的"高阶地形图"——从工具到工程系统的跃迁（5 特征）+ 6 机制一句话总结（Skills/SubAgent/Hooks/MCP/Rules/Plugins)+ 四层架构模型（交互/能力/协控/扩展）+ 企业 Agent 化 3 阶段（工具化/流程化/平台化）+ 学习路径图（基础/扩展/集成/分发 4 阶段）。</blockquote>
+<hr>
+<p class="breadcrumb">← 回到 <a href="#top">本讲网页顶部</a></p>
+</main>
+<script>
+  (function () {
+    var STORAGE_KEY = "***";
+    var root = document.documentElement;
+    var btn  = document.getElementById("themeToggle");
+    var icon = document.getElementById("themeIcon");
+    var lbl  = document.getElementById("themeLabel");
+    function apply(theme) {
+      root.setAttribute("data-theme", theme);
+      if (theme === "dark") {
+        icon.innerHTML = "&#9728;&#65039;";
+        lbl.textContent  = "亮色";
+      } else {
+        icon.innerHTML = "&#127769;";
+        lbl.textContent  = "暗色";
+      }
+    }
+    var saved = null;
+    try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    if (saved === "light" || saved === "dark") {
+      apply(saved);
+    } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      apply("dark");
+    } else {
+      apply("light");
+    }
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") || "light";
+      var next = cur === "dark" ? "light" : "dark";
+      apply(next);
+      try { localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>
