@@ -1,0 +1,719 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 27 讲 · 从 OpenClaw 到 Hermes：拆解爆款 Agent 的设计密码与工程范式</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fff;
+    --fg: #222;
+    --muted: #555;
+    --link: #1a73e8;
+    --code-bg: #f4f4f4;
+    --code-fg: inherit;
+    --pre-bg: #1e1e1e;
+    --pre-fg: #eaeaea;
+    --border: #ddd;
+    --th-bg: #f5f5f5;
+    --zebra: #fafafa;
+    --hover-row: #e8f0fe;
+    --hover-th: #eef2f7;
+    --blockquote-bg: #fafafa;
+    --blockquote-border: #ddd;
+    --hr: #eee;
+    --toggle-bg: #f5f5f5;
+    --toggle-fg: #333;
+    --toggle-border: #ddd;
+    --tag-bg: #eef4ff;
+    --tag-fg: #1a73e8;
+    --callout-bg: #fffbe6;
+    --callout-border: #fadb14;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1115;
+    --fg: #e6e6e6;
+    --muted: #9aa0a6;
+    --link: #8ab4f8;
+    --code-bg: #1e1f24;
+    --code-fg: #e6e6e6;
+    --pre-bg: #1a1d23;
+    --pre-fg: #e6e6e6;
+    --border: #303136;
+    --th-bg: #1c1f25;
+    --zebra: #16181d;
+    --hover-row: #1f2733;
+    --hover-th: #262c36;
+    --blockquote-bg: #181a20;
+    --blockquote-border: #303136;
+    --hr: #2a2d33;
+    --toggle-bg: #1c1f25;
+    --toggle-fg: #e6e6e6;
+    --toggle-border: #303136;
+    --tag-bg: #1c2740;
+    --tag-fg: #8ab4f8;
+    --callout-bg: #2a2615;
+    --callout-border: #fadb14;
+  }
+  html, body { background: var(--bg); color: var(--fg); }
+  body { font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.7; max-width: 920px; margin: 24px auto; padding: 0 18px; }
+  h1, h2, h3 { color: var(--fg); }
+  h1 { font-size: 28px; margin: .2em 0 .4em; }
+  h2 { font-size: 22px; margin-top: 1.6em; border-bottom: 1px solid var(--hr); padding-bottom: .25em; }
+  h3 { font-size: 18px; margin-top: 1.4em; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  hr { border: none; border-top: 1px solid var(--hr); margin: 2em 0; }
+  code { background: var(--code-bg); color: var(--code-fg); padding: 1px 6px; border-radius: 4px; font-size: 90%; }
+  pre { background: var(--pre-bg); color: var(--pre-fg); padding: 14px 16px; border-radius: 8px; overflow-x: auto; line-height: 1.55; font-size: 13.5px; }
+  pre.lang-flow { background: #f6f8fa; color: #24292f; }
+  :root[data-theme="dark"] pre.lang-flow { background: #16181d; color: #e6e6e6; }
+  pre.lang-flow code { background: transparent; color: inherit; padding: 0; }
+  pre.code code { background: transparent; color: inherit; padding: 0; }
+  blockquote { background: var(--blockquote-bg); border-left: 4px solid var(--blockquote-border); margin: 1em 0; padding: .7em 1em; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; margin: 1em 0; font-size: 14.5px; }
+  th, td { padding: 8px 10px; border: 1px solid var(--border); text-align: left; vertical-align: top; }
+  th { background: var(--th-bg); font-weight: 600; }
+  tbody tr:nth-child(even) td { background: var(--zebra); }
+  tbody tr:hover td { background: var(--hover-row); }
+  th:hover { background: var(--hover-th); }
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    margin-right: 6px;
+    background: var(--tag-bg);
+    color: var(--tag-fg);
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .breadcrumb {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 1em;
+  }
+  .breadcrumb a { color: var(--muted); }
+  .breadcrumb a:hover { color: var(--link); }
+
+  /* 暗色模式切换 */
+  .theme-toggle {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 9999;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--toggle-bg);
+    color: var(--toggle-fg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    user-select: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    transition: background-color .2s ease, transform .1s ease;
+  }
+  .theme-toggle:hover { background: var(--hover-row); }
+  .theme-toggle:active { transform: scale(.97); }
+  .theme-toggle .icon { font-size: 15px; line-height: 1; }
+
+  /* 课程序号大圆点 */
+  .lesson-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1a73e8, #6f42c1);
+    color: #fff;
+    font-size: 24px;
+    font-weight: 700;
+    margin-right: 14px;
+    vertical-align: middle;
+  }
+
+  /* callout */
+  .callout {
+    background: var(--callout-bg);
+    border-left: 4px solid var(--callout-border);
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin: 1.2em 0;
+  }
+  .callout.ok {
+    background: #e6f7ed;
+    border-color: #2ea44f;
+  }
+  :root[data-theme="dark"] .callout.ok { background: #112a1c; }
+  .callout.warn {
+    background: #fff1f0;
+    border-color: #cf222e;
+  }
+  :root[data-theme="dark"] .callout.warn { background: #2a1517; }
+
+  /* pre.code 通用代码块,跟 pre.lang-flow 区别 */
+  pre.code { background: #1e1e1e; color: #eaeaea; }
+  :root[data-theme="dark"] pre.code { background: #16181d; color: #e6e6e6; }
+</style>
+<link rel="stylesheet" href="assets/flow.css">
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="切换暗色模式">
+  <span class="icon" id="themeIcon">&#127769;</span>
+  <span id="themeLabel">暗色</span>
+</button>
+<main>
+<div class="breadcrumb">课程导航： &laquo; <a href="lesson-26.html">第 26 讲</a>  ·  <a href="lesson-28.html">第 28 讲</a> &raquo;</div>
+
+<h1><span class="lesson-badge">27</span>第 27 讲 · 从 OpenClaw 到 Hermes：拆解爆款 Agent 的设计密码与工程范式</h1>
+<p>
+  <span class="tag">热点加餐</span>
+  <span class="tag">第 27 / 33 讲</span>
+  <span class="tag">Claude Code 工程化实战</span>
+  <span class="tag">爆款拆解</span>
+  <span class="tag">工程范式</span>
+</p>
+
+<div class="callout ok">
+<strong>&#128204; 本讲摘要</strong> · 读爆款 Agent 的源码不是为了抄功能、而是为了反推它们做对了什么。本讲拆解 OpenClaw（Star 第 1、平台型）与 Hermes（Star 第 2、工程型）这两类代表性 Agent、提炼出 4 大共通设计密码（Harness / Channel / Skills / SubAgent）和 5 个可复用工程范式。学完本讲、你应该能用看 3 套源码、提炼 1 个范式、落地 1 个项目的方法、持续从爆款里吸取养分、而不是只会用 Claude Code 自带的命令。
+</div>
+
+<h2>1. 什么是爆款 Agent：三维度筛选标准</h2>
+
+<p>爆款不等于下载量第一、而是有可学习价值的产品。本讲用三个维度筛选：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>维度</th>
+      <th>硬指标</th>
+      <th>软指标</th>
+      <th>为什么重要</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>行业口碑</td>
+      <td>GitHub star &gt; 5K</td>
+      <td>被官方文档 / 大会引用</td>
+      <td>说明被同行验证过</td>
+    </tr>
+    <tr>
+      <td>架构代表性</td>
+      <td>开源 + 代码可读</td>
+      <td>作者愿意讲架构</td>
+      <td>说明有可学的设计选择</td>
+    </tr>
+    <tr>
+      <td>工程化深度</td>
+      <td>有完整的 CI / 测试 / 文档</td>
+      <td>有企业用户在生产用</td>
+      <td>说明不是 demo 级玩具</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>按这三个维度筛、本讲选 OpenClaw（平台型、生态化）、Hermes（工程型、极致本地化）做样本。两者刚好代表 Agent 产品的两个极端、合起来覆盖 80% 的设计选择。</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>排名</th>
+      <th>仓库</th>
+      <th>Star 数</th>
+      <th>本讲定位</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td>OpenClaw</td>
+      <td>⭐ 381K</td>
+      <td>平台型代表、本讲重点拆解</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>Hermes Agent</td>
+      <td>⭐ 205K</td>
+      <td>工程型代表、本讲重点拆解</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>AutoGPT</td>
+      <td>⭐ 185K</td>
+      <td>早期范式参考</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>LangChain</td>
+      <td>⭐ 140K</td>
+      <td>LLM 框架参照</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>Claude Code</td>
+      <td>⭐ 135K</td>
+      <td>本课程主线</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>Browser-Use</td>
+      <td>⭐ 101K</td>
+      <td>浏览器 Agent 范式</td>
+    </tr>
+  </tbody>
+</table>
+
+<p style="font-size:13px;color:var(--muted)">&#128202; <strong>最终核查结果（数据截至 2026-06-29）</strong>：OpenClaw 与 Hermes 正是当前 GitHub Star 排名前二的 Agent 项目、用它们做样本、就等于站在行业最高点反推设计密码。</p>
+
+<div class="callout warn">
+<strong>&#9888;&#65039; 坑 1</strong> · 只看 star 数选型——很多高 star 仓库是 awesome-list 型、只是收集链接没有设计选择；反过来、有些 star 不高但设计极精巧的项目反而更值得学。本讲选 OpenClaw 与 Hermes、不仅是 star 高、更因为它们刚好覆盖"平台型 vs 工程型"两个极端。
+</div>
+
+<h2>2. OpenClaw 架构深读：平台型 Agent 的 7 层骨架</h2>
+
+<p><strong>实战代码块 1 — OpenClaw 的 7 层模块结构</strong>。看仓库根目录能反推它的设计意图：</p>
+
+<pre class="code"><code>OpenClaw/
+├── 01-frontend/          # Web UI / TUI / IDE 插件
+├── 02-runtime/           # Agent 执行循环
+├── 03-tools/             # 工具层(Bash / Read / Edit / Grep ...)
+├── 04-channels/          # 跨平台通道(Telegram / Slack / CLI)
+├── 05-memory/            # 长期记忆 + CLAUDE.md 解析
+├── 06-skills/            # Skills 注册中心
+└── 07-deployment/        # 部署 / CI / Plugin 打包
+</code></pre>
+
+<p>OpenClaw 走平台化路线——核心思想是 Agent 不只是一个 CLI、而是一个能挂任意前端、任意通道、任意 Skills 的中间层。这跟 Claude Code CLI 的定位不太一样：Claude Code 是一个具体的产品，OpenClaw 是一个 Agent 操作系统。</p>
+
+<p>它对我们最有启发的设计是 <strong>04-channels</strong>：同一个 Agent runtime、可以挂 Telegram bot / Slack app / Web chat / 桌面 GUI。用户从哪个通道发命令、Agent 都能响应。这种一次 runtime、多端可达是 2026 年 Agent 产品的标配。</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>层</th>
+      <th>职责</th>
+      <th>对应本课程</th>
+      <th>借鉴点</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>frontend</td>
+      <td>UI 渲染</td>
+      <td>无直接对应（Claude Code 自带 TUI）</td>
+      <td>想清楚前端要不要做</td>
+    </tr>
+    <tr>
+      <td>runtime</td>
+      <td>Agent 循环</td>
+      <td>第 23-24 讲 Agent SDK</td>
+      <td>循环要可中断、可恢复</td>
+    </tr>
+    <tr>
+      <td>tools</td>
+      <td>工具注册</td>
+      <td>第 20 讲 Tools 工具系统</td>
+      <td>工具要可插拔</td>
+    </tr>
+    <tr>
+      <td>channels</td>
+      <td>通道协议</td>
+      <td>无直接对应（可借鉴）</td>
+      <td>一次 runtime、多端可达</td>
+    </tr>
+    <tr>
+      <td>memory</td>
+      <td>记忆系统</td>
+      <td>第 3 讲 CLAUDE.md 记忆</td>
+      <td>记忆分层：short / long / project</td>
+    </tr>
+    <tr>
+      <td>skills</td>
+      <td>技能注册</td>
+      <td>第 10-16 讲 Skills 全系</td>
+      <td>Skills 要可发现、可降级</td>
+    </tr>
+    <tr>
+      <td>deployment</td>
+      <td>部署打包</td>
+      <td>第 25 讲 Plugins</td>
+      <td>一个 Skill = 一个独立 npm 包</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>3. Hermes 范式：配置即代码、Channel 协议、跨运行时</h2>
+
+<p>Hermes 是工程派的代表——它不是做一个新 Agent、而是让现有 Agent 跑得更好。三个核心范式：</p>
+
+<p><strong>实战代码块 2 — 配置即代码（Code as Config）</strong>。Hermes 把所有配置都用代码描述、不用 YAML / JSON：</p>
+
+<pre class="code"><code>// hermes.config.ts
+import { defineConfig } from "@hermes/core";
+
+export default defineConfig({
+  agents: {
+    default: {
+      model: "claude-sonnet-4-7",
+      system: "./prompts/main.md",
+      tools: ["Bash", "Read", "Edit", "Grep"],
+      skills: ["./skills/lint-fast", "./skills/test-runner"]
+    },
+    reviewer: {
+      model: "claude-haiku-4-5",
+      system: "./prompts/reviewer.md",
+      tools: ["Read", "Grep"],
+      isolated: true   // 独立上下文
+    }
+  },
+  channels: {
+    cli: { enabled: true },
+    telegram: {
+      token: process.env.TELEGRAM_BOT_TOKEN,
+      webhook: "/api/telegram"
+    }
+  },
+  hooks: {
+    PreToolUse: "./hooks/pii-guard.ts"
+  }
+});
+</code></pre>
+
+<p>这个范式的价值：用 TypeScript 写配置、可以 import 别的模块、可以用类型检查、可以在配置里跑逻辑。对比 JSON / YAML 配置的纯数据路线、这是配置即代码——配置本身是项目里的一份源代码、可以被 lint、被 type-check、被测试。</p>
+
+<p><strong>Channel 协议</strong>：Hermes 定义了一个抽象的 Channel 接口、每个 Channel（CLI / Telegram / Web）都实现这个接口。Agent 不关心消息从哪来、只管我收到了一条消息、要给出回复。这种输入适配器模式让 Agent 真正做到端无关。</p>
+
+<p><strong>跨运行时</strong>：Hermes 的 runtime 抽象可以挂在 Node.js、Bun、Deno、甚至浏览器 Web Worker。核心是把 system prompt + tools + message 变成一个标准化的 task、丢给任何能跑 LLM 的环境。</p>
+
+<div class="callout warn">
+<strong>&#9888;&#65039; 坑 2</strong> · 抄配置即代码但用 JS 不用 TS——没有类型保护的配置、改一个字段名 runtime 才发现错了。配置代码必须上 TypeScript + 严格模式。
+</div>
+
+<h2>4. 4 大共通设计密码：Harness / Channel / Skills / SubAgent</h2>
+
+<p>通读两个项目的源码、能反推出 4 个共通的设计密码：</p>
+
+<div class="flow-diagram">
+  <div class="flow-note" style="font-size:14px;font-weight:600;color:var(--link);font-style:normal;margin-bottom:10px">🔑 4 大共通设计密码</div>
+
+  <div class="flow-steps">
+    <div class="flow-step">
+      <div class="flow-step-num">1</div>
+      <div class="flow-step-body">
+        <div class="flow-step-title">Harness 包裹一切</div>
+        <div class="flow-step-desc">模型只是心脏，Harness 才是身体 → 课程第 28 讲专讲</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-num">2</div>
+      <div class="flow-step-body">
+        <div class="flow-step-title">Channel 抽象输入</div>
+        <div class="flow-step-desc">CLI / IDE / IM / Web 都走同一接口 → 用户从哪问，Agent 都答得上来</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-num">3</div>
+      <div class="flow-step-body">
+        <div class="flow-step-title">Skills 按需加载</div>
+        <div class="flow-step-desc">全量加载 = 烧 Token · 按 description 触发 = 渐进式披露 → 课程第 12 讲专讲</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-num">4</div>
+      <div class="flow-step-body">
+        <div class="flow-step-title">SubAgent 隔离上下文</div>
+        <div class="flow-step-desc">大任务 = 多 Agent 协作 → 课程第 4-9 讲专讲</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flow-container" style="margin-top:22px;border-color:var(--ok-border)">
+    <div class="flow-container-title" style="color:var(--ok-border)">总结</div>
+    <div class="flow-note" style="font-style:normal;color:var(--fg);font-size:14px;margin:0">
+      4 个密码 = 4 个范式 · 组合起来 = 完整的 Agent 工程实践
+    </div>
+  </div>
+</div>
+
+<p>这 4 个密码不是 OpenClaw / Hermes 独有的、而是 2025-2026 年所有头部 Agent 产品的共识：Claude Code、Gemini CLI、Cursor、Continue.dev、Cline 都在不同程度上实现了这 4 个。学完本课程、你已经掌握了 Claude Code 版本的全部 4 个、等于掌握了行业基准线。</p>
+
+<h2>5. 5 个可复用工程范式：从爆款反推范式</h2>
+
+<p>除了 4 大密码、还有 5 个工程范式也是行业标配：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>范式</th>
+      <th>核心思想</th>
+      <th>代表项目</th>
+      <th>适用场景</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>范式 1 · 插件热加载</td>
+      <td>Skills / Plugins 运行时注册、无需重启</td>
+      <td>Claude Code、OpenClaw</td>
+      <td>频繁加新能力的产品</td>
+    </tr>
+    <tr>
+      <td>范式 2 · 工具白盒化</td>
+      <td>工具的 schema 显式声明、Agent 看得到</td>
+      <td>Hermes、Claude Code</td>
+      <td>需要 Agent 自主选工具</td>
+    </tr>
+    <tr>
+      <td>范式 3 · 流式思考</td>
+      <td>Agent 边想边吐 token、不要沉默 30 秒再回答</td>
+      <td>Cursor、Claude Code</td>
+      <td>所有交互式 Agent</td>
+    </tr>
+    <tr>
+      <td>范式 4 · 错误可恢复</td>
+      <td>工具调用失败时、Agent 能 retry 或 fallback</td>
+      <td>OpenClaw、Agent SDK</td>
+      <td>长链路任务</td>
+    </tr>
+    <tr>
+      <td>范式 5 · 审计可观测</td>
+      <td>每次工具调用落日志、可回放</td>
+      <td>Hermes、Claude Code Hooks</td>
+      <td>企业 / 合规场景</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>实战代码块 3 — 工具白盒化</strong>。Hermes 的工具 schema 范本：</p>
+
+<pre class="code"><code>// tools/read-file.ts
+import { z } from "zod";
+import { defineTool } from "@hermes/core";
+
+export default defineTool({
+  name: "Read",
+  description: "Read a file from the filesystem. Returns file content with line numbers.",
+  input: z.object({
+    file_path: z.string().describe("Absolute path to the file"),
+    offset: z.number().int().min(0).optional().describe("Line offset to start from"),
+    limit: z.number().int().min(1).max(2000).optional().describe("Max lines to read")
+  }),
+  output: z.object({
+    content: z.string(),
+    total_lines: z.number().int(),
+    truncated: z.boolean()
+  }),
+  risk: "low",  // 告诉 Agent 这个工具的危险等级
+  async execute({ file_path, offset = 0, limit = 2000 }) {
+    // 实现 ...
+  }
+});
+</code></pre>
+
+<p>注意 <code>risk: "low"</code> 字段——这是把工具危险等级显式声明、Agent 在自主选工具时会参考。对比 Claude Code 的隐式风险（只能靠 deny 规则拦）、这是更显式的设计。</p>
+
+<div class="callout warn">
+<strong>&#9888;&#65039; 坑 3</strong> · 抄工具白盒化但跳过 description——description 是 Agent 选工具的唯一依据、写读文件三个字远不如写读取文件内容、返回带行号的文本、适合查看代码或配置有用。
+</div>
+
+<h2>6. 拿来主义：在自己的项目里怎么抄作业</h2>
+
+<p>学完 OpenClaw 与 Hermes 的范式之后、怎么把这些范式带回自己的项目？推荐三步法：</p>
+
+<p><strong>实战代码块 4 — 抄作业 Checklist</strong>。每次读完一个爆款、过一遍这个清单：</p>
+
+<pre class="code"><code># 爆款学习 Checklist
+
+## 1. 它解决了什么问题?
+- [ ] 用户痛点是什么?为什么非它不可?
+- [ ] 替代品是什么?它比替代品好在哪?
+
+## 2. 它的核心抽象是什么?
+- [ ] 用 1 句话总结它的"主架构"
+- [ ] 这个抽象可以套到我的项目吗?
+
+## 3. 它做对了哪 3 件事?
+- [ ] 列出最值得学的 3 个设计选择
+- [ ] 每个选择为什么好?解决了什么具体问题?
+
+## 4. 它做错了哪 1 件事?
+- [ ] 列出最明显的 1 个缺陷
+- [ ] 我能不能避免这个缺陷?
+
+## 5. 我能从中拿走什么?
+- [ ] 提炼 1 个可复用的范式(用 50 字内说清楚)
+- [ ] 列出在我的项目里落地的 3 个具体动作
+</code></pre>
+
+<p>具体到本课程学完后、你已经能在 Claude Code 里直接用上这些范式（Harness / Skills / SubAgent / Channel / Hooks / Plugins）、所以"抄作业"的姿势应该是——**先在 Claude Code 里把范式用熟、再去读 OpenClaw / Hermes 源码验证哦原来人家也是这么做的、最后在 Agent SDK 上自己实现一遍。**</p>
+
+<p>下面给出 OpenClaw 与 Hermes 的源码深读路径、按推荐顺序读、配合上面的 Checklist、能最快抽干它们的精华。</p>
+
+<h3>6.1 OpenClaw 源码深读指南</h3>
+
+<p>OpenClaw（<a href="https://github.com/OpenClaw/openclaw" target="_blank">OpenClaw/openclaw</a>）是 GitHub Star 第 1 的 Agent 平台、读它不需要从头到尾看完、按这条路径走最快：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>阅读顺序</th>
+      <th>目录 / 文件</th>
+      <th>看什么</th>
+      <th>对应本讲哪一节</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>①</td>
+      <td><code>02-runtime/</code></td>
+      <td>Agent 主循环怎么中断、怎么恢复</td>
+      <td>第 23-24 讲</td>
+    </tr>
+    <tr>
+      <td>②</td>
+      <td><code>04-channels/</code></td>
+      <td>同一个 runtime 如何挂 Telegram / Slack / Web</td>
+      <td>第 2 节</td>
+    </tr>
+    <tr>
+      <td>③</td>
+      <td><code>03-tools/</code></td>
+      <td>工具如何注册、如何插拔</td>
+      <td>第 20 讲</td>
+    </tr>
+    <tr>
+      <td>④</td>
+      <td><code>05-memory/</code></td>
+      <td>短期 / 长期 / 项目三级记忆怎么分层</td>
+      <td>第 3 讲</td>
+    </tr>
+    <tr>
+      <td>⑤</td>
+      <td><code>06-skills/</code></td>
+      <td>Skills 的发现机制与降级策略</td>
+      <td>第 10-16 讲</td>
+    </tr>
+    <tr>
+      <td>⑥</td>
+      <td><code>07-deployment/</code></td>
+      <td>一个 Skill 如何独立打包成 npm</td>
+      <td>第 25 讲</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>6.2 Hermes 源码深读指南</h3>
+
+<p>Hermes（<a href="https://github.com/NousResearch/hermes-agent" target="_blank">NousResearch/hermes-agent</a>）是 GitHub Star 第 2 的工程派 Agent、按这条路径读最出活：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>阅读顺序</th>
+      <th>文件 / 模块</th>
+      <th>看什么</th>
+      <th>对应本讲哪一节</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>①</td>
+      <td><code>hermes.config.ts</code></td>
+      <td>配置即代码范式、TS 类型如何保护配置</td>
+      <td>第 3 节 · 配置即代码</td>
+    </tr>
+    <tr>
+      <td>②</td>
+      <td><code>channels/interface.ts</code></td>
+      <td>Channel 接口如何抽象输入适配器</td>
+      <td>第 3 节 · Channel 协议</td>
+    </tr>
+    <tr>
+      <td>③</td>
+      <td><code>runtime/adapter.ts</code></td>
+      <td>runtime 如何跨 Node / Bun / Deno / Web Worker</td>
+      <td>第 3 节 · 跨运行时</td>
+    </tr>
+    <tr>
+      <td>④</td>
+      <td><code>tools/read-file.ts</code></td>
+      <td>工具 schema 与 <code>risk</code> 字段如何白盒化</td>
+      <td>第 5 节 · 范式 2 工具白盒化</td>
+    </tr>
+    <tr>
+      <td>⑤</td>
+      <td><code>hooks/pii-guard.ts</code></td>
+      <td>PreToolUse 钩子如何做敏感信息拦截</td>
+      <td>第 5 节 · 范式 5 审计可观测</td>
+    </tr>
+    <tr>
+      <td>⑥</td>
+      <td><code>agents/reviewer.ts</code></td>
+      <td>独立上下文的 reviewer agent 如何调度</td>
+      <td>第 4 节 · SubAgent 密码</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout warn">
+<strong>&#9888;&#65039; 坑 4</strong> · 读源码不写笔记——3 个月后忘光。读完一个仓库、必须用 1 页纸总结它的主架构 + 3 个优点 + 1 个缺点、存进你自己的 knowledge base。
+</div>
+
+<h2>7. 一句话备忘</h2>
+
+<blockquote>&#128214; 读爆款源码、不是为了抄功能、而是为了反推它们做对了什么、再把范式带回自己的项目。</blockquote>
+
+<div class="callout">
+<strong>&#128218; 学习建议</strong> · 三个项目一起读、视角才能立体。建议按 <strong>Claude Code → OpenClaw → Hermes</strong> 的顺序交叉看：<br>
+&nbsp;&nbsp;<strong>① Claude Code</strong> 是你的"母语"、先把 Harness / Skills / SubAgent / Hooks / Plugins 玩熟、建立体感；<br>
+&nbsp;&nbsp;<strong>② OpenClaw</strong> 帮你跳出 CLI 视角、看一个真正的 Agent 平台怎么用 7 层骨架挂任意前端与通道、专攻"系统架构"；<br>
+&nbsp;&nbsp;<strong>③ Hermes</strong> 帮你从工程派视角看范式——配置即代码、Channel 协议、跨运行时、工具白盒化、审计可观测——专攻"工程落地"。<br>
+读完之后、回头看任何 Agent（AutoGPT、LangChain、Browser-Use 等）都能很快定位它在 4 大密码和 5 个范式上的取舍。
+</div>
+
+<hr>
+<p class="breadcrumb">← 回到 <a href="#top">本讲网页顶部</a></p>
+</main>
+<script>
+  (function () {
+    var STORAGE_KEY = "***";
+    var root = document.documentElement;
+    var btn  = document.getElementById("themeToggle");
+    var icon = document.getElementById("themeIcon");
+    var lbl  = document.getElementById("themeLabel");
+    function apply(theme) {
+      root.setAttribute("data-theme", theme);
+      if (theme === "dark") {
+        icon.innerHTML = "&#9728;&#65039;";
+        lbl.textContent  = "亮色";
+      } else {
+        icon.innerHTML = "&#127769;";
+        lbl.textContent  = "暗色";
+      }
+    }
+    var saved = null;
+    try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    if (saved === "light" || saved === "dark") {
+      apply(saved);
+    } else if (window.matchMedia &amp;&amp; window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      apply("dark");
+    } else {
+      apply("light");
+    }
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") || "light";
+      var next = cur === "dark" ? "light" : "dark";
+      apply(next);
+      try { localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>
