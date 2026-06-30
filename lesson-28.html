@@ -1,0 +1,582 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 28 讲 · Agent 工程范式：Harness Engineering 到底革新了什么？</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fff;
+    --fg: #222;
+    --muted: #555;
+    --link: #1a73e8;
+    --code-bg: #f4f4f4;
+    --code-fg: inherit;
+    --pre-bg: #1e1e1e;
+    --pre-fg: #eaeaea;
+    --border: #ddd;
+    --th-bg: #f5f5f5;
+    --zebra: #fafafa;
+    --hover-row: #e8f0fe;
+    --hover-th: #eef2f7;
+    --blockquote-bg: #fafafa;
+    --blockquote-border: #ddd;
+    --hr: #eee;
+    --toggle-bg: #f5f5f5;
+    --toggle-fg: #333;
+    --toggle-border: #ddd;
+    --tag-bg: #eef4ff;
+    --tag-fg: #1a73e8;
+    --callout-bg: #fffbe6;
+    --callout-border: #fadb14;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1115;
+    --fg: #e6e6e6;
+    --muted: #9aa0a6;
+    --link: #8ab4f8;
+    --code-bg: #1e1f24;
+    --code-fg: #e6e6e6;
+    --pre-bg: #1a1d23;
+    --pre-fg: #e6e6e6;
+    --border: #303136;
+    --th-bg: #1c1f25;
+    --zebra: #16181d;
+    --hover-row: #1f2733;
+    --hover-th: #262c36;
+    --blockquote-bg: #181a20;
+    --blockquote-border: #303136;
+    --hr: #2a2d33;
+    --toggle-bg: #1c1f25;
+    --toggle-fg: #e6e6e6;
+    --toggle-border: #303136;
+    --tag-bg: #1c2740;
+    --tag-fg: #8ab4f8;
+    --callout-bg: #2a2615;
+    --callout-border: #fadb14;
+  }
+  html, body { background: var(--bg); color: var(--fg); }
+  body { font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.7; max-width: 920px; margin: 24px auto; padding: 0 18px; }
+  h1, h2, h3 { color: var(--fg); }
+  h1 { font-size: 28px; margin: .2em 0 .4em; }
+  h2 { font-size: 22px; margin-top: 1.6em; border-bottom: 1px solid var(--hr); padding-bottom: .25em; }
+  h3 { font-size: 18px; margin-top: 1.4em; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  hr { border: none; border-top: 1px solid var(--hr); margin: 2em 0; }
+  code { background: var(--code-bg); color: var(--code-fg); padding: 1px 6px; border-radius: 4px; font-size: 90%; }
+  pre { background: var(--pre-bg); color: var(--pre-fg); padding: 14px 16px; border-radius: 8px; overflow-x: auto; line-height: 1.55; font-size: 13.5px; }
+  pre.lang-flow { background: #f6f8fa; color: #24292f; }
+  :root[data-theme="dark"] pre.lang-flow { background: #16181d; color: #e6e6e6; }
+  pre.lang-flow code { background: transparent; color: inherit; padding: 0; }
+  pre.code code { background: transparent; color: inherit; padding: 0; }
+  blockquote { background: var(--blockquote-bg); border-left: 4px solid var(--blockquote-border); margin: 1em 0; padding: .7em 1em; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; margin: 1em 0; font-size: 14.5px; }
+  th, td { padding: 8px 10px; border: 1px solid var(--border); text-align: left; vertical-align: top; }
+  th { background: var(--th-bg); font-weight: 600; }
+  tbody tr:nth-child(even) td { background: var(--zebra); }
+  tbody tr:hover td { background: var(--hover-row); }
+  th:hover { background: var(--hover-th); }
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    margin-right: 6px;
+    background: var(--tag-bg);
+    color: var(--tag-fg);
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .breadcrumb {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 1em;
+  }
+  .breadcrumb a { color: var(--muted); }
+  .breadcrumb a:hover { color: var(--link); }
+
+  /* 暗色模式切换 */
+  .theme-toggle {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 9999;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--toggle-bg);
+    color: var(--toggle-fg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    user-select: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    transition: background-color .2s ease, transform .1s ease;
+  }
+  .theme-toggle:hover { background: var(--hover-row); }
+  .theme-toggle:active { transform: scale(.97); }
+  .theme-toggle .icon { font-size: 15px; line-height: 1; }
+
+  /* 课程序号大圆点 */
+  .lesson-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1a73e8, #6f42c1);
+    color: #fff;
+    font-size: 24px;
+    font-weight: 700;
+    margin-right: 14px;
+    vertical-align: middle;
+  }
+
+  /* callout */
+  .callout {
+    background: var(--callout-bg);
+    border-left: 4px solid var(--callout-border);
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin: 1.2em 0;
+  }
+  .callout.ok {
+    background: #e6f7ed;
+    border-color: #2ea44f;
+  }
+  :root[data-theme="dark"] .callout.ok { background: #112a1c; }
+  .callout.warn {
+    background: #fff1f0;
+    border-color: #cf222e;
+  }
+  :root[data-theme="dark"] .callout.warn { background: #2a1517; }
+
+  /* pre.code 通用代码块,跟 pre.lang-flow 区别 */
+  pre.code { background: #1e1e1e; color: #eaeaea; }
+  :root[data-theme="dark"] pre.code { background: #16181d; color: #e6e6e6; }
+</style>
+<link rel="stylesheet" href="assets/flow.css">
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="切换暗色模式">
+  <span class="icon" id="themeIcon">&#127769;</span>
+  <span id="themeLabel">暗色</span>
+</button>
+<main>
+<div class="breadcrumb">课程导航： &laquo; <a href="lesson-27.html">第 27 讲</a>  ·  <a href="lesson-29.html">第 29 讲</a> &raquo;</div>
+
+<h1><span class="lesson-badge">28</span>第 28 讲 · Agent 工程范式：Harness Engineering 到底革新了什么？</h1>
+<p>
+  <span class="tag">热点加餐</span>
+  <span class="tag">第 28 / 33 讲</span>
+  <span class="tag">Claude Code 工程化实战</span>
+  <span class="tag">范式 3.0</span>
+  <span class="tag">Harness</span>
+</p>
+
+<div class="callout ok">
+<strong>&#128204; 本讲摘要</strong> · Harness Engineering 是 2025-2026 年 AI 工程领域最被低估的范式跃迁——它把 Agent 从调一个模型重新定义为运行一个系统。本讲从范式演进史（Prompt Engineering → Agent Engineering → Harness Engineering）出发、系统讲清楚 Harness 是什么、7 层架构长什么样、5 大设计原则如何在工程里落地、并用 200 行最小 Harness 演示让你跑通从想法到运行的完整闭环。学完本讲、你应该能用 Harness 思维重新审视 Claude Code / 任何 Agent 产品的设计选择、而不是只把它当高级 prompt 工具。
+</div>
+
+<h2>1. 范式演进史：从 Prompt 到 Harness</h2>
+
+<p>AI 工程 5 年走完了 3 个范式跃迁、每个范式回答的核心问题不一样：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>范式</th>
+      <th>时间</th>
+      <th>核心问题</th>
+      <th>代表工作</th>
+      <th>范式局限</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1.0 · Prompt Engineering</td>
+      <td>2022-2023</td>
+      <td>怎么让模型听懂我？</td>
+      <td>few-shot、CoT、ReAct</td>
+      <td>换个模型就失效</td>
+    </tr>
+    <tr>
+      <td>2.0 · Agent Engineering</td>
+      <td>2024</td>
+      <td>怎么让模型能动手？</td>
+      <td>Tool use、Function calling</td>
+      <td>行为边界不清晰、容易失控</td>
+    </tr>
+    <tr>
+      <td>3.0 · Harness Engineering</td>
+      <td>2025-2026</td>
+      <td>怎么让系统在边界内跑得稳？</td>
+      <td>Claude Code、OpenClaw</td>
+      <td>工程复杂度高、需要团队</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>关键洞察</strong>：3 个范式不是取代、而是叠加。Prompt 仍然是 Harness 的一部分、Agent 仍然是 Harness 的一部分。Harness 是把它们装进一个可治理系统的元范式。</p>
+
+<div class="callout warn">
+<strong>&#9888;&#65039; 坑 1</strong> · 以为 3.0 取代 1.0 / 2.0——不，3.0 是在 1.0 + 2.0 之上加了一个治理层。写好 Harness 里的 system prompt、仍然要懂 Prompt Engineering；选好 Harness 里的 tool schema、仍然要懂 Agent Engineering。
+</div>
+
+<h2>2. Harness 是什么：包裹模型的工程骨架</h2>
+
+<p><strong>Harness Engineering（驾驭工程）</strong>是把模型装进可治理系统的工程范式——管理上下文、调度工具、设边界、做可观测——让 Agent 在可控、可复现、可演化的方式下稳定运行。它把 Agent 当作完整的产品来对待、而不是一个裸露的模型调用。该概念在 2025 年随着 Claude Code 的工程化实践被业界广泛接受。</p>
+
+<p>用一个比喻：Harness 是 Agent 的骨架 + 神经系统 + 边界护栏、模型是心脏。没有 Harness、模型就是一堆漂浮的智能；有了 Harness、模型才能在工程里稳定工作。</p>
+
+<p>具体说、Harness 包含 6 个组件：</p>
+
+<ol>
+  <li><strong>System Prompt</strong>：定义 Agent 的人格和工作守则</li>
+  <li><strong>Tool Schema</strong>：定义 Agent 能调的工具集（白盒化）</li>
+  <li><strong>Memory</strong>：短期上下文 + 长期记忆 + 项目记忆</li>
+  <li><strong>Control Loop</strong>：主循环——读消息 → 思考 → 调工具 → 写回复</li>
+  <li><strong>Boundary</strong>：权限 / 风险 / PII 等边界护栏</li>
+  <li><strong>Observability</strong>：日志 / 监控 / 审计 / 计费</li>
+</ol>
+
+<p>Claude Code 之所以工程化、就是因为这 6 个组件都做齐了。对比之下、直接调用 <code>client.messages.create()</code> 那种裸模型路线、缺了 5 个组件、只在 demo 阶段能用。</p>
+
+<h2>3. 7 层架构图：从模型到用户的完整抽象</h2>
+
+<p>把 Harness 拆成 7 层、从底向上是：</p>
+
+<div class="flow-diagram">
+  <div class="flow-note" style="font-size:14px;font-weight:600;color:var(--link);font-style:normal;margin-bottom:10px">🏗️ Harness 7 层架构</div>
+
+  <div class="flow-box-lg" style="max-width:560px">
+    <div class="flow-box-title">L7 · User Interface</div>
+    <div class="flow-box-sub" style="text-align:left">CLI / TUI / Web / IDE / IM</div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg" style="max-width:560px">
+    <div class="flow-box-title">L6 · Channel Adapter</div>
+    <div class="flow-box-sub" style="text-align:left">把消息标准化成 Agent 能理解的格式（Telegram / Slack / WebSocket / stdio）</div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg" style="max-width:560px;border-color:var(--link)">
+    <div class="flow-box-title">L5 · Orchestrator</div>
+    <div class="flow-box-sub" style="text-align:left">主循环 + 子代理调度 · 决定这一步调哪个 Agent</div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg" style="max-width:560px">
+    <div class="flow-box-title">L4 · Memory Store</div>
+    <div class="flow-box-sub" style="text-align:left">短期消息历史 · CLAUDE.md / 长期记忆</div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg" style="max-width:560px">
+    <div class="flow-box-title">L3 · Tool Layer</div>
+    <div class="flow-box-sub" style="text-align:left">Bash / Read / Edit / Grep / MCP（含权限 + 风险等级）</div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg" style="max-width:560px;border-color:var(--warn-border)">
+    <div class="flow-box-title" style="color:var(--warn-border)">L2 · Boundary & Hooks</div>
+    <ul>
+      <li>PreToolUse 拦截</li>
+      <li>PostToolUse 审计</li>
+      <li>Stop 收尾</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg" style="max-width:560px">
+    <div class="flow-box-title">L1 · Model Adapter</div>
+    <div class="flow-box-sub" style="text-align:left">Opus / Sonnet / Haiku 抽象 · 流式输出 + retry + fallback</div>
+  </div>
+
+  <div class="flow-container" style="margin-top:22px;border-color:var(--ok-border)">
+    <div class="flow-container-title" style="color:var(--ok-border)">总结</div>
+    <div class="flow-note" style="font-style:normal;color:var(--fg);font-size:14px;margin:0">
+      上面 7 层 = 一个完整的 Harness · Claude Code / OpenClaw / OpenCode 都是这样
+    </div>
+  </div>
+</div>
+
+<p>7 层各自独立可替换——换模型（Claude → Gemini）只改 L1；换通道（CLI → Telegram）只改 L6；换 Orchestrator（单 Agent → 多 Agent）只改 L5。这正是 Harness 范式的可演化价值：不绑死在某一家、某一端。</p>
+
+<h2>4. 5 大设计原则：可观测 / 可控制 / 可演化 / 可分享 / 可测试</h2>
+
+<p>做 Harness 容易、做好 Harness 难。5 大设计原则是判断 Harness 质量的尺子：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>原则</th>
+      <th>含义</th>
+      <th>反例</th>
+      <th>正例</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>可观测</td>
+      <td>每次行为都能被记录、回放</td>
+      <td>Agent 调了什么我也不知道</td>
+      <td>PostToolUse 落 JSON Lines、可重放</td>
+    </tr>
+    <tr>
+      <td>可控制</td>
+      <td>用户能随时介入、终止、回滚</td>
+      <td>Agent 跑了 30 分钟我只能等</td>
+      <td>支持 /rewind、中断、Checkpointing</td>
+    </tr>
+    <tr>
+      <td>可演化</td>
+      <td>Skills / Tools / Hooks 可热加载</td>
+      <td>加个 Skill 要重启 3 个服务</td>
+      <td>Skill 描述加进 CLAUDE.md 即生效</td>
+    </tr>
+    <tr>
+      <td>可分享</td>
+      <td>团队成员能复用你的 Harness 资产</td>
+      <td>我配的 Skills 你那边跑不通</td>
+      <td>Plugin 打包 + Marketplace 共享</td>
+    </tr>
+    <tr>
+      <td>可测试</td>
+      <td>Agent 行为有自动化测试</td>
+      <td>Agent 改坏了文件我才知道</td>
+      <td>评估集（eval） + 快照测试</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>用这 5 条对照 Claude Code、你会发现它每条都做了 60-80 分——这正是它能工程化的原因。把这 5 条做到 90+ 分、就是企业级 Harness 的标准。</p>
+
+<div class="callout warn">
+<strong>&#9888;&#65039; 坑 2</strong> · 只追功能多、不追可观测与可控制——Harness 的价值不是多能干、而是出问题时能不能 5 分钟内定位 + 1 分钟内止血。事故驱动的设计比功能驱动的设计重要 10 倍。
+</div>
+
+<h2>5. 200 行最小 Harness 演示</h2>
+
+<p>理论再多不如一行代码。下面是一个最小可运行的 Harness（约 200 行 TypeScript）：</p>
+
+<p><strong>实战代码块 1 — 最小 Harness 完整实现</strong>。能跑通用户输入 → 调模型 → 调工具 → 返回结果 完整闭环。</p>
+
+<pre class="code"><code>// minimal-harness.ts (200 行)
+import Anthropic from "@anthropic-ai/sdk";
+import * as readline from "readline";
+import { execSync } from "child_process";
+import { readFileSync, writeFileSync } from "fs";
+
+// ============ L1: Model Adapter ============
+const client = new Anthropic();
+
+// ============ L3: Tool Layer (白盒化) ============
+const TOOLS = [
+  {
+    name: "Bash",
+    description: "执行 shell 命令,返回 stdout/stderr。危险命令会被拦截。",
+    input_schema: {
+      type: "object",
+      properties: { command: { type: "string" } },
+      required: ["command"]
+    }
+  },
+  {
+    name: "Read",
+    description: "读取文件内容,返回带行号的文本。",
+    input_schema: {
+      type: "object",
+      properties: { file_path: { type: "string" } },
+      required: ["file_path"]
+    }
+  },
+  {
+    name: "Edit",
+    description: "编辑文件,old_text 必须唯一匹配。",
+    input_schema: {
+      type: "object",
+      properties: {
+        file_path: { type: "string" },
+        old_text: { type: "string" },
+        new_text: { type: "string" }
+      },
+      required: ["file_path", "old_text", "new_text"]
+    }
+  }
+];
+
+// ============ L3: Tool Implementation ============
+function executeTool(name: string, input: any): string {
+  // L2: Boundary - 黑名单
+  if (name === "Bash" &amp;&amp; /rm -rf|sudo|dd |mkfs/.test(input.command) {
+    return "&#10060; 拒绝执行危险命令";
+  }
+  // L2: Boundary - PII 脱敏
+  if (/\b1[3-9][0-9]{9}\b/.test(JSON.stringify(input) {
+    return "&#10060; 检测到 PII,已拦截";
+  }
+
+  if (name === "Bash") {
+    try { return execSync(input.command, { encoding: "utf-8", timeout: 10000 }); }
+    catch (e: any) { return `Error: ${e.message}`; }
+  }
+  if (name === "Read") { return readFileSync(input.file_path, "utf-8"); }
+  if (name === "Edit") {
+    const content = readFileSync(input.file_path, "utf-8");
+    if (!content.includes(input.old_text) return "&#10060; old_text 不存在";
+    writeFileSync(input.file_path, content.replace(input.old_text, input.new_text);
+    return "&#10003; 已修改";
+  }
+  return "Unknown tool";
+}
+
+// ============ L4: Memory Store (短期) ============
+const messages: any[] = [];
+const SYSTEM_PROMPT = `你是 Claude Code 风格的 Agent,可以用工具帮用户工作。回答简洁,先想再动手。`;
+
+// ============ L5: Orchestrator (主循环) ============
+async function runTurn(userMessage: string) {
+  messages.push({ role: "user", content: userMessage });
+  for (let i = 0; i &lt; 10; i++) {
+    const response = await client.messages.create({
+      model: "claude-sonnet-4-7",
+      max_tokens: 4096,
+      system: SYSTEM_PROMPT,
+      tools: TOOLS,
+      messages
+    });
+    messages.push({ role: "assistant", content: response.content });
+    if (response.stop_reason === "end_turn") {
+      return response.content.filter(b: any) => b.type === "text").map(b: any) => b.text).join("\n");
+    }
+    // 工具调用
+    const toolUse = response.content.find(b: any) => b.type === "tool_use");
+    if (toolUse) {
+      const result = executeTool(toolUse.name, toolUse.input);
+      messages.push({ role: "user", content: [{ type: "tool_result", tool_use_id: toolUse.id, content: result }] });
+    }
+  }
+  return "达到最大轮数,停止";
+}
+
+// ============ L6 &amp; L7: Channel + UI (CLI) ============
+const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+const ask = (q: string) => new Promise&lt;string&gt;(r) => rl.question(q, r);
+(async () => {
+  console.log("Minimal Harness ready. 输入 exit 退出。");
+  while (true) {
+    const input = await ask("\n&gt; ");
+    if (input === "exit") break;
+    const result = await runTurn(input);
+    console.log("\n" + result);
+  }
+})();
+</code></pre>
+
+<p>这个 Harness 包含 L1-L7 中的 6 层（L6 channel 简化成 stdin）、约 200 行。把它跑起来、就是一个能调 Claude + 调工具 + 有边界护栏的最小 Agent。</p>
+
+<p>想学 Harness 演进、从这里开始改：</p>
+
+<ul>
+  <li>加 <strong>L4 长期记忆</strong>：把对话摘要写进 <code>.claude/memory.md</code>、下次启动读回来</li>
+  <li>加 <strong>L5 子代理</strong>：把调工具改成 Task tool 调子代理</li>
+  <li>加 <strong>L6 Channel</strong>：用 Telegraf 库挂 Telegram bot</li>
+  <li>加 <strong>Skills 注册</strong>：从 <code>.claude/skills/</code> 读 SKILL.md 描述、塞进 system prompt</li>
+  <li>加 <strong>L2 Hooks</strong>：PreToolUse 调 PII 脱敏 hook</li>
+</ul>
+
+<p>每加一层、Harness 就向 Claude Code 近一步。</p>
+
+<div class="callout warn">
+<strong>&#9888;&#65039; 坑 3</strong> · 抄完 200 行就跑——没有改、没有测、没有部署。Harness 的学习不是读懂、而是改 3 个版本后你才真的懂。
+</div>
+
+<h2>6. Harness 思维如何反哺日常开发</h2>
+
+<p>学完 Harness、回过头来用它审视日常开发、会看到一些以前觉得理所当然的事其实有更好的解法：</p>
+
+<p><strong>实战代码块 2 — 用 Harness 思维重构一个传统 CLI 工具</strong>。比如一个传统代码生成器工具、以前是参数驱动；Harness 化后是 Agent 驱动：</p>
+
+<pre class="code"><code># 传统 CLI 工具(参数驱动)
+$ gen-component --name Button --type functional --style css
+# 输出:一堆文件,需要人工看是不是想要的
+
+# Harness 化后(Agent 驱动)
+$ gen-component 我要一个 React Button 组件,支持 primary/secondary 两种风格
+# Agent 自己决定:用什么库、什么 props、什么样式、要不要 test
+# 还能追问:Button 要不要带 icon?要不要支持 disabled 状态?
+</code></pre>
+
+<p>对比之下、Harness 化的工具更像在跟一个同事对话、而不是在用一台机器。这正是 Harness 范式想带给大家的东西：从工具升级为伙伴。</p>
+
+<p><strong>反哺日常开发的 3 个具体动作</strong>：</p>
+
+<ol>
+  <li><strong>把脚本改成 Agent</strong>：你常用的 5 个 shell 脚本、挑 1 个改成 Agent 能调的工具、放进 <code>.claude/skills/</code></li>
+  <li><strong>把 CLI 工具加 Harness 化</strong>：你写的 1 个 CLI 工具、加一个简单的对话模式——输入一句话、工具解读后执行</li>
+  <li><strong>把团队约定写进 CLAUDE.md</strong>：把团队的代码规范 / Git 流程 / 部署命令写进 CLAUDE.md、让 Agent 替你守规矩</li>
+</ol>
+
+<div class="callout warn">
+<strong>&#9888;&#65039; 坑 4</strong> · 觉得 Harness 离自己很远——我又不是做 Agent 产品的。其实，任何接受输入、产出结果的工具、都可以 Harness 化。哪怕是一个部署脚本、加了 Agent 化后都能省 50% 的手工操作。
+</div>
+
+<h2>7. 范式还在演进：Loop Engineering 正在兴起</h2>
+
+<p>本讲写于 2026 年初——彼时 Harness Engineering 已随着 Claude Code 的普及成为业界共识，但 Agent 工程范式的演进并未就此停步。2026 年上半年，<strong>Loop Engineering（循环工程）</strong>正在成为新的方向：把 Harness 的主循环升级成多 Agent 协作 + 长时记忆 + 自动评估的闭环，让 Agent 具备自我迭代能力。</p>
+
+<p>几个值得关注的方向：</p>
+<ul>
+  <li><strong>长时记忆</strong>：突破单次会话边界、让 Agent 跨任务记住上次学到的教训</li>
+  <li><strong>自动评估</strong>：Agent 每次跑完、自动生成评估报告、驱动下一步改进</li>
+  <li><strong>多 Agent 协作</strong>：从一个 Agent 一杆枪到多个 Agent 分工 + 互相校验</li>
+  <li><strong>自我修复</strong>：检测到行为漂移后、自动回滚 + 重试 + 报警</li>
+</ul>
+
+<p>这意味着 Agent 工程范式仍在快速演进——Harness Engineering 是当下、Loop Engineering 是下一个浪尖。保持对范式跃迁的敏感度、才能不被技术更替甩在身后。</p>
+
+<h2>8. 一句话备忘</h2>
+
+<blockquote>&#128296; 未来不是更大的模型、而是更聪明的 Harness；下一步不是更长的上下文、而是更聪明的循环。</blockquote>
+
+<hr>
+<p class="breadcrumb">← 回到 <a href="#top">本讲网页顶部</a></p>
+</main>
+<script>
+  (function () {
+    var STORAGE_KEY = "***";
+    var root = document.documentElement;
+    var btn  = document.getElementById("themeToggle");
+    var icon = document.getElementById("themeIcon");
+    var lbl  = document.getElementById("themeLabel");
+    function apply(theme) {
+      root.setAttribute("data-theme", theme);
+      if (theme === "dark") {
+        icon.innerHTML = "&#9728;&#65039;";
+        lbl.textContent  = "亮色";
+      } else {
+        icon.innerHTML = "&#127769;";
+        lbl.textContent  = "暗色";
+      }
+    }
+    var saved = null;
+    try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    if (saved === "light" || saved === "dark") {
+      apply(saved);
+    } else if (window.matchMedia &amp;&amp; window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      apply("dark");
+    } else {
+      apply("light");
+    }
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") || "light";
+      var next = cur === "dark" ? "light" : "dark";
+      apply(next);
+      try { localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>
