@@ -1,0 +1,1200 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 29 讲 · Agent 基础设施设计：Harness 架构、模式与工程实践</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fff;
+    --fg: #222;
+    --muted: #555;
+    --link: #1a73e8;
+    --code-bg: #f4f4f4;
+    --code-fg: inherit;
+    --pre-bg: #1e1e1e;
+    --pre-fg: #eaeaea;
+    --border: #ddd;
+    --th-bg: #f5f5f5;
+    --zebra: #fafafa;
+    --hover-row: #e8f0fe;
+    --hover-th: #eef2f7;
+    --blockquote-bg: #fafafa;
+    --blockquote-border: #ddd;
+    --hr: #eee;
+    --toggle-bg: #f5f5f5;
+    --toggle-fg: #333;
+    --toggle-border: #ddd;
+    --tag-bg: #eef4ff;
+    --tag-fg: #1a73e8;
+    --callout-bg: #fffbe6;
+    --callout-border: #fadb14;
+    --warn-bg: #fff1f0;
+    --warn-border: #ff4d4f;
+    --ok-bg: #f6ffed;
+    --ok-border: #52c41a;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1115;
+    --fg: #e6e6e6;
+    --muted: #9aa0a6;
+    --link: #8ab4f8;
+    --code-bg: #1e1f24;
+    --code-fg: #e6e6e6;
+    --pre-bg: #1a1d23;
+    --pre-fg: #e6e6e6;
+    --border: #303136;
+    --th-bg: #1c1f25;
+    --zebra: #16181d;
+    --hover-row: #1f2733;
+    --hover-th: #262c36;
+    --blockquote-bg: #181a20;
+    --blockquote-border: #303136;
+    --hr: #2a2d33;
+    --toggle-bg: #1c1f25;
+    --toggle-fg: #e6e6e6;
+    --toggle-border: #303136;
+    --tag-bg: #1c2740;
+    --tag-fg: #8ab4f8;
+    --callout-bg: #2a2615;
+    --callout-border: #fadb14;
+    --warn-bg: #2a1517;
+    --warn-border: #ff6b6b;
+    --ok-bg: #112a1c;
+    --ok-border: #4ea866;
+  }
+  html, body { background: var(--bg); color: var(--fg); }
+  body { font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.7; max-width: 920px; margin: 24px auto; padding: 0 18px; }
+  h1, h2, h3, h4 { color: var(--fg); }
+  h1 { font-size: 28px; margin: .2em 0 .4em; }
+  h2 { font-size: 22px; margin-top: 1.6em; border-bottom: 1px solid var(--hr); padding-bottom: .25em; }
+  h3 { font-size: 18px; margin-top: 1.4em; }
+  h4 {
+    font-size: 16px;
+    margin: 1.6em 0 .6em;
+    padding-left: 12px;
+    border-left: 4px solid var(--link);
+    color: var(--link);
+  }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  hr { border: none; border-top: 1px solid var(--hr); margin: 2em 0; }
+  code { background: var(--code-bg); color: var(--code-fg); padding: 1px 6px; border-radius: 4px; font-size: 90%; }
+  pre { background: var(--pre-bg); color: var(--pre-fg); padding: 14px 16px; border-radius: 8px; overflow-x: auto; line-height: 1.55; font-size: 13.5px; }
+  pre.code { background: #1e1e1e; color: #eaeaea; }
+  :root[data-theme="dark"] pre.code { background: #16181d; color: #e6e6e6; }
+  pre.code code { background: transparent; color: inherit; padding: 0; }
+  pre.lang-flow { background: #f6f8fa; color: #24292f; }
+  :root[data-theme="dark"] pre.lang-flow { background: #16181d; color: #e6e6e6; }
+  pre.lang-flow code { background: transparent; color: inherit; padding: 0; }
+  blockquote { background: var(--blockquote-bg); border-left: 4px solid var(--blockquote-border); margin: 1em 0; padding: .7em 1em; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; margin: 1em 0; font-size: 14.5px; }
+  th, td { padding: 8px 10px; border: 1px solid var(--border); text-align: left; vertical-align: top; }
+  th { background: var(--th-bg); font-weight: 600; }
+  tbody tr:nth-child(even) td { background: var(--zebra); }
+  tbody tr:hover td { background: var(--hover-row); }
+  th:hover { background: var(--hover-th); }
+  ul, ol { padding-left: 1.5em; }
+  li { margin: .25em 0; }
+
+  /* 暗色模式切换 */
+  .theme-toggle {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 9999;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--toggle-bg);
+    color: var(--toggle-fg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    user-select: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    transition: background-color .2s ease, transform .1s ease;
+  }
+  .theme-toggle:hover { background: var(--hover-row); }
+  .theme-toggle:active { transform: scale(.97); }
+  .theme-toggle .icon { font-size: 15px; line-height: 1; }
+
+  /* 课程序号大圆点 */
+  .lesson-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1a73e8, #6f42c1);
+    color: #fff;
+    font-size: 24px;
+    font-weight: 700;
+    margin-right: 14px;
+    vertical-align: middle;
+  }
+
+  /* callout */
+  .callout {
+    background: var(--callout-bg);
+    border-left: 4px solid var(--callout-border);
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin: 1.2em 0;
+  }
+  .callout.ok {
+    background: var(--ok-bg);
+    border-color: var(--ok-border);
+  }
+  .callout.warn {
+    background: var(--warn-bg);
+    border-color: var(--warn-border);
+  }
+  .callout .callout-title {
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: var(--fg);
+  }
+
+  /* tag */
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    margin-right: 6px;
+    background: var(--tag-bg);
+    color: var(--tag-fg);
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .breadcrumb {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 1em;
+  }
+  .breadcrumb a { color: var(--muted); }
+  .breadcrumb a:hover { color: var(--link); }
+
+  /* 来源卡片 */
+  .source-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 10px;
+    margin: 1.2em 0;
+  }
+  .source-card {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 13.5px;
+  }
+  .source-card .src-num {
+    display: inline-block;
+    width: 22px; height: 22px;
+    line-height: 22px; text-align: center;
+    border-radius: 50%;
+    background: var(--link);
+    color: #fff;
+    font-size: 12px; font-weight: 700;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+  .source-card .src-title {
+    font-weight: 600;
+    color: var(--fg);
+  }
+  .source-card .src-meta {
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 4px;
+  }
+
+  /* 高亮金句 */
+  .gold {
+    background: linear-gradient(transparent 65%, rgba(250, 219, 20, 0.35) 65%);
+    padding: 0 2px;
+    font-weight: 600;
+  }
+  :root[data-theme="dark"] .gold {
+    background: linear-gradient(transparent 65%, rgba(250, 219, 20, 0.22) 65%);
+  }
+
+  /* 配图（inline SVG） */
+  figure.diagram-figure {
+    margin: 0.8em 0;
+    padding: 8px 10px;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    text-align: center;
+  }
+  figure.diagram-figure svg {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+  }
+  figure.diagram-figure figcaption {
+    margin-top: 10px;
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+  }
+  figure.diagram-figure figcaption .cap-title {
+    font-weight: 600;
+    color: var(--fg);
+    margin-right: 6px;
+  }
+</style>
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="切换暗色模式">
+  <span class="icon" id="themeIcon">&#127769;</span>
+  <span id="themeLabel">暗色</span>
+</button>
+<main>
+<div class="breadcrumb">课程导航： &laquo; <a href="lesson-28.html">第 28 讲</a>  ·  <a href="index.html">回到目录</a> &raquo;</div>
+
+<h1><span class="lesson-badge">29</span>第 29 讲 · Agent 基础设施设计：Harness 架构、模式与工程实践</h1>
+
+<div class="callout">
+<div class="callout-title">&#128204; 本讲摘要</div>
+<p style="margin:6px 0 8px 0">本文从三个层面系统讲清楚 Harness Engineering：</p>
+<p style="margin:4px 0"><strong>① Agent Harness 革命</strong>——三根缰绳、棘轮原则、Code as Harness 学术范式。</p>
+<p style="margin:4px 0"><strong>② Claude Code 的 Harness 设计</strong>——512K 行源码、五层洋葱架构、Anthropic 三大设计模式。</p>
+<p style="margin:4px 0 8px 0"><strong>③ 实践路线图</strong>——25%→90% / 60%→80% 真实数据、10 步从零到生产 Checklist、8 种失败模式速查。</p>
+<p style="margin:8px 0 0 0">学完本讲，你应该能用 Harness 思维重新审视 Agent 产品的设计选择，而不是把它当高级 Prompt 工具。</p>
+</div>
+
+<hr>
+
+<h2>一、Agent Harness 革命：从"调 Prompt"到"造 Harness"</h2>
+
+<h3>1.1 模型是马，Harness 是缰绳</h3>
+
+<p>一个被反复验证的判断：</p>
+
+<blockquote>"一匹千里马，不管它多猛，你不给它套上马具，它只会四处乱跑。大语言模型就是这匹千里马。它可能已经足够聪明了，但如果没有一套好的 Harness 来引导，它的表现可能极其拉胯。"</blockquote>
+
+<p>所谓 Harness，直白点说就是<strong>模型之外、包裹模型的一切</strong>：系统提示、工具描述、工具调用格式、上下文窗口管理、记忆与文件、子代理编排、权限沙箱、错误恢复、循环终止条件……所有这些"非模型权重"的部分。</p>
+
+<p><span class="gold">Harness 不是限制马的能力，而是把强大但可能失控的力量，转化为可靠、可预测、可管理的生产力。</span></p>
+
+<p>研究发现 Transformer 内部真的存在"情绪向量"——<strong>Happy Vector</strong> 和 <strong>Desperate Vector</strong>。当你骂 AI"你这个笨蛋"时，会触发它内部的 Desperate 向量，它真的就会变笨。</p>
+
+<div class="callout warn">
+<div class="callout-title">&#9888;&#65039; 坑 1 · 情绪化反馈会让模型真的变笨</div>
+这不是段子，是论文级别的发现。Harness 的反馈应该是<strong>建设性的 Verbalized Feedback</strong>，而不是情绪化的责备。
+</div>
+
+<h3>1.2 三代驾驭工程的演进：Prompt → Context → Harness</h3>
+
+<p>把视野放到 30 年软件工程演进的历史轴上，Harness 的出现就不是偶然，而是必然：</p>
+
+<table>
+  <thead>
+    <tr><th>年份</th><th>驾驭对象</th><th>代表作</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>1994</strong></td><td>对象复杂性</td><td>23 种经典设计模式</td></tr>
+    <tr><td><strong>2002</strong></td><td>企业架构复杂性</td><td>企业应用架构模式、领域驱动设计</td></tr>
+    <tr><td><strong>2010</strong></td><td>分布式系统</td><td>微服务、消息队列、最终一致性</td></tr>
+    <tr><td><strong>2017</strong></td><td>数据系统</td><td>数据密集型应用系统设计</td></tr>
+    <tr><td><strong>2026</strong></td><td>智能体（不确定性系统）</td><td><strong>Harness</strong></td></tr>
+  </tbody>
+</table>
+
+<blockquote>
+<p style="margin:0">"工程师一直在跟系统的复杂度做斗争。技术架构演进二十几年不变的就是如何驾驭复杂性。"</p>
+<p style="margin:8px 0 0 0">"Harness 就是把大模型的大脑变成 Agent 的身体。"</p>
+</blockquote>
+
+<p>Agent 工程本身也经历了三次跃迁：</p>
+
+<table>
+  <thead>
+    <tr><th>代际</th><th>时间</th><th>核心隐喻</th><th>局限</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>Prompt Engineering</strong></td><td>2022-2024</td><td>写好一封邮件</td><td>模型一换就崩，长任务会"漂"</td></tr>
+    <tr><td><strong>Context Engineering</strong></td><td>2025</td><td>给邮件附上正确的附件</td><td>完美上下文也防不住错误下周再犯</td></tr>
+    <tr><td><strong>Harness Engineering</strong></td><td>2026-</td><td>设计 Agent 的完整执行环境</td><td>学习曲线陡、需要懂模型也懂系统</td></tr>
+  </tbody>
+</table>
+
+<p><strong>包含关系：Prompt ⊂ Context ⊂ Harness</strong>——每一代都吸收前一代，然后向上攀升。</p>
+
+<h4>图 1 · Harness 的本质</h4>
+<p><strong>Harness · 运行时与基础设施</strong>，包裹模型运行的外层工程系统。</p>
+
+<figure class="diagram-figure">
+<svg viewBox="40 90 580 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Harness 包裹 Model 架构示意图">
+  <!-- 四角能力卡片 -->
+  <rect x="60" y="105" width="160" height="60" rx="10"
+        fill="var(--code-bg)" stroke="var(--link)" stroke-width="1.5"/>
+  <text x="140" y="131" text-anchor="middle" font-size="14" font-weight="700" fill="var(--fg)">⚙️ 模型运行时</text>
+  <text x="140" y="150" text-anchor="middle" font-size="11" fill="var(--muted)">Agent 自主执行</text>
+
+  <rect x="440" y="105" width="160" height="60" rx="10"
+        fill="var(--code-bg)" stroke="var(--link)" stroke-width="1.5"/>
+  <text x="520" y="131" text-anchor="middle" font-size="14" font-weight="700" fill="var(--fg)">🧰 自助工具系统</text>
+  <text x="520" y="150" text-anchor="middle" font-size="11" fill="var(--muted)">工具注册与调用</text>
+
+  <!-- 中间 Model 圆圈 -->
+  <circle cx="330" cy="225" r="75"
+          fill="var(--callout-bg)" stroke="var(--link)" stroke-width="2.5"/>
+  <text x="330" y="220" text-anchor="middle" font-size="24" font-weight="700" fill="var(--fg)">Model</text>
+  <text x="330" y="244" text-anchor="middle" font-size="11" fill="var(--muted)">（无状态 / 纯推理）</text>
+
+  <!-- 左下 / 右下能力卡片 -->
+  <rect x="60" y="290" width="160" height="60" rx="10"
+        fill="var(--code-bg)" stroke="var(--link)" stroke-width="1.5"/>
+  <text x="140" y="316" text-anchor="middle" font-size="14" font-weight="700" fill="var(--fg)">🔐 权限控制</text>
+  <text x="140" y="335" text-anchor="middle" font-size="11" fill="var(--muted)">Allow · Deny · Ask</text>
+
+  <rect x="440" y="290" width="160" height="60" rx="10"
+        fill="var(--code-bg)" stroke="var(--link)" stroke-width="1.5"/>
+  <text x="520" y="316" text-anchor="middle" font-size="14" font-weight="700" fill="var(--fg)">💾 状态持久化</text>
+  <text x="520" y="335" text-anchor="middle" font-size="11" fill="var(--muted)">Memory · Git · DB</text>
+
+  <!-- 四角到中心的虚线连接 -->
+  <line x1="220" y1="135" x2="270" y2="195" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.55"/>
+  <line x1="440" y1="135" x2="390" y2="195" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.55"/>
+  <line x1="220" y1="320" x2="270" y2="258" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.55"/>
+  <line x1="440" y1="320" x2="390" y2="258" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.55"/>
+</svg>
+</figure>
+
+<h3>1.3 起源与扩散：一个习惯，引爆了整个行业</h3>
+
+<p>2026 年 2 月，在构建 AI 编码代理时，一个资深工程师形成了这样一个核心习惯：</p>
+
+<blockquote>"Every time you discover an agent has made a mistake, you take the time to engineer a solution so that it can never make that mistake again."</blockquote>
+
+<p>他把这个实践叫做 <strong>"engineering the harness"</strong>。几周之内，OpenAI、Anthropic 等机构迅速采纳。</p>
+
+<p>实测数据显示：<span class="gold">同一个模型、仅换 Harness 架构，Terminal Bench 2.0 基准得分从 42% 跃升至 78%</span>——<strong>36 个百分点的提升</strong>，没有换模型、没有换数据、没有换提示词。</p>
+
+<blockquote>
+<p style="margin:0">还有一条"零容忍规则"：<strong>AGENTS.md 中的每一行都应追溯到一次真实的 Agent 失败</strong>。如果指不出具体是哪次错误催生了这行规则，就删掉它。零条理想化规则。</p>
+<p style="margin:8px 0 0 0">这就是 <strong>"棘轮原则（Ratchet Principle）"</strong>——Harness 只收紧，不放松。</p>
+</blockquote>
+
+<h3>1.4 三根缰绳：Harness 三大支柱</h3>
+
+<p><strong>Harness Engineering 的三根缰绳</strong>，是这一章最有价值的部分：</p>
+
+<p><strong>&#129504; 第一根缰绳：控制"认知框架"</strong></p>
+<ul>
+  <li>CLAUDE.md / AGENTS.md 这些自然语言写成的规则，就是最常见的认知框架 Harness</li>
+  <li>模型每次开始工作前都会先"复读"这些规则</li>
+  <li><strong>OpenAI 的教训</strong>：一个巨大的 AGENTS.md 反而会起反效果，当所有事情都"重要"时，实际上就没有真正重要的东西</li>
+  <li><strong>解决方案</strong>：把 AGENTS.md 当成"目录"，~100 行左右，具体的知识放在结构化的 docs/ 目录里</li>
+  <li>这叫 <strong>"渐进式揭露"</strong>——先给一张地图，需要的时候再展开看细节</li>
+</ul>
+
+<p><strong>&#128274; 第二根缰绳：控制"能力边界"</strong></p>
+<ul>
+  <li>不要把整个系统都丢给模型，而是限制它能看什么、能做什么</li>
+  <li>SWE-agent 提出 <strong>ACI（Agent-Computer Interface）</strong> 概念——跟人类用的 GUI 对应，Agent 需要自己专属的"操作界面"</li>
+  <li><strong>Stripe 的实践</strong>：400+ 工具通过 MCP 服务器暴露，但每个代理会话仅能访问其子集；高风险场景下，甚至<strong>从 schema 级别移除写操作工具</strong>——不是告诉代理"别删数据"，而是让删数据的工具根本不存在</li>
+</ul>
+
+<p><strong>&#128260; 第三根缰绳：控制"行为流程"</strong></p>
+<ul>
+  <li>用标准工作流程来约束模型的行为</li>
+  <li>一个被广泛采用的反馈循环模式叫 <strong>Ralph Loop</strong>：<br>
+      <code>Init Prompt → Output v1 → Evaluation → Feedback → Output v2 → ...</code></li>
+  <li>不让模型一次性盲猜最终答案，每次产出版本，外部评估给反馈，再基于反馈修正</li>
+  <li>经验同样验证了这一点：Agent 最常见的两个失败模式是"试图一步到位"和"过早宣布完工"</li>
+  <li>解决方案：每次只做一个功能，做完提交 git，写好进度文件，把环境打扫干净再交班</li>
+</ul>
+
+<blockquote>隐喻：Harness 的反馈就像 <strong>"语义上的梯度下降"</strong>。传统深度学习通过数值梯度优化参数，Harness 通过自然语言反馈优化模型的输出方向。
+</blockquote>
+
+<h3>1.5 学术化：Harness 成为独立学科</h3>
+
+<p>2026 年下半年，两份资料把这件事彻底学术化：</p>
+<ul>
+  <li>学术界出现的 102 页系统综述，把 Harness 拆成三层架构</li>
+  <li>另一份深度综述：把 Harness 定义为"战略级资产"</li>
+</ul>
+
+<p>综述提出了一个根本性范式转移：</p>
+
+<blockquote><strong>代码不再是 Agent 的终点输出，而是 Agent 系统的运行基座（Harness）。</strong></blockquote>
+
+<p>代码之所以适合成为 Harness 的核心载体，因为它有自然语言不具备的三个属性：</p>
+<ul>
+  <li><strong>可执行（Executable）</strong>：模型的意图可以变成真实操作（shell command / patch / 测试脚本）</li>
+  <li><strong>可检查（Inspectable）</strong>：编译错误、runtime error、测试结果、日志都能给出客观反馈</li>
+  <li><strong>有状态（Stateful）</strong>：仓库、文件系统、commit history、skill library 都能持久保存任务进度</li>
+</ul>
+
+<h4>图 · 三层架构（论文提出）</h4>
+<p>论文把 Harness 拆成自下而上紧密耦合的三层：</p>
+
+<figure class="diagram-figure">
+<svg viewBox="0 0 660 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="三层架构示意图">
+  <!-- 顶层：Scaling the Harness -->
+  <rect x="30" y="30" width="600" height="80" rx="8"
+        fill="var(--code-bg)" stroke="#6f42c1" stroke-width="2"/>
+  <text x="60" y="60" font-size="14" font-weight="700" fill="#6f42c1">L3 · Scaling the Harness（扩展层）</text>
+  <text x="60" y="85" font-size="12" fill="var(--muted)">多 Agent 通过共享代码产物实现协同、审查与集体验证</text>
+  <text x="60" y="103" font-size="11" fill="var(--muted)">关键词：Multi-Agent · Shared Codebase · Convergence</text>
+
+  <!-- 中间层：Harness Mechanisms -->
+  <rect x="30" y="125" width="600" height="80" rx="8"
+        fill="var(--code-bg)" stroke="var(--link)" stroke-width="2"/>
+  <text x="60" y="155" font-size="14" font-weight="700" fill="var(--link)">L2 · Harness Mechanisms（机制层）</text>
+  <text x="60" y="180" font-size="12" fill="var(--muted)">规划 / 记忆 / 工具使用 / Harness 控制 / 自进化</text>
+  <text x="60" y="198" font-size="11" fill="var(--muted)">关键词：Planning · Memory · Tool Use · PEV · AHE</text>
+
+  <!-- 底层：Harness Interface -->
+  <rect x="30" y="220" width="600" height="80" rx="8"
+        fill="var(--code-bg)" stroke="var(--ok-border)" stroke-width="2"/>
+  <text x="60" y="250" font-size="14" font-weight="700" fill="var(--ok-border)">L1 · Harness Interface（接口层）</text>
+  <text x="60" y="275" font-size="12" fill="var(--muted)">代码作为推理、行动与环境建模的接口</text>
+  <text x="60" y="293" font-size="11" fill="var(--muted)">关键词：Code for Reasoning · Acting · Environment Modeling</text>
+</svg>
+</figure>
+
+<blockquote>
+<p style="margin:0"><strong>过去，代码是模型的考题。现在，代码正在成为 Agent 的操作系统。</strong></p>
+</blockquote>
+
+<hr>
+
+<h2>二、Claude Code 的 Harness Engineering：它到底怎么设计的</h2>
+
+<p>Claude Code 是当下 Harness Engineering 的"工业级样板间"。它没有花哨的 UI，但它把 Harness 拆成了一个非常干净的体系。下面我们一层一层剥开它的设计。</p>
+
+<h3>2.1 一张图看懂 Claude Code 的 Harness</h3>
+
+<p>2026 年 3 月 31 日，Claude Code 的源码因 npm 包中的 source map 文件意外泄露，约 <strong>1,900 个文件 / 512,000+ 行 TypeScript 代码</strong>被公开。这是工业级 Agent Harness 的活体解剖样本。</p>
+
+<p>架构可以用一个极简公式概括：</p>
+
+<pre class="code"><code>Claude Code = one agent loop
+            + tools (bash, read, write, edit, glob, grep, browser...)
+            + on-demand skill loading
+            + context compression
+            + subagent spawning
+            + task system with dependency graph
+            + team coordination with async mailboxes
+            + worktree isolation for parallel execution
+            + permission governance</code></pre>
+
+<blockquote><strong>核心哲学</strong>："The model is the agent. The code is the harness."<br>
+模型决定做什么，Harness 负责执行怎么做。
+</blockquote>
+
+<h3>2.2 Harness 的精确定义</h3>
+
+<pre class="code"><code>Harness = Tools + Knowledge + Observation + Action Interfaces + Permissions</code></pre>
+
+<table>
+  <thead>
+    <tr><th>维度</th><th>内容</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>Tools</strong></td><td>file I/O, shell, network, database, browser</td></tr>
+    <tr><td><strong>Knowledge</strong></td><td>product docs, domain references, API specs, style guides</td></tr>
+    <tr><td><strong>Observation</strong></td><td>git diff, error logs, browser state, sensor data</td></tr>
+    <tr><td><strong>Action</strong></td><td>CLI commands, API calls, UI interactions</td></tr>
+    <tr><td><strong>Permissions</strong></td><td>sandboxing, approval workflows, trust boundaries</td></tr>
+  </tbody>
+</table>
+
+<h3>2.3 五层洋葱架构</h3>
+
+<p>从外到内的五层洋葱：每一层都是一个独立的可替换子系统。</p>
+
+<figure class="diagram-figure">
+<svg viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Claude Code 五层洋葱架构示意图">
+  <!-- L1 最外层：入口层 -->
+  <rect x="20" y="20" width="680" height="60" rx="8"
+        fill="var(--code-bg)" stroke="#6f42c1" stroke-width="2"/>
+  <text x="40" y="46" font-size="14" font-weight="700" fill="#6f42c1">L1 · 入口层（Entry）</text>
+  <text x="40" y="68" font-size="12" fill="var(--muted)">CLI / TUI / IDE / Web / SDK — 用户接触 Agent 的所有通道</text>
+
+  <!-- L2 会话层 -->
+  <rect x="50" y="95" width="620" height="55" rx="8"
+        fill="var(--code-bg)" stroke="var(--link)" stroke-width="2"/>
+  <text x="70" y="119" font-size="14" font-weight="700" fill="var(--link)">L2 · 会话层（Session）</text>
+  <text x="70" y="140" font-size="12" fill="var(--muted)">会话状态 · 上下文窗口 · 压缩策略</text>
+
+  <!-- L3 工具层 -->
+  <rect x="80" y="165" width="560" height="55" rx="8"
+        fill="var(--code-bg)" stroke="var(--ok-border)" stroke-width="2"/>
+  <text x="100" y="189" font-size="14" font-weight="700" fill="var(--ok-border)">L3 · 工具层（Tools）</text>
+  <text x="100" y="210" font-size="12" fill="var(--muted)">Read / Write / Edit / Bash / Grep / Web / MCP …</text>
+
+  <!-- L4 编排层 -->
+  <rect x="110" y="235" width="500" height="55" rx="8"
+        fill="var(--code-bg)" stroke="#ff9800" stroke-width="2"/>
+  <text x="130" y="259" font-size="14" font-weight="700" fill="#ff9800">L4 · 编排层（Orchestration）</text>
+  <text x="130" y="280" font-size="12" fill="var(--muted)">Main Agent · SubAgents · Skills · Subagent Spawning</text>
+
+  <!-- L5 系统层（最核心） -->
+  <rect x="140" y="305" width="440" height="45" rx="22"
+        fill="url(#onionCore)" stroke="var(--callout-border)" stroke-width="2"/>
+  <text x="360" y="332" text-anchor="middle" font-size="14" font-weight="700" fill="var(--fg)">L5 · 系统层（System）— 权限 / Hooks / Memory / Telemetry</text>
+
+  <defs>
+    <linearGradient id="onionCore" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fffbe6"/>
+      <stop offset="100%" stop-color="#ffe082"/>
+    </linearGradient>
+  </defs>
+</svg>
+</figure>
+
+<p><strong>30+ 顶层目录</strong>清晰对应每个 Harness 子系统：</p>
+
+<table>
+  <thead>
+    <tr><th>目录</th><th>Harness 角色</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>src/tools/</td><td>Agent 的双手（40+ 工具）</td></tr>
+    <tr><td>src/commands/</td><td>用户指令接口（50+ 斜杠命令）</td></tr>
+    <tr><td>src/coordinator/</td><td>多智能体协调</td></tr>
+    <tr><td>src/skills/</td><td>按需知识加载</td></tr>
+    <tr><td>src/bridge/</td><td>IDE 桥接层</td></tr>
+    <tr><td>src/hooks/</td><td>权限与生命周期</td></tr>
+    <tr><td>src/components/</td><td>终端 UI（140+ React+Ink 组件）</td></tr>
+    <tr><td>src/memdir/</td><td>持久记忆</td></tr>
+    <tr><td>src/tasks/</td><td>任务系统</td></tr>
+  </tbody>
+</table>
+
+<h3>2.4 核心组件一：工具系统的 Harness 分层</h3>
+
+<p>Claude Code 把工具按 Harness 层次精心分层（这是源码分析的最大亮点）：</p>
+
+<table>
+  <thead>
+    <tr><th>工具</th><th>Harness 层次</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>BashTool</td><td>行动层</td></tr>
+    <tr><td>FileReadTool / GlobTool / GrepTool</td><td>感知层</td></tr>
+    <tr><td>FileWriteTool / FileEditTool</td><td>行动层</td></tr>
+    <tr><td><strong>AgentTool</strong></td><td><strong>协调层</strong></td></tr>
+    <tr><td>SkillTool</td><td>知识层</td></tr>
+    <tr><td>MCPTool</td><td>扩展层</td></tr>
+    <tr><td><strong>EnterPlanModeTool / ExitPlanModeTool</strong></td><td><strong>认知层</strong></td></tr>
+    <tr><td><strong>EnterWorktreeTool / ExitWorktreeTool</strong></td><td><strong>隔离层</strong></td></tr>
+    <tr><td>CronCreateTool / SleepTool</td><td>调度层</td></tr>
+  </tbody>
+</table>
+
+<p><strong>工具设计的三大原则</strong>：</p>
+<ol>
+  <li><strong>原子性（Atomicity）</strong>：每个工具只做一件事，职责单一</li>
+  <li><strong>可组合性（Composability）</strong>：输出 = 下一步输入</li>
+  <li><strong>自我描述性（Self-Describing）</strong>：Zod v4 Schema + <strong>延迟工具发现（Deferred Tool Discovery）</strong>——Agent 在运行时动态发现工具，不在系统提示中预加载</li>
+</ol>
+
+<h3>2.5 核心组件二：上下文管理（Context Engineering）</h3>
+
+<p>这是 Harness 的"内存子系统"，也是 Claude Code 最隐蔽的部分。它做了<strong>三层压缩策略</strong>：</p>
+
+<pre class="lang-flow"><code>Lead Agent (messages[])
+   └─ spawn SubAgent → SubAgent (fresh messages[])
+                          └─ return summary → Lead Agent</code></pre>
+<ol>
+  <li><strong>子智能体隔离</strong>：独立 messages[] 数组，只回传摘要</li>
+  <li><strong>上下文压缩</strong>（src/services/compact/）：自动压缩早期对话</li>
+  <li><strong>任务持久化</strong>（src/tasks/ + src/memdir/）：状态落盘，跨会话恢复</li>
+</ol>
+
+<p><strong>渐进式披露（Progressive Disclosure）</strong>——技能内容分三层：</p>
+<ul>
+  <li><strong>Level 1</strong>：Metadata（触发描述，Agent 首先看到）</li>
+  <li><strong>Level 2</strong>：Body（主体内容，按需加载）</li>
+  <li><strong>Level 3</strong>：References（引用资料，深入时加载）</li>
+</ul>
+
+<h3>2.6 核心组件三：多智能体协调（Multi-Agent Harness）</h3>
+
+<p>Claude Code 支持<strong>六种多智能体架构模式</strong>：</p>
+
+<table>
+  <thead>
+    <tr><th>模式</th><th>适用场景</th><th>通信</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>Pipeline</strong></td><td>顺序依赖任务（设计 → 前端 → 后端 → 测试）</td><td>上一步→下一步</td></tr>
+    <tr><td><strong>Fan-out/Fan-in</strong></td><td>并行独立任务（多维度代码审查）</td><td>分发后聚合</td></tr>
+    <tr><td><strong>Expert Pool</strong></td><td>上下文依赖专业任务</td><td>动态选专家</td></tr>
+    <tr><td><strong>Producer-Reviewer</strong></td><td>生成后验证（内容创作 + 质量审核）</td><td>生产-审核交替</td></tr>
+    <tr><td><strong>Supervisor</strong></td><td>中心化动态调度</td><td>Supervisor 统一调度</td></tr>
+    <tr><td><strong>Hierarchical Delegation</strong></td><td>复杂任务自顶向下递归拆分</td><td>树状层级</td></tr>
+  </tbody>
+</table>
+
+<p><strong>异步通信机制</strong>：基于 JSONL 文件的异步邮箱（Mailbox）、Teammates 持久化、自主任务认领。</p>
+
+<p><strong>Git Worktree 隔离</strong>：</p>
+
+<pre class="lang-flow"><code>main branch:     /project/ (shared)
+                 ├── worktree-task-1/ (agent A's sandbox)
+                 ├── worktree-task-2/ (agent B's sandbox)
+                 └── worktree-task-3/ (agent C's sandbox)</code></pre>
+
+<h3>2.7 核心组件四：权限与 Harness 控制</h3>
+
+<p><strong>权限模式</strong>：</p>
+<ul>
+  <li><code>default</code>：每次工具调用前提示用户审批</li>
+  <li><code>plan</code>：规划阶段只读，执行阶段需审批</li>
+  <li><code>auto</code>：自动批准低风险操作，高风险仍需审批</li>
+  <li><code>bypassPermissions</code>：跳过所有权限检查（沙箱环境）</li>
+</ul>
+
+<p><strong>Anthropic 提出的 Plan-Execute-Verify (PEV) 闭环</strong>：</p>
+<ul>
+  <li><strong>Plan as Contract</strong>：规划不仅是步骤分解，而是明确文件范围、预期不变量、验证命令、回滚点的契约</li>
+  <li><strong>Sandboxed Execution</strong>：在隔离的文件系统、运行时与权限边界中执行（Daytona、E2B、OpenHands）</li>
+  <li><strong>Permissioned State Transition</strong>：多层级权限模型（只读 → 沙箱编辑 → 完全访问），高风险操作需 HITL</li>
+  <li><strong>Deterministic Verification</strong>：通过 Linter、测试、静态分析、运行时监控等确定性传感器验证</li>
+</ul>
+
+<h3>2.8 Anthropic 官方 Harness：三个关键设计模式</h3>
+
+<p>2026 年初 Anthropic 发布的 <strong>Claude Managed Agents</strong>，把 Harness 从概念变成产品。多家团队实测：开发速度提升 10 倍，从构思到交付只用了数周。</p>
+
+<p>开发者定义任务 / 工具 / 护栏，Anthropic 基础设施负责运行，内置编排 Harness 统一调度四大核心能力。</p>
+
+<figure class="diagram-figure">
+<svg viewBox="0 55 740 450" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Claude Managed Agents 整体架构示意图">
+  <defs>
+    <linearGradient id="hubGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a73e8"/>
+      <stop offset="100%" stop-color="#6f42c1"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 上：生产级 Agent -->
+  <rect x="240" y="72" width="260" height="100" rx="10"
+        fill="var(--code-bg)" stroke="var(--ok-border)" stroke-width="2"/>
+  <text x="370" y="100" text-anchor="middle" font-size="15" font-weight="700" fill="var(--fg)">
+    🛡️ 生产级 Agent
+  </text>
+  <text x="370" y="123" text-anchor="middle" font-size="11" fill="var(--muted)">
+    安全沙箱 · 身份验证 · 工具执行
+  </text>
+  <text x="370" y="142" text-anchor="middle" font-size="11" fill="var(--muted)">
+    平台全部接管 · 开发者免自建
+  </text>
+  <text x="370" y="160" text-anchor="middle" font-size="11" fill="var(--muted)">
+    节省数月基础设施投入
+  </text>
+
+  <!-- 右：长运行会话 -->
+  <rect x="520" y="225" width="210" height="100" rx="10"
+        fill="var(--code-bg)" stroke="var(--ok-border)" stroke-width="2"/>
+  <text x="625" y="253" text-anchor="middle" font-size="15" font-weight="700" fill="var(--fg)">
+    ⏰ 长运行会话
+  </text>
+  <text x="625" y="276" text-anchor="middle" font-size="11" fill="var(--muted)">
+    进度持久化 · 不丢状态
+  </text>
+  <text x="625" y="295" text-anchor="middle" font-size="11" fill="var(--muted)">
+    数小时自主运行
+  </text>
+  <text x="625" y="313" text-anchor="middle" font-size="11" fill="var(--muted)">
+    连接断开可恢复
+  </text>
+
+  <!-- 下：多 Agent 协调 -->
+  <rect x="240" y="380" width="260" height="100" rx="10"
+        fill="var(--code-bg)" stroke="var(--ok-border)" stroke-width="2"/>
+  <text x="370" y="408" text-anchor="middle" font-size="15" font-weight="700" fill="var(--fg)">
+    🤝 多 Agent 协调
+  </text>
+  <text x="370" y="431" text-anchor="middle" font-size="11" fill="var(--muted)">
+    主 Agent 派生子 Agent
+  </text>
+  <text x="370" y="450" text-anchor="middle" font-size="11" fill="var(--muted)">
+    并行处理 · 汇总结果
+  </text>
+  <text x="370" y="468" text-anchor="middle" font-size="11" fill="var(--muted)">
+    远超几分钟的简单请求
+  </text>
+
+  <!-- 左：可信治理 -->
+  <rect x="10" y="225" width="210" height="100" rx="10"
+        fill="var(--code-bg)" stroke="var(--ok-border)" stroke-width="2"/>
+  <text x="115" y="253" text-anchor="middle" font-size="15" font-weight="700" fill="var(--fg)">
+    🔒 可信治理
+  </text>
+  <text x="115" y="276" text-anchor="middle" font-size="11" fill="var(--muted)">
+    作用域权限 · 身份管理
+  </text>
+  <text x="115" y="295" text-anchor="middle" font-size="11" fill="var(--muted)">
+    执行追踪内置
+  </text>
+  <text x="115" y="313" text-anchor="middle" font-size="11" fill="var(--muted)">
+    防 Agent 越权访问
+  </text>
+
+  <!-- 中央 Hub（Anthropic 全托管编排 Harness） -->
+  <rect x="245" y="205" width="250" height="140" rx="14"
+        fill="url(#hubGrad)" stroke="var(--link)" stroke-width="2"/>
+  <text x="370" y="240" text-anchor="middle" font-size="17" font-weight="700" fill="#fff">
+    Claude Managed Agents
+  </text>
+  <text x="370" y="262" text-anchor="middle" font-size="12" fill="#fff" opacity="0.95">
+    内置编排 Harness
+  </text>
+  <text x="370" y="283" text-anchor="middle" font-size="11" fill="#fff" opacity="0.88">
+    · 决定何时调用工具
+  </text>
+  <text x="370" y="300" text-anchor="middle" font-size="11" fill="#fff" opacity="0.88">
+    · 管理上下文与错误恢复
+  </text>
+  <text x="370" y="324" text-anchor="middle" font-size="11" font-weight="600" fill="#fff" opacity="0.92">
+    (Anthropic 全托管)
+  </text>
+
+  <!-- 四向连接线 -->
+  <line x1="370" y1="172" x2="370" y2="205" stroke="var(--muted)" stroke-width="1.5" opacity="0.6"/>
+  <line x1="520" y1="275" x2="495" y2="275" stroke="var(--muted)" stroke-width="1.5" opacity="0.6"/>
+  <line x1="370" y1="345" x2="370" y2="380" stroke="var(--muted)" stroke-width="1.5" opacity="0.6"/>
+  <line x1="245" y1="275" x2="220" y2="275" stroke="var(--muted)" stroke-width="1.5" opacity="0.6"/>
+</svg>
+</figure>
+
+<p>Anthropic 在 Harness 设计上留下三个关键模式：</p>
+
+<p><strong>模式一：使用 Claude 已知的工具</strong></p>
+<ul>
+  <li>SWE-bench Verified：Claude 仅用 <strong>2 个工具（bash + 文本编辑器）</strong> 就达到 49%</li>
+  <li>bash 虽非为 Agent 设计，但 Claude 深度理解并会随模型迭代改进使用能力</li>
+  <li><strong>核心理念</strong>：提供 Claude 已精通的通用工具，让它自己组合出解决方案</li>
+</ul>
+
+<p><strong>模式二：让 Claude 自主决策</strong></p>
+<ul>
+  <li>挑战假设：每个工具结果都必须通过上下文窗口</li>
+  <li>解法：给 Claude 一个代码执行工具，让 Claude 自己编写代码表达工具调用逻辑</li>
+  <li><strong>BrowseComp 基准（Opus 4.6）</strong>：让模型过滤自己工具输出，准确率 <strong>45.3% → 61.6%</strong></li>
+  <li><strong>编排决策从 harness 转移到模型本身</strong></li>
+</ul>
+
+<p><strong>模式三：谨慎设置边界</strong></p>
+<ul>
+  <li>把命令字符串提升为<strong>专用工具</strong>，可以拦截、控制、渲染、审计</li>
+  <li>可逆性是好标准：难以逆转操作（外部 API）需用户确认</li>
+  <li>写入工具可包含<strong>过期检查</strong>（防止覆盖自上次读取以来已更改的文件）</li>
+</ul>
+
+<h3>2.9 技术栈（性能优化的工程细节）</h3>
+
+<table>
+  <thead>
+    <tr><th>类别</th><th>技术</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>运行时</td><td>Bun（支持 bun:bundle 死代码消除）</td></tr>
+    <tr><td>语言</td><td>TypeScript (strict)</td></tr>
+    <tr><td>终端 UI</td><td>React + Ink（140+ 组件）</td></tr>
+    <tr><td>CLI</td><td>Commander.js</td></tr>
+    <tr><td>Schema 验证</td><td>Zod v4</td></tr>
+    <tr><td>代码搜索</td><td>ripgrep</td></tr>
+    <tr><td>外部协议</td><td>MCP SDK, LSP</td></tr>
+    <tr><td>遥测</td><td>OpenTelemetry + gRPC</td></tr>
+    <tr><td>特性标志</td><td>GrowthBook</td></tr>
+    <tr><td>认证</td><td>OAuth 2.0, JWT, Keychain</td></tr>
+  </tbody>
+</table>
+
+<p><strong>并行预取启动</strong>：main.tsx 模块求值前并发启动 MDM / Keychain / GrowthBook / API 预连接。</p>
+
+<hr>
+
+<h2>三、Claude Code 的 Harness Engineering 实践：能照搬什么</h2>
+
+<p>理论讲完了，聊聊怎么用上。下面三个真实案例和一份路线图，覆盖从原型到生产的完整闭环。</p>
+
+<h3>3.1 Karpathy Autoresearch 复现：让模型自己调优 Harness</h3>
+
+<blockquote>"我做了一个很好玩的事情，让模型给自己迭代一个上下文管理的 plugin 插件……任务通过率从 60% 飙到 80%。最后最佳的方案，仅仅是一行不到 50 个字符的 prompt hooks 注入。"
+</blockquote>
+
+<p>这个实验用 <strong>MiniMax M3</strong>（全新 MSA 注意力机制，1M 上下文，推理速度比 Flash-Sparse-Attention、FlashMoBA 快 <strong>4 倍以上</strong>）自迭代 20 个方案变体、跑 25 轮 10-case 串联评测。</p>
+
+<p><strong>关键发现</strong>：</p>
+<ul>
+  <li>baseline：M3 在 swebench-lite 10 任务上通过率 <strong>60%</strong>，641K tokens</li>
+  <li>v1：直觉式压缩 → 通过率到 80%，<strong>但 token 反而涨 11.7%</strong>（架构上 PostToolUse hook 只能追加 systemMessage，不是真压缩）</li>
+  <li><strong>v19 突破</strong>：仅一行代码</li>
+</ul>
+
+<pre class="code"><code>ctx = f"Task #{n+1}. Memory: {mem_count} tool outputs saved."</code></pre>
+
+<p>通过率 80%，token 643K（基准 641K），额外开销 <strong>0.3%</strong></p>
+
+<table>
+  <thead>
+    <tr><th>方案</th><th>通过率</th><th>Token 增量</th><th>做法</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>v9</td><td>80%</td><td>+17.6%</td><td>注入 500 字符历史摘要</td></tr>
+    <tr><td><strong>v19</strong></td><td><strong>80%</strong></td><td><strong>+0.3%</strong></td><td>一行 memory count 提示</td></tr>
+  </tbody>
+</table>
+
+<blockquote>M3 自己的解释：<strong>"Agent 不缺记忆，缺的是知道自己有记忆。"</strong>
+</blockquote>
+
+<p><strong>飞轮效应</strong>："模型越强 → 越能理解 Harness 设计空间 → 自己找到更好的 Harness → 更好的 Harness 又让它表现更强。"</p>
+
+<h3>3.2 阿里集团实战：AI 代码率从 24.86% 到 90.54%</h3>
+
+<p>阿里集团工程师在真实企业级 Java 应用（10 万+ 行，Java 1.8 / Spring Boot / LiteFlow / HSF / Diamond / Tair）中落地 Harness：</p>
+
+<p><strong>核心数据</strong>（前后对比）：</p>
+
+<table>
+  <thead>
+    <tr><th>维度</th><th>无 Harness</th><th>有 Harness</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>项目 AI 代码率</td><td><strong>24.86%</strong></td><td><strong>90.54%</strong></td></tr>
+    <tr><td>个人 AI 代码率</td><td>14.24%</td><td>87.85%</td></tr>
+  </tbody>
+</table>
+
+<p><strong>四要素架构</strong>（.harness/ 目录作为物理载体）：</p>
+
+<pre class="lang-flow"><code>.harness/
+├── agents/          # Agent 角色定义（Application Owner）
+├── rules/           # 规则体系（工程结构 / 开发流程 / 编码规范）
+├── skills/          # 技能体系（9 个 Skill）
+│   ├── request-analysis/      # 需求分析
+│   ├── coding-skill/          # 编码实现（含 8 份分层 Spec）
+│   ├── expert-reviewer/       # 专家评审
+│   ├── unit-test-write/       # 单元测试编写
+│   ├── unit-test-ci/          # CI 流水线验证
+│   ├── deploy-verify/         # 部署验证
+│   ├── code-review/           # 代码检查
+│   ├── project-analysis/      # 项目分析
+│   └── aone-ci-generate/      # CI 配置生成
+├── changes/         # 变更管理（每个需求独立目录）
+└── mcp/             # 外部工具集成配置</code></pre>
+
+<p><strong>上下文三层架构</strong>：</p>
+<ul>
+  <li><strong>L1 会话常驻层</strong>：Agent 定义 + 3 Rules（总量严格控制，40% 以下填充）</li>
+  <li><strong>L2 阶段触发层</strong>：按阶段加载对应 Skill</li>
+  <li><strong>L3 按需查询层</strong>：Wiki 不主动加载，Agent 自主查阅</li>
+</ul>
+
+<p><strong>十阶段开发流程</strong>：</p>
+
+<pre class="lang-flow"><code>需求分析 → 需求评审 → 编码实现 → 编码评审 → 单元测试编写
+    → 单元测试评审 → 代码推送 → CI 验证 → 部署验证 → 用户确认</code></pre>
+<ul>
+  <li>每阶段三要素：<strong>触发条件 / Skill 加载 / 质量门禁</strong></li>
+  <li><strong>精确回退路径</strong>：CI 0/0 → 回阶段 5；编译错 → 回阶段 3</li>
+  <li><strong>评审循环上限</strong>：需求评审最多 3 轮，编码/测试最多 2 轮</li>
+  <li><strong>5 个 Human-in-the-Loop 确认点</strong></li>
+</ul>
+
+<p><strong>五条关键经验</strong>：</p>
+<ol>
+  <li><strong>Harness 本身需要 Dry Run</strong>：用虚拟需求走完全流程，发现 4 个关键缺陷</li>
+  <li><strong>质量门禁必须可程序化验证</strong>："If it can't be mechanically enforced, the agent will drift"
+    <ul>
+      <li>错误示例："检查 CI 是否通过"（SUCCESS 但测试 0/0 也会通过）</li>
+      <li>正确示例：<code>status == SUCCESS &amp;&amp; total_tests > 0 &amp;&amp; passed == total</code></li>
+    </ul>
+  </li>
+  <li><strong>分离执行与评判是关键杠杆</strong>：评审 Agent 发现编码 Agent 遗漏的渠道判断逻辑（潜在线上故障）</li>
+  <li><strong>流程一致性优先于流程效率</strong>：2 个文件 6 行代码的小需求也走完 10 阶段</li>
+  <li><strong>规范是活文档</strong>：每条规则对应一个历史失败案例</li>
+</ol>
+
+<h3>3.3 玩转 Harness 翻车清单：哪些是必须，哪里会翻车</h3>
+
+<p>一位工程师在阶跃星辰 Step Plan 上用多个模型做了对照实验，核心问题是：<strong>同一套 Harness 配上不同模型，效果差距有多大？哪些 Harness 组件是必须的？</strong></p>
+
+<p>实验用 hero-coding 框架（约 400 行 Go 代码）跑简单、中等、困难三类任务，测试了 step-3.5-flash 和 step-3.5-flash-2603（Agent 强化版）。</p>
+
+<p><strong>核心发现</strong>：</p>
+<ul>
+  <li>简单和中等任务两个模型都能过，但困难任务（从零实现多范围解析器，12 条验收标准）——<strong>裸跑都失败</strong>。flash 跑了 267 次工具调用撞墙放弃，实际上它<strong>已经写对了代码</strong>，但不知道自己写对了，继续改直到超时。</li>
+  <li>加了两个简单护栏后——<strong>工具调用上限（80 次）</strong>防止死循环，<strong>auto-rescue commit</strong>（worker 被 kill 前自动 commit）防止成果丢失——flash 直接 <strong>151 秒通过</strong>。但 Agent 强化版的 2603 反而失败，因为它的"谨慎"让每步验证就把额度用完了。</li>
+  <li>把 2603 切到 <strong>low 推理模式</strong>，输出更短更聚焦，反而一轮通过、全场最快。好的 feedback 替代了内部推理——代码有 bug 不需要模型自己推理，harness 直接告诉它。</li>
+</ul>
+
+<div class="callout warn">
+<div class="callout-title">&#9888;&#65039; 坑 2 · "Scaffolding is coping, not scaling"</div>
+OpenAI 这句话原意是"脚手架只是应对，不是规模化的解"。但 2603 恰好反过来——<strong>内化了太多 scaffolding 行为</strong>，在有限 budget 下反而丧失效率。Harness 不需要什么高端 trick，<strong>观察模型行为，补充让轨迹正确的操作</strong>就够了。
+</div>
+
+<p>另外，用路由模型做"脑手分工"——强模型负责思考统筹，小模型负责快速执行——<strong>耗时减半，token 消耗降到 1/3</strong>。Scale AI 的数据也印证：Harness 对 SWE-bench 贡献 5-15 个百分点，且越来越集中在"模型无法自己做到的事"——物理约束和确定性验证。</p>
+
+<blockquote>"<strong>Harness 不是模型的拐杖，是模型的杠杆</strong>。"</blockquote>
+
+<h3>3.4 10 步从零构建 Harness 路线图</h3>
+
+<p>适合大多数 Agent 项目的构建顺序：</p>
+
+<p><strong>从原型到生产 · 阶段式渐进落地。</strong>分四阶段 10 步，第 10 步飞轮回到第 1 步。先跑通最小闭环，再规模化。</p>
+
+<figure class="diagram-figure">
+<svg viewBox="0 55 820 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="10 步从零构建 Harness 路线图">
+  <defs>
+    <marker id="arrow-blue" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1a73e8"/>
+    </marker>
+    <marker id="arrow-orange" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#ff9800"/>
+    </marker>
+  </defs>
+
+  <!-- ========= 阶段一 · 基础搭建 (Steps 1-4) ========= -->
+  <rect x="20" y="75" width="90" height="115" rx="6" fill="#1a73e8" opacity="0.92"/>
+  <text x="65" y="100" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">阶段一</text>
+  <text x="65" y="123" text-anchor="middle" font-size="16" font-weight="700" fill="#fff">基础</text>
+  <text x="65" y="146" text-anchor="middle" font-size="10" fill="#fff" opacity="0.92">Steps 1-4</text>
+  <text x="65" y="172" text-anchor="middle" font-size="11" fill="#fff" opacity="0.95">搭骨架</text>
+
+  <!-- Step 1 -->
+  <rect x="125" y="85" width="155" height="95" rx="6" fill="var(--code-bg)" stroke="var(--link)" stroke-width="1.5"/>
+  <circle cx="148" cy="108" r="14" fill="var(--link)"/>
+  <text x="148" y="113" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">1</text>
+  <text x="200" y="113" text-anchor="middle" font-size="14" font-weight="700" fill="var(--fg)">定义目标</text>
+  <text x="200" y="142" text-anchor="middle" font-size="11" fill="var(--muted)">任务 / 禁止 / 标准</text>
+  <text x="200" y="161" text-anchor="middle" font-size="10" fill="var(--muted)">输出 Agent 规格文档</text>
+
+  <line x1="282" y1="132" x2="302" y2="132" stroke="var(--link)" stroke-width="2" marker-end="url(#arrow-blue)"/>
+
+  <!-- Step 2 -->
+  <rect x="305" y="85" width="155" height="95" rx="6" fill="var(--code-bg)" stroke="var(--link)" stroke-width="1.5"/>
+  <circle cx="328" cy="108" r="14" fill="var(--link)"/>
+  <text x="328" y="113" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">2</text>
+  <text x="380" y="113" text-anchor="middle" font-size="14" font-weight="700" fill="var(--fg)">设计工具集</text>
+  <text x="380" y="142" text-anchor="middle" font-size="11" fill="var(--muted)">原子 + Shell 后备</text>
+  <text x="380" y="161" text-anchor="middle" font-size="10" fill="var(--muted)">先 3-5 个核心</text>
+
+  <line x1="462" y1="132" x2="482" y2="132" stroke="var(--link)" stroke-width="2" marker-end="url(#arrow-blue)"/>
+
+  <!-- Step 3 -->
+  <rect x="485" y="85" width="155" height="95" rx="6" fill="var(--code-bg)" stroke="var(--link)" stroke-width="1.5"/>
+  <circle cx="508" cy="108" r="14" fill="var(--link)"/>
+  <text x="508" y="113" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">3</text>
+  <text x="560" y="113" text-anchor="middle" font-size="14" font-weight="700" fill="var(--fg)">上下文策略</text>
+  <text x="560" y="142" text-anchor="middle" font-size="11" fill="var(--muted)">渐进式披露</text>
+  <text x="560" y="161" text-anchor="middle" font-size="10" fill="var(--muted)">输出卸载 + 缓存</text>
+
+  <line x1="642" y1="132" x2="662" y2="132" stroke="var(--link)" stroke-width="2" marker-end="url(#arrow-blue)"/>
+
+  <!-- Step 4 -->
+  <rect x="665" y="85" width="135" height="95" rx="6" fill="var(--code-bg)" stroke="var(--link)" stroke-width="1.5"/>
+  <circle cx="688" cy="108" r="14" fill="var(--link)"/>
+  <text x="688" y="113" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">4</text>
+  <text x="740" y="113" text-anchor="middle" font-size="14" font-weight="700" fill="var(--fg)">状态管理</text>
+  <text x="740" y="142" text-anchor="middle" font-size="11" fill="var(--muted)">短 / 中 / 长期</text>
+  <text x="740" y="161" text-anchor="middle" font-size="10" fill="var(--muted)">三层记忆</text>
+
+  <!-- 阶段 1 → 2 过渡（斜向左下） -->
+  <path d="M 740 180 C 570 195, 370 210, 235 220"
+        fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrow-blue)"/>
+
+  <!-- ========= 阶段二 · 可靠性 (Steps 5-6) ========= -->
+  <rect x="20" y="220" width="90" height="90" rx="6" fill="#1a73e8" opacity="0.88"/>
+  <text x="65" y="244" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">阶段二</text>
+  <text x="65" y="267" text-anchor="middle" font-size="16" font-weight="700" fill="#fff">可靠</text>
+  <text x="65" y="289" text-anchor="middle" font-size="10" fill="#fff" opacity="0.92">Steps 5-6</text>
+  <text x="65" y="304" text-anchor="middle" font-size="11" fill="#fff" opacity="0.95">加护栏</text>
+
+  <!-- Step 5 -->
+  <rect x="125" y="230" width="220" height="95" rx="6" fill="var(--code-bg)" stroke="var(--link)" stroke-width="1.5"/>
+  <circle cx="148" cy="253" r="14" fill="var(--link)"/>
+  <text x="148" y="258" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">5</text>
+  <text x="235" y="253" text-anchor="middle" font-size="14" font-weight="700" fill="var(--fg)">配置安全护栏</text>
+  <text x="235" y="282" text-anchor="middle" font-size="11" fill="var(--muted)">命令白名单 + 目录黑名单</text>
+  <text x="235" y="301" text-anchor="middle" font-size="10" fill="var(--muted)">破坏性操作人工确认</text>
+
+  <line x1="347" y1="277" x2="367" y2="277" stroke="var(--link)" stroke-width="2" marker-end="url(#arrow-blue)"/>
+
+  <!-- Step 6 -->
+  <rect x="370" y="230" width="220" height="95" rx="6" fill="var(--code-bg)" stroke="var(--link)" stroke-width="1.5"/>
+  <circle cx="393" cy="253" r="14" fill="var(--link)"/>
+  <text x="393" y="258" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">6</text>
+  <text x="480" y="253" text-anchor="middle" font-size="14" font-weight="700" fill="var(--fg)">搭建验证循环</text>
+  <text x="480" y="282" text-anchor="middle" font-size="11" fill="var(--muted)">计算型 + 推理型 (LLM Judge)</text>
+  <text x="480" y="301" text-anchor="middle" font-size="10" fill="var(--muted)">优先用计算型</text>
+
+  <!-- 阶段 2 → 3 过渡 -->
+  <line x1="480" y1="325" x2="480" y2="360" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrow-blue)"/>
+
+  <!-- ========= 阶段三 · 生产运行 (Steps 7-9) ========= -->
+  <rect x="20" y="365" width="90" height="115" rx="6" fill="#1a73e8" opacity="0.88"/>
+  <text x="65" y="389" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">阶段三</text>
+  <text x="65" y="412" text-anchor="middle" font-size="16" font-weight="700" fill="#fff">运行</text>
+  <text x="65" y="434" text-anchor="middle" font-size="10" fill="#fff" opacity="0.92">Steps 7-9</text>
+  <text x="65" y="461" text-anchor="middle" font-size="11" fill="#fff" opacity="0.95">上生产</text>
+
+  <!-- Step 7 -->
+  <rect x="125" y="375" width="220" height="95" rx="6" fill="var(--code-bg)" stroke="var(--link)" stroke-width="1.5"/>
+  <circle cx="148" cy="398" r="14" fill="var(--link)"/>
+  <text x="148" y="403" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">7</text>
+  <text x="235" y="398" text-anchor="middle" font-size="14" font-weight="700" fill="var(--fg)">部署可观测性</text>
+  <text x="235" y="427" text-anchor="middle" font-size="11" fill="var(--muted)">Langfuse 5 分钟接入</text>
+  <text x="235" y="446" text-anchor="middle" font-size="10" fill="var(--muted)">先 Trace · 再 Metrics · 再 Logs</text>
+
+  <line x1="347" y1="422" x2="367" y2="422" stroke="var(--link)" stroke-width="2" marker-end="url(#arrow-blue)"/>
+
+  <!-- Step 8 -->
+  <rect x="370" y="375" width="220" height="95" rx="6" fill="var(--code-bg)" stroke="var(--link)" stroke-width="1.5"/>
+  <circle cx="393" cy="398" r="14" fill="var(--link)"/>
+  <text x="393" y="403" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">8</text>
+  <text x="480" y="398" text-anchor="middle" font-size="14" font-weight="700" fill="var(--fg)">实现长程执行</text>
+  <text x="480" y="427" text-anchor="middle" font-size="11" fill="var(--muted)">Ralph Loop</text>
+  <text x="480" y="446" text-anchor="middle" font-size="10" fill="var(--muted)">干净上下文 + 从文件读状态</text>
+
+  <line x1="592" y1="422" x2="612" y2="422" stroke="var(--link)" stroke-width="2" marker-end="url(#arrow-blue)"/>
+
+  <!-- Step 9 -->
+  <rect x="615" y="375" width="185" height="95" rx="6" fill="var(--code-bg)" stroke="var(--link)" stroke-width="1.5"/>
+  <circle cx="638" cy="398" r="14" fill="var(--link)"/>
+  <text x="638" y="403" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">9</text>
+  <text x="715" y="398" text-anchor="middle" font-size="14" font-weight="700" fill="var(--fg)">优化成本</text>
+  <text x="715" y="427" text-anchor="middle" font-size="11" fill="var(--muted)">模型路由 + 缓存</text>
+  <text x="715" y="446" text-anchor="middle" font-size="10" fill="var(--muted)">子 Agent 隔离</text>
+
+  <!-- 阶段 3 → 4 过渡（斜向左下） -->
+  <path d="M 740 470 C 600 485, 450 500, 350 510"
+        fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrow-orange)"/>
+
+  <!-- ========= 阶段四 · 持续闭环 (Step 10) ========= -->
+  <rect x="20" y="510" width="90" height="80" rx="6" fill="#ff9800" opacity="0.92"/>
+  <text x="65" y="535" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">阶段四</text>
+  <text x="65" y="558" text-anchor="middle" font-size="16" font-weight="700" fill="#fff">持续</text>
+  <text x="65" y="580" text-anchor="middle" font-size="10" fill="#fff" opacity="0.92">Step 10</text>
+
+  <!-- Step 10 (高亮，胶囊形) -->
+  <rect x="125" y="520" width="450" height="60" rx="30" fill="#ff9800" fill-opacity="0.15" stroke="#ff9800" stroke-width="2"/>
+  <circle cx="148" cy="550" r="14" fill="#ff9800"/>
+  <text x="148" y="555" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">10</text>
+  <text x="190" y="548" font-size="15" font-weight="700" fill="var(--fg)">持续迭代</text>
+  <text x="440" y="544" text-anchor="middle" font-size="12" fill="var(--fg)">评估 → 改进 → 重新评估</text>
+  <text x="440" y="566" text-anchor="middle" font-size="10" fill="var(--muted)">改进记录在 AGENTS.md</text>
+
+  <!-- 飞轮回路：Step 10 → Step 1 -->
+  <path d="M 575 550 Q 770 550, 770 280 Q 770 132, 280 132"
+        fill="none" stroke="#ff9800" stroke-width="2.5"
+        stroke-dasharray="6 4" marker-end="url(#arrow-orange)"/>
+  <text x="775" y="320" font-size="11" font-weight="700" fill="#ff9800">飞轮</text>
+  <text x="775" y="335" font-size="10" fill="#ff9800">→ Step 1</text>
+</svg>
+</figure>
+
+<h3>3.5 常见失败模式速查表（可贴墙上）</h3>
+
+<table>
+  <thead>
+    <tr><th>失败模式</th><th>表现</th><th>缓解</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>完成幻觉</strong></td><td>报告完成但实际未完成</td><td>Feature List 要求 passes 标准 + 强制运行验证</td></tr>
+    <tr><td><strong>上下文腐烂</strong></td><td>20-30 分钟后给矛盾答案</td><td>60% 触发 Compaction；每次迭代重新注入任务</td></tr>
+    <tr><td><strong>过早停止</strong></td><td>任务未完就停下</td><td>Ralph Loop 拦截退出 + "测试全过才停"</td></tr>
+    <tr><td><strong>级联错误</strong></td><td>第一步错导致后续全错</td><td>关键步骤后验证门禁；任务拆小</td></tr>
+    <tr><td><strong>上下文溢出</strong></td><td>Context length exceeded</td><td>工具输出卸载、子 Agent 隔离</td></tr>
+    <tr><td><strong>工具误用</strong></td><td>参数错、用了不该用的工具</td><td>改善工具描述、参数验证、使用示例</td></tr>
+    <tr><td><strong>跨会话失忆</strong></td><td>新会话重复已完成工作</td><td>强制读 progress.txt</td></tr>
+    <tr><td><strong>范围蔓延</strong></td><td>做额外"改进"</td><td>AGENTS.md 明确边界；Feature List 划定</td></tr>
+  </tbody>
+</table>
+
+<h3>3.6 Harness 设计 Checklist（生产前必过）</h3>
+
+<pre class="code"><code>□ 目标与边界  任务可验证 / 禁止操作已定义 / 成功标准可计算
+□ 工具设计    覆盖核心场景 / Shell 后备 / 沙箱化
+□ 上下文管理  渐进式披露 / 工具输出卸载 / Prompt 缓存
+□ 状态管理    Progress File / Git 集成
+□ 安全护栏    命令白名单 / 审批门禁 / 敏感路径限制
+□ 验证循环    自动测试每次修改后运行 / 通过是下一步前提
+□ 可观测性    Trace 接入 / 成本追踪 / 预算告警
+□ 成本控制    模型路由 / 缓存 / 预算硬顶</code></pre>
+
+<h3>3.7 工程师新三大技能</h3>
+
+<p>工程师面向 Agent 时代最需要的三项新能力：</p>
+<ol>
+  <li><strong>约束工程（Constraint Engineering）</strong>：不是告诉 Agent 做什么，而是设计它不能做什么</li>
+  <li><strong>评估设计（Evaluation Design）</strong>：定义"什么叫做对了"——可计算的成功标准、测试套件、LLM Judge 的评估维度</li>
+  <li><strong>反馈循环设计（Feedback Loop Design）</strong>：可观测性 + 评估 → 知道下一步改什么、怎么改、改了有没有用</li>
+</ol>
+
+<blockquote>"<strong>这三个技能和'写好代码'的能力是互补的，不是替代。Harness 设计越好，Agent 能做的事就越多；Agent 能力越强，Harness 设计者的杠杆就越大。</strong>"
+</blockquote>
+
+<hr>
+
+<h2>写在最后</h2>
+
+<p>Harness 工程化记住三件事：<strong>模型之外的一切才真正决定 Agent 生产质量</strong>——一个 70 分的模型配上精心设计的 Harness，能稳定完成复杂生产任务，95 分的模型没有 Harness 在真实工作流里依然脆弱；<strong>评估是 Harness 改进的引擎</strong>，没有评估的改进是猜测；<strong>从可运行到可生产，核心是工程纪律</strong>——Harness Engineering 不是新魔法，是把测试、可观测性、故障隔离、持续改进这些软件工程基本原则应用到 AI Agent 这个新执行环境上。投资 Harness 基础设施是最高 ROI 的决策，模型在快速变化，Harness 的价值只会增加。</p>
+
+<p>AI 编码的兴起没有取代软件工程的工艺——它抬高了工艺的门槛。<strong>未来的工程竞争力不再取决于谁的 Prompt 写得更好，而是谁的 Harness 设计得更精密、更可靠、更具可演化性。开发者的核心竞争力正在从"写代码"转向"设计 Agent 的工作环境"。</strong></p>
+
+<h2>一句话备忘</h2>
+
+<p><strong>Harness Engineering 之于 AI Agent，正如 DevOps 之于软件部署。</strong></p>
+<p>Agent 现在面临的问题——上下文腐烂、工具误用、成本失控、安全漏洞、跨会话失忆——不是模型的问题，是 Harness 的问题。把工程精力从"试图编程智能"转向"为智能构建世界"，是 2026 年每一个工程师最值得做的一次转身。</p>
+
+<hr>
+<p class="breadcrumb">← 回到 <a href="#top">本讲网页顶部</a> · <a href="index.html">课程目录</a></p>
+</main>
+<script>
+  (function () {
+    var STORAGE_KEY = "***";
+    var root = document.documentElement;
+    var btn  = document.getElementById("themeToggle");
+    var icon = document.getElementById("themeIcon");
+    var lbl  = document.getElementById("themeLabel");
+    function apply(theme) {
+      root.setAttribute("data-theme", theme);
+      if (theme === "dark") {
+        icon.innerHTML = "&#9728;&#65039;";
+        lbl.textContent  = "亮色";
+      } else {
+        icon.innerHTML = "&#127769;";
+        lbl.textContent  = "暗色";
+      }
+    }
+    var saved = null;
+    try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    if (saved === "light" || saved === "dark") {
+      apply(saved);
+    } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      apply("dark");
+    } else {
+      apply("light");
+    }
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") || "light";
+      var next = cur === "dark" ? "light" : "dark";
+      apply(next);
+      try { localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>
