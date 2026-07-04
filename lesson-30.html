@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 30 讲 · 团队落地路线图 · 把 Claude Code 用到你的项目里</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fff;
+    --fg: #222;
+    --muted: #555;
+    --link: #1a73e8;
+    --code-bg: #f4f4f4;
+    --code-fg: inherit;
+    --pre-bg: #1e1e1e;
+    --pre-fg: #eaeaea;
+    --border: #ddd;
+    --th-bg: #f5f5f5;
+    --zebra: #fafafa;
+    --hover-row: #e8f0fe;
+    --hover-th: #eef2f7;
+    --blockquote-bg: #fafafa;
+    --blockquote-border: #ddd;
+    --hr: #eee;
+    --toggle-bg: #f5f5f5;
+    --toggle-fg: #333;
+    --toggle-border: #ddd;
+    --tag-bg: #eef4ff;
+    --tag-fg: #1a73e8;
+    --callout-bg: #fffbe6;
+    --callout-border: #fadb14;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1115;
+    --fg: #e6e6e6;
+    --muted: #9aa0a6;
+    --link: #8ab4f8;
+    --code-bg: #1e1f24;
+    --code-fg: #e6e6e6;
+    --pre-bg: #1a1d23;
+    --pre-fg: #e6e6e6;
+    --border: #303136;
+    --th-bg: #1c1f25;
+    --zebra: #16181d;
+    --hover-row: #1f2733;
+    --hover-th: #262c36;
+    --blockquote-bg: #181a20;
+    --blockquote-border: #303136;
+    --hr: #2a2d33;
+    --toggle-bg: #1c1f25;
+    --toggle-fg: #e6e6e6;
+    --toggle-border: #303136;
+    --tag-bg: #1c2740;
+    --tag-fg: #8ab4f8;
+    --callout-bg: #2a2615;
+    --callout-border: #fadb14;
+  }
+  html, body { background: var(--bg); color: var(--fg); }
+  body { font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.7; max-width: 920px; margin: 24px auto; padding: 0 18px; }
+  h1, h2, h3 { color: var(--fg); }
+  h1 { font-size: 28px; margin: .2em 0 .4em; }
+  h2 { font-size: 22px; margin-top: 1.6em; border-bottom: 1px solid var(--hr); padding-bottom: .25em; }
+  h3 { font-size: 18px; margin-top: 1.4em; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  hr { border: none; border-top: 1px solid var(--hr); margin: 2em 0; }
+  code { background: var(--code-bg); color: var(--code-fg); padding: 1px 6px; border-radius: 4px; font-size: 90%; }
+  pre { background: var(--pre-bg); color: var(--pre-fg); padding: 14px 16px; border-radius: 8px; overflow-x: auto; line-height: 1.55; font-size: 13.5px; }
+  pre.lang-flow { background: #f6f8fa; color: #24292f; }
+  :root[data-theme="dark"] pre.lang-flow { background: #16181d; color: #e6e6e6; }
+  pre.lang-flow code { background: transparent; color: inherit; padding: 0; }
+  pre.code code { background: transparent; color: inherit; padding: 0; }
+  blockquote { background: var(--blockquote-bg); border-left: 4px solid var(--blockquote-border); margin: 1em 0; padding: .7em 1em; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; margin: 1em 0; font-size: 14.5px; }
+  th, td { padding: 8px 10px; border: 1px solid var(--border); text-align: left; vertical-align: top; }
+  th { background: var(--th-bg); font-weight: 600; }
+  tbody tr:nth-child(even) td { background: var(--zebra); }
+  tbody tr:hover td { background: var(--hover-row); }
+  th:hover { background: var(--hover-th); }
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    margin-right: 6px;
+    background: var(--tag-bg);
+    color: var(--tag-fg);
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .breadcrumb {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 1em;
+  }
+  .breadcrumb a { color: var(--muted); }
+  .breadcrumb a:hover { color: var(--link); }
+
+  /* 暗色模式切换 */
+  .theme-toggle {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 9999;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--toggle-bg);
+    color: var(--toggle-fg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    user-select: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    transition: background-color .2s ease, transform .1s ease;
+  }
+  .theme-toggle:hover { background: var(--hover-row); }
+  .theme-toggle:active { transform: scale(.97); }
+  .theme-toggle .icon { font-size: 15px; line-height: 1; }
+
+  /* 课程序号大圆点 */
+  .lesson-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1a73e8, #6f42c1);
+    color: #fff;
+    font-size: 24px;
+    font-weight: 700;
+    margin-right: 14px;
+    vertical-align: middle;
+  }
+
+  /* callout */
+  .callout {
+    background: var(--callout-bg);
+    border-left: 4px solid var(--callout-border);
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin: 1.2em 0;
+  }
+  .callout.ok {
+    background: #e6f7ed;
+    border-color: #2ea44f;
+  }
+  :root[data-theme="dark"] .callout.ok { background: #112a1c; }
+  .callout.warn {
+    background: #fff1f0;
+    border-color: #cf222e;
+  }
+  :root[data-theme="dark"] .callout.warn { background: #2a1517; }
+
+  /* pre.code 通用代码块,跟 pre.lang-flow 区别 */
+  pre.code { background: #1e1e1e; color: #eaeaea; }
+  :root[data-theme="dark"] pre.code { background: #16181d; color: #e6e6e6; }
+</style>
+<link rel="stylesheet" href="assets/flow.css">
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="切换暗色模式">
+  <span class="icon" id="themeIcon">&#127769;</span>
+  <span id="themeLabel">暗色</span>
+</button>
+<main>
+<div class="breadcrumb">课程导航： &laquo; <a href="lesson-29.html">第 29 讲</a>  ·  <a href="lesson-31.html">第 31 讲</a> &raquo;</div>
+
+<h1><span class="lesson-badge">30</span>第 30 讲 · 团队落地路线图 · 把 Claude Code 用到你的项目里</h1>
+<p>
+  <span class="tag">实战加餐</span>
+  <span class="tag">第 30 / 33 讲</span>
+  <span class="tag">Claude Code 工程化实战</span>
+  <span class="tag">团队落地</span>
+  <span class="tag">路线图</span>
+</p>
+
+<div class="callout ok">
+<strong>&#128204; 本讲摘要</strong> · 把 Claude Code 从个人玩具变成团队工具再到公司平台、需要 6 个月、4 个阶段、4 类角色。本讲给出一份经过 50 人团队验证的 4 阶段路线图：Week 1 单人探索 → Week 2-4 Skills 库建设 → Month 2-3 Plugins 共享 → Month 4-6 CI/CD 集成。配套 4 类角色（Champion / Steward / Contributor / User）、3 指标（覆盖率 / 使用率 / ROI）、5 大陷阱。学完本讲，你应该能用 1 张路线图说服老板投入 1 个 FTE 来做 Claude Code 团队推广。
+</div>
+
+<h2>1. 路线图总览：6 个月 4 阶段</h2>
+
+<p>先看 4 阶段全景图。每个阶段都有一个明确的退出标准——达到这个标准才进入下一阶段：</p>
+
+<div class="flow-diagram">
+  <div class="flow-note" style="font-size:14px;font-weight:600;color:var(--link);font-style:normal;margin-bottom:10px">🚀 团队落地 4 阶段路线图</div>
+
+  <div class="flow-timeline">
+    <div class="flow-tl-item">
+      <div class="flow-tl-date">Month 0<br>Week 1</div>
+      <div class="flow-step-body">
+        <div class="flow-step-title">单人探索</div>
+        <ul style="margin:4px 0;padding-left:1.4em;font-size:13px">
+          <li>1 个工程师跑通</li>
+          <li>选 1 个真实项目做试点</li>
+          <li>写 1 份种子报告</li>
+        </ul>
+        <div class="flow-note" style="margin-top:4px;font-style:normal;color:var(--ok-border)">退出标准：1 人能日常用 + 1 份 ROI 种子报告</div>
+      </div>
+    </div>
+    <div class="flow-tl-item">
+      <div class="flow-tl-date">Month 1<br>Week 2-4</div>
+      <div class="flow-step-body">
+        <div class="flow-step-title">Skills 库建设</div>
+        <ul style="margin:4px 0;padding-left:1.4em;font-size:13px">
+          <li>5 人小组共建团队 Skills 库</li>
+          <li>团队 CLAUDE.md 模板</li>
+          <li>Onboarding 5-20 人</li>
+        </ul>
+        <div class="flow-note" style="margin-top:4px;font-style:normal;color:var(--ok-border)">退出标准：团队 Skills 库 5+ 个 + 20+ 人能用</div>
+      </div>
+    </div>
+    <div class="flow-tl-item">
+      <div class="flow-tl-date">Month 2-3</div>
+      <div class="flow-step-body">
+        <div class="flow-step-title">Plugins 共享</div>
+        <ul style="margin:4px 0;padding-left:1.4em;font-size:13px">
+          <li>封装 Plugin 推 3 跨团队</li>
+          <li>建内部 Marketplace</li>
+          <li>Champion + Steward 双角色</li>
+        </ul>
+        <div class="flow-note" style="margin-top:4px;font-style:normal;color:var(--ok-border)">退出标准：3 跨团队 + 内部 Marketplace 上线</div>
+      </div>
+    </div>
+    <div class="flow-tl-item">
+      <div class="flow-tl-date">Month 4-6</div>
+      <div class="flow-step-body">
+        <div class="flow-step-title">CI/CD 集成</div>
+        <ul style="margin:4px 0;padding-left:1.4em;font-size:13px">
+          <li>Headless 模式集成 GitHub Actions</li>
+          <li>5 维权限收窄</li>
+          <li>Platform Team 3-5 人承接</li>
+        </ul>
+        <div class="flow-note" style="margin-top:4px;font-style:normal;color:var(--ok-border)">退出标准：80% PR 自动过审查 + 零事故</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p>三个关键原则：</p>
+
+<ul>
+  <li><strong>渐进式</strong>：不跳阶段、每阶段都拿到回报再推进</li>
+  <li><strong>价值驱动</strong>：每一阶段都看 ROI，ROI 不达标就停下复盘</li>
+  <li><strong>自下而上</strong>：从开发者自愿用开始、不是老板下行政命令</li>
+</ul>
+
+<div class="callout warn">
+<strong>&#9888;&#65039; 坑 1</strong> · 一上来就推 100 人用——没有 Skills 库、没有 Plugin 共享、推 100 人用只会收到 100 个反馈、然后团队解散。原则：阶段 1 跑通之前、只跟 1 个工程师合作。
+</div>
+
+<h2>2. Week 1 单人探索：1 工程师跑通</h2>
+
+<p>第 1 周的核心不是教团队用 Claude Code、而是找 1 个工程师深度体验 1 个真实项目。</p>
+
+<p><strong>Day 1-2 · 选项目</strong>。挑项目的标准：</p>
+
+<ol>
+  <li>代码量 5K-50K 行（太小没意义、太大跑不动）</li>
+  <li>有真实业务逻辑（不是 demo / 脚手架）</li>
+  <li>有现成的 CI / lint / 单测（便于评估 Agent 改动质量）</li>
+  <li>工程师本人就是这个项目 owner（避免协作摩擦）</li>
+</ol>
+
+<p><strong>Day 3-5 · 深度用</strong>。这个工程师用 3 天把课程里学到的能力全用一遍：</p>
+
+<ul>
+  <li>第 1 天：用 SubAgent（第 2-9 讲）拆 1 个真实任务</li>
+  <li>第 2 天：用 Skills（第 10-16 讲）写 3 个团队级 Skill</li>
+  <li>第 3 天：用 Hooks（第 17-18 讲）挂 PII 脱敏 + 审计日志</li>
+</ul>
+
+<p><strong>Day 6-7 · 写种子报告</strong>。1 页纸、3 段话：</p>
+
+<p><strong>实战代码块 1 — 种子报告模板</strong>。Week 1 结束时给老板看：</p>
+
+<pre class="code"><code># Claude Code 单人试点 · 种子报告
+
+## 用了什么
+- 项目:[项目名],代码 30K 行,5 个核心模块
+- 期间:Week 1(共 5 个工作日)
+- 用到的能力:SubAgent(分 4 个只读子代理审查)、Skills(3 个团队级 Skill)、Hooks(PII 脱敏 + 审计)
+
+## 拿到了什么
+- 速度:平均任务耗时从 2h → 0.5h(75% 提速)
+- 质量:Agent 生成的代码首次通过率 70%,二次 review 后 95%
+- 体验:1 句话总结 — "比我预期更稳,但首版经常跑偏需要返工"
+
+## 建议
+- 下个月:5 人小组共建团队 Skills 库
+- 投入:5 人 × 20% 时间 = 1 FTE
+- 预期:3 个月内 20+ 人能用,ROI 至少 3×(省下的人工 vs 订阅费)
+</code></pre>
+
+<div class="callout warn">
+<strong>&#9888;&#65039; 坑 2</strong> · 试点工程师没时间写报告——光顾着用、忘了总结。报告是向上要资源的依据，没有报告，推广计划就缺一份说服力强的数据。
+</div>
+
+<h2>3. Week 2-4 Skills 库建设：5 人小组共建</h2>
+
+<p>第 2-4 周、组建 5 人小组、把单人经验沉淀成可复用的团队资产。</p>
+
+<p><strong>5 人角色分工</strong>：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>角色</th>
+      <th>人数</th>
+      <th>职责</th>
+      <th>投入</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Champion（主推手）</td>
+      <td>1 人</td>
+      <td>组织会议、做决策、对上汇报</td>
+      <td>50% 时间</td>
+    </tr>
+    <tr>
+      <td>Skill 作者</td>
+      <td>2 人</td>
+      <td>写 3-5 个团队级 Skill</td>
+      <td>30% 时间</td>
+    </tr>
+    <tr>
+      <td>Hook 工程师</td>
+      <td>1 人</td>
+      <td>设计 PreToolUse / PostToolUse</td>
+      <td>30% 时间</td>
+    </tr>
+    <tr>
+      <td>Onboarding 培训师</td>
+      <td>1 人</td>
+      <td>做团队培训、写 onboarding 文档</td>
+      <td>20% 时间</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>Week 2</strong>：Champion 召集启动会、5 人对齐目标（1 个月内 20+ 人能用、沉淀 5+ 团队 Skills）。</p>
+
+<p><strong>Week 3</strong>：Skill 作者产出 3-5 个团队级 Skill（参考第 11-16 讲）；Hook 工程师产出 1 套 hooks（PII + 审计 + 性能日志）。</p>
+
+<p><strong>Week 4</strong>：Onboarding 培训师给 20+ 人做 2 小时培训、产出 1 份 onboarding 文档 + 1 份团队 CLAUDE.md 模板。</p>
+
+<p><strong>退出标准</strong>：</p>
+
+<ul>
+  <li>团队 Skills 库：5+ 个、描述清晰、触发关键词明确</li>
+  <li>CLAUDE.md 模板：含项目结构 / 常用命令 / 代码规范 / 团队约定</li>
+  <li>Hooks 范本：含 PII 脱敏 + 审计 + 性能监控</li>
+  <li>Onboarding 文档：含 5 分钟上手指南 + 5 个常见任务 demo</li>
+  <li>20+ 人用过并反馈</li>
+</ul>
+
+<div class="callout warn">
+<strong>&#9888;&#65039; 坑 3</strong> · 5 人小组写完 Skills 后没人用——Skill 的发现机制做得不好。建议每个 Skill 的 description 都用 50 词以上、包含具体触发场景（参考第 11 讲）。
+</div>
+
+<h2>4. Month 2-3 Plugins 共享：跨团队 Marketplace</h2>
+
+<p>团队内跑通后、下一步是把团队资产变成跨团队资产。这一步的核心是 <strong>Plugin 化</strong>——把 Skills + Hooks + CLAUDE.md 模板打成 Plugin、可以推给其他团队。</p>
+
+<p><strong>Month 2 · 封装 Plugin</strong>：</p>
+
+<ol>
+  <li>从团队 Skills 库里选 3-5 个最通用的、打成 Plugin</li>
+  <li>每个 Plugin 含 <code>plugin.json</code> + <code>SKILL.md</code> + 必要的 scripts</li>
+  <li>Plugin 走内部 npm 仓库（或者直接用 GitHub 私有仓库）</li>
+  <li>编写 <code>README.md</code>、含安装命令 + 触发示例 + 适用场景</li>
+</ol>
+
+<p><strong>Month 3 · 跨团队推广</strong>：</p>
+
+<ul>
+  <li>选 3 个相邻团队（比如后端 / 前端 / 数据）做试点</li>
+  <li>每个团队配 1 个 Champion 跟 2 周、做现场支持</li>
+  <li>收集反馈、迭代 Plugin</li>
+  <li>建内部 <strong>Marketplace</strong>（一个简单的 GitHub 列表页 / Notion 页面）</li>
+</ul>
+
+<p><strong>Champion + Steward 双角色</strong>：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>角色</th>
+      <th>职责</th>
+      <th>谁做</th>
+      <th>考核指标</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Champion</td>
+      <td>推广、培训、答疑、收集反馈</td>
+      <td>每个团队 1 人、兼职</td>
+      <td>本团队使用率 &gt; 50%</td>
+    </tr>
+    <tr>
+      <td>Steward</td>
+      <td>维护 Plugin、修复 bug、版本管理</td>
+      <td>原始团队 1-2 人、兼职</td>
+      <td>Plugin 月活 &gt; 100 install</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout warn">
+<strong>&#9888;&#65039; 坑 4</strong> · Plugin 推出去就撒手——Champion 必须 1 对 1 跟新团队 2 周、否则他们用不起来就会放弃。我装了但跑不通是最常见的失败原因。
+</div>
+
+<h2>5. Month 4-6 CI/CD 集成：Headless 模式 + 5 维权限</h2>
+
+<p>第 4 阶段是 Claude Code 真正成为基础设施。两个核心动作：</p>
+
+<p><strong>5.1 Headless 模式集成 GitHub Actions</strong>。第 21 讲详细讲过、这里给一个落地方案：</p>
+
+<p><strong>实战代码块 2 — GitHub Actions 集成示例</strong>。每个 PR 触发 Claude Code 自动审查：</p>
+
+<pre class="code"><code># .github/workflows/claude-review.yml
+name: Claude Code PR Review
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  claude-review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Claude Code Review
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          npx @anthropic-ai/claude-code \
+            --headless \
+            --prompt "审查此 PR 的代码质量、安全、风格,结果以评论形式贴回" \
+            --mcp-server "github:${{ secrets.GITHUB_TOKEN }}" \
+            --model claude-sonnet-4-7
+</code></pre>
+
+<p>这个 workflow 跑通后、每条 PR 都会自动收到 Claude Code 的审查评论（第 33 讲的毕业项目就是干这个的）。</p>
+
+<p><strong>5.2 5 维权限收窄</strong>。Headless 模式下、Agent 的权限必须收窄（参考第 32 讲）：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>维度</th>
+      <th>默认</th>
+      <td>Headless 收窄到</th>
+      <th>原因</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Bash 命令</td>
+      <td>全开</td>
+      <td>白名单 20 个命令</td>
+      <td>Headless 不会有人看着</td>
+    </tr>
+    <tr>
+      <td>读文件路径</td>
+      <td>全开</td>
+      <td>只读 src/ tests/ docs/</td>
+      <td>避免读凭据 / 配置</td>
+    </tr>
+    <tr>
+      <td>写文件路径</td>
+      <td>全开</td>
+      <td>只写 .claude/output/</td>
+      <td>禁止写源代码、只能写审查报告</td>
+    </tr>
+    <tr>
+      <td>网络出口</td>
+      <td>全开</td>
+      <td>白名单 5 个 API</td>
+      <td>防止 PII 出域</td>
+    </tr>
+    <tr>
+      <td>模型档位</td>
+      <td>inherit</td>
+      <td>sonnet（不用 opus)</td>
+      <td>Headless 量大、控制成本</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>5.3 Platform Team 承接</strong>。Month 4 开始、组建 3-5 人的 Platform Team 专门负责：</p>
+
+<ul>
+  <li>Claude Code 升级 / 回滚</li>
+  <li>Plugin 审核 / 发布</li>
+  <li>权限策略 / 审计策略</li>
+  <li>事故响应（第 32 讲 Playbook)</li>
+  <li>月度用量 / ROI 报告</li>
+</ul>
+
+<div class="callout warn">
+<strong>&#9888;&#65039; 坑 5</strong> · 没做权限收窄就上 Headless——一旦 PII 进了日志、或者 Agent 误改了生产数据库、就是大事故。Headless 必须配 5 维权限 + 审计 + 告警（参考第 32 讲 12 道关）。
+</div>
+
+<h2>6. 4 角色 + 3 指标 + 50 人真实案例</h2>
+
+<p>整张路线图要落地，需要角色 × 指标 × 案例三件套。</p>
+
+<p><strong>4 类角色</strong>：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>角色</th>
+      <th>职责</th>
+      <th>谁做</th>
+      <th>投入</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Executive Sponsor</td>
+      <td>给资源、给政治支持、季度 review</td>
+      <td>CTO / VP Eng</td>
+      <td>5% 时间</td>
+    </tr>
+    <tr>
+      <td>Platform Lead</td>
+      <td>整体规划、跨团队协调</td>
+      <td>1 名资深工程师</td>
+      <td>100% 时间</td>
+    </tr>
+    <tr>
+      <td>Champion</td>
+      <td>每个团队 1 人、做推广</td>
+      <td>团队 lead / 资深开发</td>
+      <td>20% 时间</td>
+    </tr>
+    <tr>
+      <td>User</td>
+      <td>日常使用、反馈 bug / 提需求</td>
+      <td>所有工程师</td>
+      <td>100% 时间（用 Claude Code)</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>3 个核心指标</strong>：</p>
+
+<ol>
+  <li><strong>覆盖率</strong>：目标团队里 80% 的工程师每周至少用 1 次</li>
+  <li><strong>使用率</strong>：每周活跃用户占目标用户的比例、目标 &gt; 60%</li>
+  <li><strong>ROI</strong>：每月节省的人工小时 × 时薪 vs 订阅费 + 工程师投入、目标 &gt; 3×</li>
+</ol>
+
+<p><strong>5 大陷阱</strong>：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>陷阱</th>
+      <th>症状</th>
+      <th>预防</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>推而不教</td>
+      <td>推了 50 人、只有 5 人在用</td>
+      <td>强制 2 小时 onboarding 培训</td>
+    </tr>
+    <tr>
+      <td>教而不建</td>
+      <td>培训完了、没 Skills 库支撑</td>
+      <td>培训和 Skills 库必须同步</td>
+    </tr>
+    <tr>
+      <td>建而不维</td>
+      <td>Skills 库 1 年没人更新</td>
+      <td>每个 Skill 配 1 个 owner</td>
+    </tr>
+    <tr>
+      <td>维而不测</td>
+      <td>Skill 改坏了没人发现</td>
+      <td>每个 Skill 配 1 个 eval 测试</td>
+    </tr>
+    <tr>
+      <td>测而不报</td>
+      <td>团队看不到 ROI、老板砍预算</td>
+      <td>月度 ROI 报告、提交 Executive Sponsor</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>6.1 50 人团队 6 月真实案例</h3>
+
+<p>一家 50 人的 SaaS 公司、2025 年 6 月起跑这条路线图、6 个月后的真实数据：</p>
+
+<ul>
+  <li><strong>Month 1</strong>：1 工程师跑通、种子报告：3.5× ROI（单人）</li>
+  <li><strong>Month 2</strong>：5 人小组，产出 8 个团队 Skills，15 人能用</li>
+  <li><strong>Month 3</strong>：30 人能用、2 个跨团队 Champion 推广、2 个 Plugin 发布</li>
+  <li><strong>Month 4</strong>：50 人全员能用、内部 Marketplace 上线（7 个 Plugin）</li>
+  <li><strong>Month 5</strong>：Headless 集成 GitHub Actions，80% PR 自动过审查</li>
+  <li><strong>Month 6</strong>：Platform Team 3 人承接、5 维权限收窄、审计 + 告警上线</li>
+</ul>
+
+<p>ROI 测算（6 月累计）：</p>
+
+<ul>
+  <li>订阅费：$5,000（50 人企业档）</li>
+  <li>工程师投入：5 人 × 20% × 6 月 ≈ $75,000</li>
+  <li>节省人工：50 人 × 5 h/月 × 6 月 × $80/h = $120,000</li>
+  <li><strong>ROI = (120,000 - 5,000 - 75,000) / 80,000 ≈ 50% 净收益</strong></li>
+  <li>如果算质量收益（bug 减少、发布加快），整体 ROI 估算 3-4×</li>
+</ul>
+
+<p>关键成功因素：Champion + Steward 双角色每月开 1 次同步会、持续迭代 Plugin。月度 ROI 报告提交给 Executive Sponsor、确保资源不断。</p>
+
+<div class="callout warn">
+<strong>&#9888;&#65039; 坑 6（隐藏）</strong> · 把 ROI 算得太乐观——省 5h/月是预期值，实际很多工程师用 1 周才摸熟，前 3 个月可能省 0h 还多花 5h。给老板的预期管理要做，不要承诺立刻 3× ROI。
+</div>
+
+<h2>7. 一句话备忘</h2>
+
+<blockquote>&#128640; 工具只有真正被团队用上、才叫工程化。</blockquote>
+
+<hr>
+<p class="breadcrumb">← 回到 <a href="#top">本讲网页顶部</a></p>
+</main>
+<script>
+  (function () {
+    var STORAGE_KEY = "***";
+    var root = document.documentElement;
+    var btn  = document.getElementById("themeToggle");
+    var icon = document.getElementById("themeIcon");
+    var lbl  = document.getElementById("themeLabel");
+    function apply(theme) {
+      root.setAttribute("data-theme", theme);
+      if (theme === "dark") {
+        icon.innerHTML = "&#9728;&#65039;";
+        lbl.textContent  = "亮色";
+      } else {
+        icon.innerHTML = "&#127769;";
+        lbl.textContent  = "暗色";
+      }
+    }
+    var saved = null;
+    try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    if (saved === "light" || saved === "dark") {
+      apply(saved);
+    } else if (window.matchMedia &amp;&amp; window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      apply("dark");
+    } else {
+      apply("light");
+    }
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") || "light";
+      var next = cur === "dark" ? "light" : "dark";
+      apply(next);
+      try { localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>
