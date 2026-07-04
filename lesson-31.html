@@ -1,0 +1,563 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 31 讲 · 性能优化 · 让 Claude Code 跑得更快、花得更少</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fff;
+    --fg: #222;
+    --muted: #555;
+    --link: #1a73e8;
+    --code-bg: #f4f4f4;
+    --code-fg: inherit;
+    --pre-bg: #1e1e1e;
+    --pre-fg: #eaeaea;
+    --border: #ddd;
+    --th-bg: #f5f5f5;
+    --zebra: #fafafa;
+    --hover-row: #e8f0fe;
+    --hover-th: #eef2f7;
+    --blockquote-bg: #fafafa;
+    --blockquote-border: #ddd;
+    --hr: #eee;
+    --toggle-bg: #f5f5f5;
+    --toggle-fg: #333;
+    --toggle-border: #ddd;
+    --tag-bg: #eef4ff;
+    --tag-fg: #1a73e8;
+    --callout-bg: #fffbe6;
+    --callout-border: #fadb14;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1115;
+    --fg: #e6e6e6;
+    --muted: #9aa0a6;
+    --link: #8ab4f8;
+    --code-bg: #1e1f24;
+    --code-fg: #e6e6e6;
+    --pre-bg: #1a1d23;
+    --pre-fg: #e6e6e6;
+    --border: #303136;
+    --th-bg: #1c1f25;
+    --zebra: #16181d;
+    --hover-row: #1f2733;
+    --hover-th: #262c36;
+    --blockquote-bg: #181a20;
+    --blockquote-border: #303136;
+    --hr: #2a2d33;
+    --toggle-bg: #1c1f25;
+    --toggle-fg: #e6e6e6;
+    --toggle-border: #303136;
+    --tag-bg: #1c2740;
+    --tag-fg: #8ab4f8;
+    --callout-bg: #2a2615;
+    --callout-border: #fadb14;
+  }
+  html, body { background: var(--bg); color: var(--fg); }
+  body { font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.7; max-width: 920px; margin: 24px auto; padding: 0 18px; }
+  h1, h2, h3 { color: var(--fg); }
+  h1 { font-size: 28px; margin: .2em 0 .4em; }
+  h2 { font-size: 22px; margin-top: 1.6em; border-bottom: 1px solid var(--hr); padding-bottom: .25em; }
+  h3 { font-size: 18px; margin-top: 1.4em; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  hr { border: none; border-top: 1px solid var(--hr); margin: 2em 0; }
+  code { background: var(--code-bg); color: var(--code-fg); padding: 1px 6px; border-radius: 4px; font-size: 90%; }
+  pre { background: var(--pre-bg); color: var(--pre-fg); padding: 14px 16px; border-radius: 8px; overflow-x: auto; line-height: 1.55; font-size: 13.5px; }
+  pre.lang-flow { background: #f6f8fa; color: #24292f; }
+  :root[data-theme="dark"] pre.lang-flow { background: #16181d; color: #e6e6e6; }
+  pre.lang-flow code { background: transparent; color: inherit; padding: 0; }
+  pre.code code { background: transparent; color: inherit; padding: 0; }
+  blockquote { background: var(--blockquote-bg); border-left: 4px solid var(--blockquote-border); margin: 1em 0; padding: .7em 1em; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; margin: 1em 0; font-size: 14.5px; }
+  th, td { padding: 8px 10px; border: 1px solid var(--border); text-align: left; vertical-align: top; }
+  th { background: var(--th-bg); font-weight: 600; }
+  tbody tr:nth-child(even) td { background: var(--zebra); }
+  tbody tr:hover td { background: var(--hover-row); }
+  th:hover { background: var(--hover-th); }
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    margin-right: 6px;
+    background: var(--tag-bg);
+    color: var(--tag-fg);
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .breadcrumb {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 1em;
+  }
+  .breadcrumb a { color: var(--muted); }
+  .breadcrumb a:hover { color: var(--link); }
+
+  /* 暗色模式切换 */
+  .theme-toggle {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 9999;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--toggle-bg);
+    color: var(--toggle-fg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    user-select: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    transition: background-color .2s ease, transform .1s ease;
+  }
+  .theme-toggle:hover { background: var(--hover-row); }
+  .theme-toggle:active { transform: scale(.97); }
+  .theme-toggle .icon { font-size: 15px; line-height: 1; }
+
+  /* 课程序号大圆点 */
+  .lesson-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1a73e8, #6f42c1);
+    color: #fff;
+    font-size: 24px;
+    font-weight: 700;
+    margin-right: 14px;
+    vertical-align: middle;
+  }
+
+  /* callout */
+  .callout {
+    background: var(--callout-bg);
+    border-left: 4px solid var(--callout-border);
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin: 1.2em 0;
+  }
+  .callout.ok {
+    background: #e6f7ed;
+    border-color: #2ea44f;
+  }
+  :root[data-theme="dark"] .callout.ok { background: #112a1c; }
+  .callout.warn {
+    background: #fff1f0;
+    border-color: #cf222e;
+  }
+  :root[data-theme="dark"] .callout.warn { background: #2a1517; }
+
+  /* pre.code 通用代码块,跟 pre.lang-flow 区别 */
+  pre.code { background: #1e1e1e; color: #eaeaea; }
+  :root[data-theme="dark"] pre.code { background: #16181d; color: #e6e6e6; }
+</style>
+<link rel="stylesheet" href="assets/flow.css">
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="切换暗色模式">
+  <span class="icon" id="themeIcon">&#127769;</span>
+  <span id="themeLabel">暗色</span>
+</button>
+<main>
+<div class="breadcrumb">课程导航： &laquo; <a href="lesson-30.html">第 30 讲</a>  ·  <a href="lesson-32.html">第 32 讲</a> &raquo;</div>
+
+<h1><span class="lesson-badge">31</span>第 31 讲 · 性能优化 · 让 Claude Code 跑得更快、花得更少</h1>
+<p>
+  <span class="tag">实战加餐</span>
+  <span class="tag">第 31 / 33 讲</span>
+  <span class="tag">Claude Code 工程化实战</span>
+  <span class="tag">性能</span>
+  <span class="tag">成本</span>
+</p>
+
+<div class="callout ok">
+<strong>&#128204; 本讲摘要</strong> · Claude Code 性能优化不是"加机器"的问题，而是"用对模型、管好上下文、复用连接、善用回滚"的系统工程。本讲从模型分级选型、上下文压缩、Token 经济、Checkpointing 回滚、MCP 连接复用、实战调优剧本六个维度，系统拆解"省时间、省钱、少返工"的工程方法论。学完本讲，你应该能针对一个真实项目的月账单做出可量化的优化方案，并在 5 步之内把单次任务的 Token 消耗压到原来的 30% 以下。
+</div>
+
+<h2>1. 模型分级选型：不是每件事都需要 Opus</h2>
+
+<p>Claude Code 支持四种模型档位，合理选型是性能优化里 ROI 最高的一招。</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>模型</th>
+      <th>适用场景</th>
+      <th>相对速度</th>
+      <th>相对成本</th>
+      <th>何时别用</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>haiku</code></td>
+      <td>lint、格式化、简单补全、grep 类查询</td>
+      <td>&#9889;&#9889;&#9889; 最快</td>
+      <td>&#128181; 最低</td>
+      <td>复杂多文件重构、架构设计</td>
+    </tr>
+    <tr>
+      <td><code>sonnet</code></td>
+      <td>日常开发、bug 定位、单文件改写</td>
+      <td>&#9889;&#9889; 较快</td>
+      <td>&#128181;&#128181; 中等</td>
+      <td>需要 100+ 文件联动的巨型重构</td>
+    </tr>
+    <tr>
+      <td><code>opus</code></td>
+      <td>架构设计、跨模块推理、长链路任务</td>
+      <td>&#9889; 较慢</td>
+      <td>&#128181;&#128181;&#128181; 最高</td>
+      <td>简单补全、单行修改</td>
+    </tr>
+    <tr>
+      <td><code>inherit</code></td>
+      <td>跟当前账户/团队档位走、自动伸缩</td>
+      <td>—</td>
+      <td>—</td>
+      <td>想精确控制单次成本时</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>实战代码块 1 — 用 haiku 跑轻量任务</strong>。把"模型选择"变成项目级约定，而不是每次手动指定。</p>
+
+<pre class="code"><code># .claude/skills/lint-fast/SKILL.md
+---
+name: lint-fast
+description: 跑 ESLint + Prettier 校验,用 haiku 模型秒回。触发关键词:lint, format, check style, 格式化, 检查代码风格。
+model: haiku
+tools: [Bash, Read]
+---
+
+# Lint Fast Skill
+
+只跑以下命令,不做任何修改:
+
+\`\`\`bash
+pnpm run lint:check
+\`\`\`
+
+返回结果时:
+- 通过 → 简短回复 "LGTM &#10003;"
+- 失败 → 列出错误文件 + 行号,不在此 Skill 中自动修复
+</code></pre>
+
+<p>把 Skill 的 <code>model</code> 字段显式锁死，子代理或 Hook 在调用 lint 时就永远走最便宜的模型。即使父 Agent 正在用 opus 处理复杂任务，子代理也能并行用 haiku 校验代码风格，总耗时反而更短——因为不必等主对话让出 quota。</p>
+
+<p>回想第 8 讲讲的"并行不悖"——子代理天然适合跑轻量模型。一个典型组合：</p>
+
+<ul>
+  <li><strong>主 Agent</strong> (opus)：负责架构设计、跨文件推理、写复杂业务逻辑</li>
+  <li><strong>子 Agent 1</strong> (haiku)：负责 lint、格式化、单测生成</li>
+  <li><strong>子 Agent 2</strong> (sonnet)：负责单文件 bug 定位、简单改写</li>
+</ul>
+
+<p>三档模型同时跑，主对话只承担最贵的部分，总账单立刻降一半以上。</p>
+
+<div class="callout warn">
+<strong>&#9888;&#65039; 坑 1</strong> · 以为"默认 inherit 就够"——很多企业账户默认 inherit 走的是 opus 档，如果不在 Skill 里显式锁 <code>model: haiku</code>，你可能在不知不觉中烧掉 10× 的钱。
+</div>
+
+<h2>2. 上下文压缩：Token 才是最贵的资源</h2>
+
+<p>Claude Code 的对话是"上下文窗口"的累积游戏，聊得越久，Token 越多，响应越慢，账单越贵。三个常用压缩手段：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>手段</th>
+      <th>触发方式</th>
+      <th>保留什么</th>
+      <th>丢弃什么</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>/clear</code></td>
+      <td>用户手动输入命令</td>
+      <td>CLAUDE.md、项目记忆</td>
+      <td>整段对话历史</td>
+    </tr>
+    <tr>
+      <td>摘要压缩</td>
+      <td>自动（每 50 轮触发）或 <code>/compact</code></td>
+      <td>关键决策、文件路径、错误信息</td>
+      <td>过程性输出、已读文件内容</td>
+    </tr>
+    <tr>
+      <td>Skill 渐进式披露</td>
+      <td>自动（按需加载）</td>
+      <td>当前任务需要的 Skill 正文</td>
+      <td>未触发的 Skill 全文</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>实战代码块 2 — 自动摘要压缩脚本</strong>。如果你想让团队每个人都用上 <code>/compact</code>，可以做成一个 pre-commit hook：</p>
+
+<pre class="code"><code># scripts/auto-compact-reminder.sh
+#!/usr/bin/env bash
+# 检测当前会话对话轮数,超过 40 轮时提醒 compact
+
+set -euo pipefail
+
+TURNS_FILE=".claude/.session-turns"
+mkdir -p .claude
+
+if [ ! -f "$TURNS_FILE" ]; then
+  echo "0" > "$TURNS_FILE"
+fi
+
+CURRENT=$(cat "$TURNS_FILE")
+NEXT=$(CURRENT + 1)
+echo "$NEXT" > "$TURNS_FILE"
+
+if [ "$NEXT" -ge 40 ] && [ "$NEXT" -lt 42 ]; then
+  echo "&#9888;&#65039;  本会话已对话 ${NEXT} 轮,Token 累积较多。"
+  echo "建议执行:claude&gt; /compact"
+  echo "或:claude&gt; /clear  (完全重置,保留 CLAUDE.md)"
+fi
+</code></pre>
+
+<p>把这个脚本挂到 Hook 的 <code>UserPromptSubmit</code> 事件上（参考第 17 讲），每次用户提交就自增一次计数，到阈值时弹个提醒。这比让用户自己记"该 compact 了"靠谱得多。</p>
+
+<h3>2.1 上下文压缩的边界</h3>
+
+<p>摘要压缩会丢失"过程性细节"——比如你让 Agent 改 10 个文件，它读完这 10 个文件的内容会留在上下文里；压缩后只剩"修改了哪些文件 + 改了什么"，内容本身没了。如果接下来还要基于这些文件的内容继续工作，就别压缩，改成开新会话（用 CLAUDE.md 衔接）。</p>
+
+<div class="callout warn">
+<strong>&#9888;&#65039; 坑 2</strong> · 在长任务中间无脑 <code>/compact</code>——压缩后 Agent 忘了刚才读过的文件内容，会重新去读，反而多花一次 Read 工具调用的 Token。原则：任务有连续性就别 compact，有阶段切换就果断 clear。
+</div>
+
+<h2>3. Token 经济：批处理 + 并行 + 工具裁剪</h2>
+
+<p>Token 消耗有三大来源：模型推理（输出）、工具调用（输入+输出）、系统提示（每次会话固定）。我们能压的主要是前两项。</p>
+
+<p><strong>实战代码块 3 — 批处理多文件 review</strong>。不要让 Agent 一次只读一个文件，而是让它"一次性把整个目录的 diff 拉过来"：</p>
+
+<pre class="code"><code># 错误做法:让 Agent 一个个文件地问
+User: "请 review src/ 下的所有文件"
+# Agent 会调 30 次 Read,每次都是独立工具调用
+# 每次 Read 都把"工具描述 + 文件路径"塞进上下文,浪费 1000+ Token
+
+# 正确做法:让 Agent 一次性看全
+User: "请用 git diff HEAD~1 -- src/ 看今天改了什么,review 一遍"
+# 一次 Bash 调用,把所有 diff 拉到一个输出里
+# Agent 直接基于这个 diff 写 review,Token 消耗 -60%
+</code></pre>
+
+<p>三个具体技巧：</p>
+
+<ul>
+  <li><strong>grep 优于 Read</strong>：要看 30 个文件里是否包含某 pattern，直接 <code>grep -rn pattern src/</code>，不要让 Agent 一个个 Read</li>
+  <li><strong>git diff 优于 file 全文</strong>：review 改动只关心 diff，不用看未改的部分</li>
+  <li><strong>批处理优于循环</strong>：一个 Bash 里跑 5 个命令，比 5 个 Bash 调用便宜 5 倍（因为系统提示只算一次）</li>
+</ul>
+
+<div class="callout warn">
+<strong>&#9888;&#65039; 坑 3</strong> · 在 prompt 里堆"请严格按照以下 12 条要求……"——每条要求都是 Token，而且模型对长 prompt 的遵从度反而下降。原则：prompt 短一点 + Skill 长一点（让 Skill 按需加载）。
+</div>
+
+<h2>4. Checkpointing 与回滚：用对方法少返工</h2>
+
+<p>Claude Code 的 <code>/rewind</code> 命令（或者用 git stash/branch 配合）能在 Agent 改坏文件时一键回退，这是性能优化里"省时间"维度最被低估的一招。</p>
+
+<p><strong>实战代码块 4 — 性能监控片段</strong>。建议每个项目都开一个轻量监控，看自己实际跑得怎么样：</p>
+
+<pre class="code"><code># .claude/hooks/log-usage.sh
+#!/usr/bin/env bash
+# 每次 Agent 完成任务时,记录耗时与 Token 估算
+# 挂到 Stop 事件
+
+set -euo pipefail
+
+LOG=".claude/usage.log"
+TIMESTAMP=$(date -Iseconds)
+TURNS=$(cat .claude/.session-turns 2&gt;/dev/null || echo "0")
+
+# 简单估算:每轮平均 2000 token
+EST_TOKENS=$(TURNS * 2000)
+
+echo "${TIMESTAMP} turns=${TURNS} est_tokens=${EST_TOKENS}" &gt;&gt; "$LOG"
+
+# 周报:统计过去 7 天的总 Token 估算
+if [ "$(date +%u)" = "1" ]; then
+  echo "&#128203; 本周 Token 估算:"
+  awk '{sum+=$NF} END {print sum " token"}' "$LOG" | tail -7
+fi
+</code></pre>
+
+<ol>
+  <li><strong>改文件前先 commit</strong>：让 Agent 改之前先 <code>git add -A &amp;&amp; git commit -m "before: $TASK"</code>，这样改坏了 <code>git checkout</code> 一秒回退</li>
+  <li><strong>大改前先开分支</strong>：跨 20+ 文件的重构，新开 <code>git checkout -b refactor/xxx</code>，失败就 <code>git checkout main &amp;&amp; git branch -D</code></li>
+  <li><strong>用 <code>/rewind</code> 处理误操作</strong>：Agent 误删文件、跑错命令时，直接 <code>/rewind</code> 回到上一步，比手动回退快 10×</li>
+</ol>
+
+<p>回滚的"性能意义"在于：Agent 返工一次的成本，通常比"小心翼翼地慢慢改"高 5×。大胆改、快回滚，反而是最高效的节奏。</p>
+
+<div class="callout warn">
+<strong>&#9888;&#65039; 坑 4</strong> · 让 Agent 改文件之前没有 commit——改坏了一脸懵，不知道哪一步出错，只能让 Agent 自己修复，陷入"修一个 bug 引入三个 bug"的死循环。
+</div>
+
+<h2>5. MCP 连接复用：别每个会话都重握手</h2>
+
+<p>每个 MCP server 第一次连接时都要握手、鉴权、加载工具列表，这一下可能花掉 3–5 秒 + 几千 Token。如果你在同一个项目里反复开会话，可以用以下方式复用：</p>
+
+<ul>
+  <li><strong>Skill 化 MCP 配置</strong>：把常用 MCP server 的配置写到 Skill 的 <code>mcpServers</code> 字段，首次加载后缓存工具列表</li>
+  <li><strong>用 <code>--continue</code> 续接</strong>：<code>claude --continue</code> 会复用上次的 MCP 连接，而不是重新握手</li>
+  <li><strong>长期任务用 SDK</strong>：Agent SDK 里的 <code>ClaudeCodeOptions.mcp_servers</code> 可以在进程内复用连接，适合跑长链路任务</li>
+</ul>
+
+<p>MCP 复用是"省时间"维度收益最大的优化之一。一个本来 30 秒启动的任务，复用后 3 秒启动，体感像"本地应用"。</p>
+
+<h2>6. 实战调优剧本：从月账单到周预算</h2>
+
+<p>如果你的 Claude Code 月账单开始"超出预期"，按这个剧本做 5 步优化，通常能把成本压到原来的 30–50%：</p>
+
+<div class="flow-diagram">
+  <div class="flow-note" style="font-size:14px;font-weight:600;color:var(--link);font-style:normal;margin-bottom:10px">🚀 性能调优剧本 · 5 步法</div>
+
+  <div class="flow-steps">
+    <div class="flow-step">
+      <div class="flow-step-num">1</div>
+      <div class="flow-step-body">
+        <div class="flow-step-title">摸清现状</div>
+        <div class="flow-step-desc">跑 <code>.claude/hooks/log-usage.sh</code> 一周 → 看到底哪些任务在烧钱</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-num">2</div>
+      <div class="flow-step-body">
+        <div class="flow-step-title">锁定大头</div>
+        <div class="flow-step-desc">找出 Token 消耗 Top 3 的任务类型 → 通常是"长链路 refactor"和"全仓 review"</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-num">3</div>
+      <div class="flow-step-body">
+        <div class="flow-step-title">拆分模型</div>
+        <div class="flow-step-desc">把 lint / format / 单测改用 <code>haiku</code> 子代理；架构 / 重构保留 <code>opus</code> → 预期降本 40%</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-num">4</div>
+      <div class="flow-step-body">
+        <div class="flow-step-title">改造上下文</div>
+        <div class="flow-step-desc">长任务拆成多个短会话；中间用 CLAUDE.md 衔接；强制每 40 轮提醒 <code>/compact</code> → 预期再降本 20%</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-num">5</div>
+      <div class="flow-step-body">
+        <div class="flow-step-title">建立基线</div>
+        <ul style="margin:4px 0;padding-left:1.4em;font-size:13px">
+          <li>单任务 &gt; 50k token 必须拆分</li>
+          <li>工具调用 &gt; 100 次必须分阶段</li>
+          <li>同一文件 3 次未改对必须 <code>/rewind</code></li>
+        </ul>
+        <div class="flow-note" style="margin-top:4px">把优化沉淀为团队约定</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p>注意区分"基线"和"优化"——基线是"达成业务目标所需要的最低成本"，优化是"在基线之上锦上添花"。如果你的 Agent 经常返工，先解决返工问题（改 prompt、加测试、明确边界），再做 Token 优化。否则省下来的 Token 都会被返工吃掉。</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>优化维度</th>
+      <th>具体动作</th>
+      <th>预期收益</th>
+      <th>实施难度</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>模型分级</td>
+      <td>Skill 锁 <code>model: haiku/sonnet</code></td>
+      <td>-40% 成本</td>
+      <td>&#9733;&#9734;&#9734;</td>
+    </tr>
+    <tr>
+      <td>上下文压缩</td>
+      <td>40 轮自动提醒 /compact</td>
+      <td>-20% 成本</td>
+      <td>&#9733;&#9734;&#9734;</td>
+    </tr>
+    <tr>
+      <td>批处理</td>
+      <td>grep / git diff 替代 Read</td>
+      <td>-30% Token</td>
+      <td>&#9733;&#9734;&#9734;</td>
+    </tr>
+    <tr>
+      <td>Checkpointing</td>
+      <td>改前 commit + 用 /rewind</td>
+      <td>-50% 返工时间</td>
+      <td>&#9733;&#9734;&#9734;</td>
+    </tr>
+    <tr>
+      <td>MCP 复用</td>
+      <td>Skill 化 + --continue</td>
+      <td>-90% 启动时间</td>
+      <td>&#9733;&#9733;&#9734;</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>7. 一句话备忘</h2>
+
+<blockquote>&#9881;&#65039; 性能优化的本质不是"让模型变快"，而是"让对的模型，在对的时间，处理对的事"。</blockquote>
+
+<hr>
+<p class="breadcrumb">← 回到 <a href="#top">本讲网页顶部</a></p>
+</main>
+<script>
+  (function () {
+    var STORAGE_KEY = "***";
+    var root = document.documentElement;
+    var btn  = document.getElementById("themeToggle");
+    var icon = document.getElementById("themeIcon");
+    var lbl  = document.getElementById("themeLabel");
+    function apply(theme) {
+      root.setAttribute("data-theme", theme);
+      if (theme === "dark") {
+        icon.innerHTML = "&#9728;&#65039;";
+        lbl.textContent  = "亮色";
+      } else {
+        icon.innerHTML = "&#127769;";
+        lbl.textContent  = "暗色";
+      }
+    }
+    var saved = null;
+    try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    if (saved === "light" || saved === "dark") {
+      apply(saved);
+    } else if (window.matchMedia &amp;&amp; window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      apply("dark");
+    } else {
+      apply("light");
+    }
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") || "light";
+      var next = cur === "dark" ? "light" : "dark";
+      apply(next);
+      try { localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>
