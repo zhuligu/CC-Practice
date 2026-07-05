@@ -1,0 +1,677 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 33 讲 · 毕业项目 · 用 Claude Code 构建你的第一个生产级 Agent</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fff;
+    --fg: #222;
+    --muted: #555;
+    --link: #1a73e8;
+    --code-bg: #f4f4f4;
+    --code-fg: inherit;
+    --pre-bg: #1e1e1e;
+    --pre-fg: #eaeaea;
+    --border: #ddd;
+    --th-bg: #f5f5f5;
+    --zebra: #fafafa;
+    --hover-row: #e8f0fe;
+    --hover-th: #eef2f7;
+    --blockquote-bg: #fafafa;
+    --blockquote-border: #ddd;
+    --hr: #eee;
+    --toggle-bg: #f5f5f5;
+    --toggle-fg: #333;
+    --toggle-border: #ddd;
+    --tag-bg: #eef4ff;
+    --tag-fg: #1a73e8;
+    --callout-bg: #fffbe6;
+    --callout-border: #fadb14;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1115;
+    --fg: #e6e6e6;
+    --muted: #9aa0a6;
+    --link: #8ab4f8;
+    --code-bg: #1e1f24;
+    --code-fg: #e6e6e6;
+    --pre-bg: #1a1d23;
+    --pre-fg: #e6e6e6;
+    --border: #303136;
+    --th-bg: #1c1f25;
+    --zebra: #16181d;
+    --hover-row: #1f2733;
+    --hover-th: #262c36;
+    --blockquote-bg: #181a20;
+    --blockquote-border: #303136;
+    --hr: #2a2d33;
+    --toggle-bg: #1c1f25;
+    --toggle-fg: #e6e6e6;
+    --toggle-border: #303136;
+    --tag-bg: #1c2740;
+    --tag-fg: #8ab4f8;
+    --callout-bg: #2a2615;
+    --callout-border: #fadb14;
+  }
+  html, body { background: var(--bg); color: var(--fg); }
+  body { font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.7; max-width: 920px; margin: 24px auto; padding: 0 18px; }
+  h1, h2, h3 { color: var(--fg); }
+  h1 { font-size: 28px; margin: .2em 0 .4em; }
+  h2 { font-size: 22px; margin-top: 1.6em; border-bottom: 1px solid var(--hr); padding-bottom: .25em; }
+  h3 { font-size: 18px; margin-top: 1.4em; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  hr { border: none; border-top: 1px solid var(--hr); margin: 2em 0; }
+  code { background: var(--code-bg); color: var(--code-fg); padding: 1px 6px; border-radius: 4px; font-size: 90%; }
+  pre { background: var(--pre-bg); color: var(--pre-fg); padding: 14px 16px; border-radius: 8px; overflow-x: auto; line-height: 1.55; font-size: 13.5px; }
+  pre.lang-flow { background: #f6f8fa; color: #24292f; }
+  :root[data-theme="dark"] pre.lang-flow { background: #16181d; color: #e6e6e6; }
+  pre.lang-flow code { background: transparent; color: inherit; padding: 0; }
+  pre.code code { background: transparent; color: inherit; padding: 0; }
+  blockquote { background: var(--blockquote-bg); border-left: 4px solid var(--blockquote-border); margin: 1em 0; padding: .7em 1em; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; margin: 1em 0; font-size: 14.5px; }
+  th, td { padding: 8px 10px; border: 1px solid var(--border); text-align: left; vertical-align: top; }
+  th { background: var(--th-bg); font-weight: 600; }
+  tbody tr:nth-child(even) td { background: var(--zebra); }
+  tbody tr:hover td { background: var(--hover-row); }
+  th:hover { background: var(--hover-th); }
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    margin-right: 6px;
+    background: var(--tag-bg);
+    color: var(--tag-fg);
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .breadcrumb {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 1em;
+  }
+  .breadcrumb a { color: var(--muted); }
+  .breadcrumb a:hover { color: var(--link); }
+
+  /* 暗色模式切换 */
+  .theme-toggle {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 9999;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--toggle-bg);
+    color: var(--toggle-fg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    user-select: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    transition: background-color .2s ease, transform .1s ease;
+  }
+  .theme-toggle:hover { background: var(--hover-row); }
+  .theme-toggle:active { transform: scale(.97); }
+  .theme-toggle .icon { font-size: 15px; line-height: 1; }
+
+  /* 课程序号大圆点 */
+  .lesson-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1a73e8, #6f42c1);
+    color: #fff;
+    font-size: 24px;
+    font-weight: 700;
+    margin-right: 14px;
+    vertical-align: middle;
+  }
+
+  /* callout */
+  .callout {
+    background: var(--callout-bg);
+    border-left: 4px solid var(--callout-border);
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin: 1.2em 0;
+  }
+  .callout.ok {
+    background: #e6f7ed;
+    border-color: #2ea44f;
+  }
+  :root[data-theme="dark"] .callout.ok { background: #112a1c; }
+  .callout.warn {
+    background: #fff1f0;
+    border-color: #cf222e;
+  }
+  :root[data-theme="dark"] .callout.warn { background: #2a1517; }
+
+  /* pre.code 通用代码块,跟 pre.lang-flow 区别 */
+  pre.code { background: #1e1e1e; color: #eaeaea; }
+  :root[data-theme="dark"] pre.code { background: #16181d; color: #e6e6e6; }
+</style>
+<link rel="stylesheet" href="assets/flow.css">
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="切换暗色模式">
+  <span class="icon" id="themeIcon">&#127769;</span>
+  <span id="themeLabel">暗色</span>
+</button>
+<main>
+<div class="breadcrumb">课程导航： &laquo; <a href="lesson-32.html">第 32 讲</a>  ·  （毕业） &raquo;</div>
+
+<h1><span class="lesson-badge">33</span>第 33 讲 · 毕业项目 · 用 Claude Code 构建你的第一个生产级 Agent</h1>
+<p>
+  <span class="tag">毕业项目</span>
+  <span class="tag">第 33 / 33 讲</span>
+  <span class="tag">Claude Code 工程化实战</span>
+  <span class="tag">综合实战</span>
+  <span class="tag">收官</span>
+</p>
+
+<div class="callout ok">
+<strong>&#128204; 本讲摘要</strong> · 学完前 32 讲、你已经掌握了 CLAUDE.md、SubAgent、Skills、Hooks、MCP、Agent SDK、Plugins、Rules、性能优化、安全治理 10 大机制。本讲把它们全部串起来、带你从 0 到 1 构建一个生产可用的自动化 PR 审查 Agent：每条 PR 自动跑 lint、单测、安全扫描、风格检查、变更摘要、并把结果以评论形式贴回 PR。这个项目不复杂、但它会用上你学过的每一项能力、是一个合格的毕业作品。
+</div>
+
+<h2>1. 项目选题：为什么选自动化 PR 审查 Agent</h2>
+
+<p>毕业项目的选题有三个标准：</p>
+
+<ol>
+  <li><strong>真实场景</strong>：能跑在真实代码上、不是玩具 demo</li>
+  <li><strong>够综合</strong>：能覆盖 80% 以上的课程知识点</li>
+  <li><strong>可扩展</strong>：留出 3-5 个优化点、后续可以持续迭代</li>
+</ol>
+
+<p>自动化 PR 审查 Agent完美命中三条——</p>
+
+<ul>
+  <li>真实场景：几乎每个团队都需要、GitHub/GitLab 上 90% 的 PR 都需要 code review</li>
+  <li>够综合：CLAUDE.md 装项目约定、Skills 装具体审查能力、SubAgent 分工、Hooks 拦截危险操作、MCP 连 GitHub、Agent SDK 跑 CI、Rules 写团队规范、安全治理做密钥保护</li>
+  <li>可扩展：第一版只跑 lint+单测、后续可加安全扫描、依赖审计、PR 描述生成、自动合入等</li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th>对比维度</th>
+      <th>传统 CI lint</th>
+      <th>PR 审查 Bot（SaaS）</th>
+      <th>本项目（Claude Code Agent）</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>规则定制</td>
+      <td>YAML、改完要 push</td>
+      <td>受限于平台</td>
+      <td>CLAUDE.md + Skills、本地即改即用</td>
+    </tr>
+    <tr>
+      <td>理解力</td>
+      <td>只能匹配 pattern</td>
+      <td>AI 驱动但黑盒</td>
+      <td>AI 驱动 + 全链路可观测</td>
+    </tr>
+    <tr>
+      <td>成本</td>
+      <td>免费</td>
+      <td>按 seat 收费</td>
+      <td>按 token 收费、本地零边际</td>
+    </tr>
+    <tr>
+      <td>可扩展</td>
+      <td>写脚本</td>
+      <td>受限</td>
+      <td>新增一个 Skill 即可</td>
+    </tr>
+    <tr>
+      <td>数据安全</td>
+      <td>数据在 CI 跑</td>
+      <td>数据传给 SaaS</td>
+      <td>数据在自己机器/自家 CI</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>2. 架构设计：五件套 + MCP + Agent SDK</h2>
+
+<p>整体架构分四层、从底向上是：数据层（本地文件系统 + Git）、能力层（Skills + SubAgent）、编排层（主 Agent + Hooks）、对接层（MCP 连 GitHub + Agent SDK 跑 CI）。</p>
+
+<div class="flow-diagram">
+  <div class="flow-note" style="font-size:14px;font-weight:600;color:var(--link);font-style:normal;margin-bottom:10px">🏗️ PR 审查 Agent · 整体架构</div>
+
+  <div class="flow-actor">
+    <div class="flow-actor-label">⬆️ GitHub PR</div>
+    <div class="flow-actor-desc">📥 webhook</div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">对接层</div>
+    <ul>
+      <li>GitHub MCP（读 PR / 写评论）</li>
+      <li>Agent SDK（在 CI 里驱动主 Agent）</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg" style="border-color:var(--link)">
+    <div class="flow-box-title">编排层 · 主 Agent（opus）</div>
+    <ul>
+      <li>读 PR diff</li>
+      <li>调用 4 个子代理并行审查</li>
+      <li>汇总 + 写评论</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg">
+    <div class="flow-box-title">能力层 · 4 个 SubAgent 并行</div>
+    <div class="flow-row flow-row-2" style="margin-top:8px">
+      <div class="flow-box"><div class="flow-box-title">LintSubAgent</div><div class="flow-box-sub">haiku</div></div>
+      <div class="flow-box"><div class="flow-box-title">TestSubAgent</div><div class="flow-box-sub">sonnet</div></div>
+      <div class="flow-box"><div class="flow-box-title">SecuritySubAgent</div><div class="flow-box-sub">sonnet</div></div>
+      <div class="flow-box"><div class="flow-box-title">StyleSubAgent</div><div class="flow-box-sub">haiku</div></div>
+    </div>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-box-lg" style="border-color:var(--warn-border)">
+    <div class="flow-box-title" style="color:var(--warn-border)">Hooks · 横切</div>
+    <ul>
+      <li>PreToolUse：PII 脱敏 + 权限检查</li>
+      <li>PostToolUse：审计日志</li>
+      <li>Stop：用量统计 + 告警</li>
+    </ul>
+  </div>
+  <div class="flow-arrow"></div>
+  <div class="flow-actor flow-actor-final">
+    <div class="flow-actor-label">回写 PR 评论</div>
+    <div class="flow-actor-desc">GitHub Comment API</div>
+  </div>
+</div>
+
+<p>这套架构用到了课程里的 10 大机制：CLAUDE.md（第 3 讲）、SubAgent（第 4-9 讲）、Skills（第 10-16 讲）、Hooks（第 17-18 讲）、MCP（第 19 讲）、Tools（第 20 讲）、Headless/CI（第 21 讲）、Rules（第 22 讲）、Agent SDK（第 23-24 讲）、Plugins（第 25 讲）、外加性能（第 31 讲）与安全（第 32 讲）两条横切线。</p>
+
+<div class="callout warn">
+<strong>&#9888;&#65039; 坑 1</strong> · 上来就堆功能——第一版只做 diff 摘要 + lint + 单测三件事、跑通后再加安全和风格。一次性做完所有 4 个 SubAgent、出 bug 排查会非常痛苦。
+</div>
+
+<h2>3. Skills 设计：5 个具体 Skill 的内容与触发</h2>
+
+<p><strong>实战代码块 1 — CLAUDE.md 完整内容</strong>。这是项目根目录的 CLAUDE.md、把团队约定写进 Agent 的开机记忆。</p>
+
+<pre class="code"><code># CLAUDE.md · PR 审查 Agent
+
+## 项目目标
+每条 PR 提交后,自动审查代码质量、安全、风格,并以评论形式发回 PR。
+
+## 技术栈
+- 后端:Node.js 20 + TypeScript 5
+- 测试:Vitest
+- Lint:ESLint + Prettier
+- 安全扫描:Semgrep + npm audit
+- GitHub 集成:GitHub MCP
+- CI:GitHub Actions
+
+## 约定
+- 所有 PR 必须通过 4 项审查:lint / test / security / style
+- 审查结果用 markdown 评论,分四节呈现
+- 高危问题(blocker)必须阻断合并
+- 风格问题(nit)只提示不阻断
+- 用 opus 跑主审查,haiku 跑 lint/style,sonnet 跑 test/security
+
+## 工作流
+1. GitHub webhook 触发 CI
+2. Agent SDK 启动主 Agent,加载本 CLAUDE.md
+3. 主 Agent 读 PR diff,拆 4 路并行调用子代理
+4. 子代理结果汇总,主 Agent 写 markdown 评论
+5. 通过 GitHub MCP 发评论
+6. 如果有 blocker,标记 PR 为 "changes requested"
+
+## 关键文件
+- .claude/skills/  · 5 个具体 Skill
+- .claude/agents/  · 4 个子代理配置
+- .claude/hooks/   · PII 脱敏 + 审计日志
+- .claude/settings.json  · 权限配置
+</code></pre>
+
+<p><strong>实战代码块 2 — 5 个 Skill 的 SKILL.md 索引</strong>。每个 Skill 独立放在 <code>.claude/skills/&lt;name&gt;/SKILL.md</code>。</p>
+
+<pre class="code"><code># .claude/skills/&lt;skill-name&gt;/SKILL.md
+# 5 个 Skill 共用以下结构,只列 name + description + 关键 prompt 片段
+
+---
+### Skill 1 · lint-check
+name: lint-check
+description: 跑 ESLint 检查,把错误按文件+行号整理。触发:lint, eslint, code style, 代码风格。
+model: haiku
+tools: [Bash, Read]
+---
+执行 `pnpm run lint` 并解析输出,返回结构化错误列表:
+{file, line, column, severity, message, rule}
+
+### Skill 2 · test-runner
+name: test-runner
+description: 跑 Vitest,定位失败用例。触发:test, unit test, 单测, 跑测试。
+model: sonnet
+tools: [Bash, Read]
+---
+执行 `pnpm test --reporter=json`,解析 JSON,返回:
+{suite, test, status, error, duration_ms}
+
+### Skill 3 · security-scan
+name: security-scan
+description: 跑 Semgrep + npm audit,识别高危依赖。触发:security, 漏洞, CVE, 危险依赖。
+model: sonnet
+tools: [Bash, Read]
+---
+依次执行:
+1. `semgrep --config=auto src/`
+2. `npm audit --json`
+合并结果,按 severity 排序,返回:
+{tool, rule_id, file, line, severity, message, fix}
+
+### Skill 4 · style-review
+name: style-review
+description: 检查命名、注释、复杂度。触发:style, naming, 命名, 注释, 复杂度。
+model: haiku
+tools: [Read, Grep]
+---
+读 PR diff,检查:
+- 命名是否符合项目 camelCase/PascalCase 约定
+- 函数是否 &gt; 50 行 / 圈复杂度 &gt; 10
+- 注释是否覆盖"为什么"而不只是"做了什么"
+返回:
+{file, line, issue, severity: "nit"|"suggestion"}
+
+### Skill 5 · pr-summarizer
+name: pr-summarizer
+description: 生成 PR 描述 / 变更摘要。触发:PR description, 变更摘要, summarize。
+model: haiku
+tools: [Read, Grep]
+---
+读 PR diff + commit messages,生成:
+- 一句话变更摘要
+- 受影响文件清单(按目录分组)
+- 风险点标注(是否改 db schema / 公共 API)
+返回 markdown 格式,可直接贴 PR description
+</code></pre>
+
+<p>5 个 Skill 都用渐进式披露：不调用就不加载正文、只占用 description 的 50 词左右。模型选型上、lint 和 style 用 haiku（简单模式匹配），test 和 security 用 sonnet（需要理解失败原因），pr-summarizer 用 haiku（纯摘要任务）。</p>
+
+<div class="callout warn">
+<strong>&#9888;&#65039; 坑 2</strong> · 5 个 Skill 都用 opus——简单任务烧钱、大材小用。Skill 选模型要看任务复杂度、不要全用最贵。
+</div>
+
+<h2>4. SubAgent 编排：主代理 + 4 个子代理的分工</h2>
+
+<p><strong>实战代码块 3 — 主代理 + 4 子代理编排</strong>。这是 Agent SDK 调主 Agent 的入口、主 Agent 内部再用 Task tool 并行调度 4 个子代理。</p>
+
+<pre class="code"><code># scripts/run-pr-review.ts
+// Agent SDK 入口,在 GitHub Actions 里被调用
+
+import { query, ClaudeCodeOptions } from "@anthropic-ai/claude-code";
+
+const options: ClaudeCodeOptions = {
+  model: "opus",
+  systemPrompt: {
+    type: "preset",
+    preset: "claude_code",
+    append: (await import("fs").readFileSync("./CLAUDE.md", "utf-8")
+  },
+  allowedTools: ["Bash", "Read", "Grep", "Task"],
+  mcpServers: {
+    "github": {
+      command: "npx",
+      args: ["-y", "@modelcontextprotocol/server-github"],
+      env: { GITHUB_TOKEN: process.env.GITHUB_TOKEN! }
+    }
+  }
+};
+
+const prompt = `
+请审查 PR #${process.env.PR_NUMBER},仓库 ${process.env.REPO}。
+
+步骤:
+1. 用 GitHub MCP 读 PR diff
+2. 并行调用 4 个子代理:
+   - lint-check(用 lint-check skill)
+   - test-runner(用 test-runner skill)
+   - security-scan(用 security-scan skill)
+   - style-review(用 style-review skill)
+3. 把 4 个子代理结果汇总
+4. 用 pr-summarizer skill 生成 PR 摘要
+5. 用 GitHub MCP 写评论到 PR
+
+返回的最终结果应是 markdown 评论正文。
+`;
+
+const result = await query({ prompt, options });
+
+// 把评论发回 PR(主 Agent 自己用 MCP 写)
+console.log(result.text);
+</code></pre>
+
+<p>主 Agent 用 opus（因为要做整体决策：优先级、风险点、是否阻断）、子代理用 haiku/sonnet（并行执行、每路独立上下文、互不干扰）。注意 systemPrompt 用 <code>append</code> 而不是 <code>override</code>——保留 Claude Code 默认行为、只追加项目级约定。</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Agent</th>
+      <th>模型</th>
+      <th>工具</th>
+      <th>职责</th>
+      <th>预计 Token</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>主 Agent</td>
+      <td>opus</td>
+      <td>Bash, Read, Grep, Task, GitHub MCP</td>
+      <td>读 diff、并行调度、汇总、写评论</td>
+      <td>~8K</td>
+    </tr>
+    <tr>
+      <td>lint-check</td>
+      <td>haiku</td>
+      <td>Bash, Read</td>
+      <td>解析 lint 输出、结构化错误</td>
+      <td>~2K</td>
+    </tr>
+    <tr>
+      <td>test-runner</td>
+      <td>sonnet</td>
+      <td>Bash, Read</td>
+      <td>跑单测、定位失败</td>
+      <td>~4K</td>
+    </tr>
+    <tr>
+      <td>security-scan</td>
+      <td>sonnet</td>
+      <td>Bash, Read</td>
+      <td>跑 Semgrep + npm audit</td>
+      <td>~5K</td>
+    </tr>
+    <tr>
+      <td>style-review</td>
+      <td>haiku</td>
+      <td>Read, Grep</td>
+      <td>命名/注释/复杂度</td>
+      <td>~2K</td>
+    </tr>
+    <tr>
+      <td>pr-summarizer</td>
+      <td>haiku</td>
+      <td>Read, Grep</td>
+      <td>生成 PR 摘要</td>
+      <td>~2K</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>单次 PR 审查总成本约 23K Token，4 个子代理并行跑、主 Agent 只承担 ~8K。比起一个 opus Agent 一把梭、成本能省 50-60%。</p>
+
+<div class="callout warn">
+<strong>&#9888;&#65039; 坑 3</strong> · 主 Agent 自己读完整 diff 再调度子代理——diff 可能 5000+ 行、主 Agent 一旦读完、上下文就爆了。正确做法：主 Agent 用 <code>git diff --stat</code> 先看文件清单、再让 4 个子代理各自读自己负责的部分。
+</div>
+
+<h2>5. Hooks 编排：PreToolUse / PostToolUse / Stop 三层钩子</h2>
+
+<p><strong>实战代码块 4 — 三层 Hook 配置 + 监控 dashboard</strong>。这是 <code>.claude/settings.json</code> 的 hooks 段。</p>
+
+<pre class="code"><code>{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          { "type": "command", "command": ".claude/hooks/pii-guard.sh" },
+          { "type": "command", "command": ".claude/hooks/permission-check.sh" }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          { "type": "command", "command": ".claude/hooks/audit-log.sh" }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          { "type": "command", "command": ".claude/hooks/usage-stats.sh" },
+          { "type": "command", "command": ".claude/hooks/alert-on-blocker.sh" }
+        ]
+      }
+    ]
+  }
+}
+</code></pre>
+
+<p>四类 Hook 各司其职：</p>
+
+<ul>
+  <li><strong>pii-guard</strong>：PreToolUse 拦截含 PII 的命令（参考第 32 讲）</li>
+  <li><strong>permission-check</strong>：PreToolUse 二次校验、防止 Skill 绕过 settings.json 权限</li>
+  <li><strong>audit-log</strong>：PostToolUse 记录每次工具调用、落 JSON Lines（参考第 32 讲）</li>
+  <li><strong>usage-stats</strong>：Stop 时统计本次会话的 token 用量、推到 Prometheus</li>
+  <li><strong>alert-on-blocker</strong>：Stop 时检查主 Agent 输出、如果包含 "blocker" 关键词、发 Slack 告警</li>
+</ul>
+
+<p>Hook 配合 Skill 配合 SubAgent 配合 MCP、组成完整的输入拦截 → 执行编排 → 输出审计闭环。</p>
+
+<h2>6. 部署与运营：从灰度到全量 + 监控 + 迭代</h2>
+
+<p>项目上线分四阶段：</p>
+
+<ol>
+  <li><strong>阶段 1 · 自己玩（1 周）</strong>：本地手跑 10 个 PR、验证基本流程</li>
+  <li><strong>阶段 2 · 小范围灰度（2 周）</strong>:3 个志愿者项目接入、只读不写评论、人工对照审查结果</li>
+  <li><strong>阶段 3 · 写评论灰度（2 周）</strong>:Agent 开始发评论、但加 [Bot-Alpha] 前缀、方便识别</li>
+  <li><strong>阶段 4 · 全量上线</strong>：去掉前缀、正式开放所有项目</li>
+</ol>
+
+<p>监控三件套：</p>
+
+<ul>
+  <li><strong>成功率</strong>：Agent 跑完任务的占比（目标 &gt; 95%）</li>
+  <li><strong>误报率</strong>：Agent 报的 blocker 被人工 review 驳回的比例（目标 &lt; 10%）</li>
+  <li><strong>用户满意度</strong>：PR 作者对评论的 👍 / 👎（目标 &gt; 80%）</li>
+</ul>
+
+<p>迭代方向：</p>
+
+<ul>
+  <li>加 <strong>PR 描述自动生成</strong>（已部分实现、pr-summarizer 可扩展）</li>
+  <li>加 <strong>依赖更新自动 PR</strong>（用 npm outdated + 自动开 PR）
+  <li>加 <strong>自动合入</strong>（所有审查通过 + 2 个 approve → 自动 merge）</li>
+  <li>加 <strong>复盘学习</strong>（用第 31 讲 /compact 的对话历史、定期复盘误报、反哺 prompt）</li>
+</ul>
+
+<div class="callout warn">
+<strong>&#9888;&#65039; 坑 4</strong> · 第一版就追求 100% 准确率、跑了 2 周没结果——Agent 审查的 ROI 在减少人工重复劳动、不是取代人类判断。先做 60 分、再迭代到 80 分、最后才是 95 分。
+</div>
+
+<h2>7. 毕业寄语 + 下一步行动</h2>
+
+<p>33 讲到这里就结束了。回头看、Claude Code 工程化的核心不是会用工具、而是：</p>
+
+<ul>
+  <li><strong>把约定写进 CLAUDE.md</strong>、让 Agent 启动就懂你的项目</li>
+  <li><strong>把能力封装成 Skill</strong>、让复杂操作可复用、可降本</li>
+  <li><strong>把职责拆给 SubAgent</strong>、让并行 + 隔离成为本能</li>
+  <li><strong>把横切挂到 Hook</strong>、让权限、审计、计费自动跑</li>
+  <li><strong>把外部接进 MCP</strong>、让 Agent 的能力不被工具数量限制</li>
+  <li><strong>把生产自动化用 SDK</strong>、让 Agent 真正能跑在 CI 里</li>
+  <li><strong>把安全当持续运营</strong>，12 道关持续过、Playbook 持续演练</li>
+</ul>
+
+<p><strong>下一步行动清单</strong>（给完成 33 讲的你）：</p>
+
+<ol>
+  <li>选一个你正在做的项目、用本讲的方法搭一个 PR 审查 Agent、跑通第一版</li>
+  <li>把你 5 个最常用的 prompt 抽成 Skill、放进 <code>.claude/skills/</code></li>
+  <li>把团队的 review checklist 写成 Rules、扔进 <code>.claude/CLAUDE.md</code></li>
+  <li>把 Claude Code 接进 CI（参考第 21 讲）、跑 Headless 模式</li>
+  <li>订阅官方更新：<a href="https://docs.claude.com/en/docs/claude-code/overview" target="_blank">docs.claude.com/claude-code</a> + <a href="https://github.com/huangjia2019/claude-code-engineering" target="_blank">huangjia2019/claude-code-engineering</a></li>
+  <li>持续读 <a href="https://github.com/shanraisshan/claude-code-best-practice" target="_blank">shanraisshan/claude-code-best-practice</a>、跟进全功能地图</li>
+</ol>
+
+<p>课程毕业、工程化之路才刚开始。祝你的 Agent 们跑得稳、跑得省、跑得久。</p>
+
+<h2>8. 一句话备忘</h2>
+
+<blockquote>&#127881; 毕业快乐。下一个项目、交给 Agent 们去审吧。</blockquote>
+
+<hr>
+<p class="breadcrumb">← 回到 <a href="#top">本讲网页顶部</a></p>
+</main>
+<script>
+  (function () {
+    var STORAGE_KEY = "***";
+    var root = document.documentElement;
+    var btn  = document.getElementById("themeToggle");
+    var icon = document.getElementById("themeIcon");
+    var lbl  = document.getElementById("themeLabel");
+    function apply(theme) {
+      root.setAttribute("data-theme", theme);
+      if (theme === "dark") {
+        icon.innerHTML = "&#9728;&#65039;";
+        lbl.textContent  = "亮色";
+      } else {
+        icon.innerHTML = "&#127769;";
+        lbl.textContent  = "暗色";
+      }
+    }
+    var saved = null;
+    try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    if (saved === "light" || saved === "dark") {
+      apply(saved);
+    } else if (window.matchMedia &amp;&amp; window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      apply("dark");
+    } else {
+      apply("light");
+    }
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") || "light";
+      var next = cur === "dark" ? "light" : "dark";
+      apply(next);
+      try { localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>

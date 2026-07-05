@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 32 讲 · 安全与治理 · 企业级 Claude Code 部署清单</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fff;
+    --fg: #222;
+    --muted: #555;
+    --link: #1a73e8;
+    --code-bg: #f4f4f4;
+    --code-fg: inherit;
+    --pre-bg: #1e1e1e;
+    --pre-fg: #eaeaea;
+    --border: #ddd;
+    --th-bg: #f5f5f5;
+    --zebra: #fafafa;
+    --hover-row: #e8f0fe;
+    --hover-th: #eef2f7;
+    --blockquote-bg: #fafafa;
+    --blockquote-border: #ddd;
+    --hr: #eee;
+    --toggle-bg: #f5f5f5;
+    --toggle-fg: #333;
+    --toggle-border: #ddd;
+    --tag-bg: #eef4ff;
+    --tag-fg: #1a73e8;
+    --callout-bg: #fffbe6;
+    --callout-border: #fadb14;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1115;
+    --fg: #e6e6e6;
+    --muted: #9aa0a6;
+    --link: #8ab4f8;
+    --code-bg: #1e1f24;
+    --code-fg: #e6e6e6;
+    --pre-bg: #1a1d23;
+    --pre-fg: #e6e6e6;
+    --border: #303136;
+    --th-bg: #1c1f25;
+    --zebra: #16181d;
+    --hover-row: #1f2733;
+    --hover-th: #262c36;
+    --blockquote-bg: #181a20;
+    --blockquote-border: #303136;
+    --hr: #2a2d33;
+    --toggle-bg: #1c1f25;
+    --toggle-fg: #e6e6e6;
+    --toggle-border: #303136;
+    --tag-bg: #1c2740;
+    --tag-fg: #8ab4f8;
+    --callout-bg: #2a2615;
+    --callout-border: #fadb14;
+  }
+  html, body { background: var(--bg); color: var(--fg); }
+  body { font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.7; max-width: 920px; margin: 24px auto; padding: 0 18px; }
+  h1, h2, h3 { color: var(--fg); }
+  h1 { font-size: 28px; margin: .2em 0 .4em; }
+  h2 { font-size: 22px; margin-top: 1.6em; border-bottom: 1px solid var(--hr); padding-bottom: .25em; }
+  h3 { font-size: 18px; margin-top: 1.4em; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  hr { border: none; border-top: 1px solid var(--hr); margin: 2em 0; }
+  code { background: var(--code-bg); color: var(--code-fg); padding: 1px 6px; border-radius: 4px; font-size: 90%; }
+  pre { background: var(--pre-bg); color: var(--pre-fg); padding: 14px 16px; border-radius: 8px; overflow-x: auto; line-height: 1.55; font-size: 13.5px; }
+  pre.lang-flow { background: #f6f8fa; color: #24292f; }
+  :root[data-theme="dark"] pre.lang-flow { background: #16181d; color: #e6e6e6; }
+  pre.lang-flow code { background: transparent; color: inherit; padding: 0; }
+  pre.code code { background: transparent; color: inherit; padding: 0; }
+  blockquote { background: var(--blockquote-bg); border-left: 4px solid var(--blockquote-border); margin: 1em 0; padding: .7em 1em; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; margin: 1em 0; font-size: 14.5px; }
+  th, td { padding: 8px 10px; border: 1px solid var(--border); text-align: left; vertical-align: top; }
+  th { background: var(--th-bg); font-weight: 600; }
+  tbody tr:nth-child(even) td { background: var(--zebra); }
+  tbody tr:hover td { background: var(--hover-row); }
+  th:hover { background: var(--hover-th); }
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    margin-right: 6px;
+    background: var(--tag-bg);
+    color: var(--tag-fg);
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .breadcrumb {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 1em;
+  }
+  .breadcrumb a { color: var(--muted); }
+  .breadcrumb a:hover { color: var(--link); }
+
+  /* 暗色模式切换 */
+  .theme-toggle {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 9999;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--toggle-bg);
+    color: var(--toggle-fg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    user-select: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    transition: background-color .2s ease, transform .1s ease;
+  }
+  .theme-toggle:hover { background: var(--hover-row); }
+  .theme-toggle:active { transform: scale(.97); }
+  .theme-toggle .icon { font-size: 15px; line-height: 1; }
+
+  /* 课程序号大圆点 */
+  .lesson-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1a73e8, #6f42c1);
+    color: #fff;
+    font-size: 24px;
+    font-weight: 700;
+    margin-right: 14px;
+    vertical-align: middle;
+  }
+
+  /* callout */
+  .callout {
+    background: var(--callout-bg);
+    border-left: 4px solid var(--callout-border);
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin: 1.2em 0;
+  }
+  .callout.ok {
+    background: #e6f7ed;
+    border-color: #2ea44f;
+  }
+  :root[data-theme="dark"] .callout.ok { background: #112a1c; }
+  .callout.warn {
+    background: #fff1f0;
+    border-color: #cf222e;
+  }
+  :root[data-theme="dark"] .callout.warn { background: #2a1517; }
+
+  /* pre.code 通用代码块,跟 pre.lang-flow 区别 */
+  pre.code { background: #1e1e1e; color: #eaeaea; }
+  :root[data-theme="dark"] pre.code { background: #16181d; color: #e6e6e6; }
+</style>
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="切换暗色模式">
+  <span class="icon" id="themeIcon">&#127769;</span>
+  <span id="themeLabel">暗色</span>
+</button>
+<main>
+<div class="breadcrumb">课程导航： &laquo; <a href="lesson-31.html">第 31 讲</a>  ·  <a href="lesson-33.html">第 33 讲</a> &raquo;</div>
+
+<h1><span class="lesson-badge">32</span>第 32 讲 · 安全与治理 · 企业级 Claude Code 部署清单</h1>
+<p>
+  <span class="tag">实战加餐</span>
+  <span class="tag">第 32 / 33 讲</span>
+  <span class="tag">Claude Code 工程化实战</span>
+  <span class="tag">安全</span>
+  <span class="tag">治理</span>
+  <span class="tag">合规</span>
+</p>
+
+<div class="callout ok">
+<strong>&#128204; 本讲摘要</strong> · Claude Code 在企业里落地，真正的难点不是能不能用、而是敢不敢用。安全与治理覆盖三条防线：权限模型决定 Agent 能做什么，凭据管理决定 Agent 能访问什么，审计与可观测决定事后能查清楚什么。本讲给出一份从 0 到生产环境的 12 道关部署清单、settings.json 权限模板、PII 脱敏 Hook、审计日志结构化方案与应急响应 Playbook。学完本讲，你应该能在 1 个工作日内，把团队从几个开发私下用 Claude Code，推进到全员合规接入 SSO + 审计 + 沙箱的企业级状态。
+</div>
+
+<h2>1. 部署清单：从 0 到生产必须过的 12 道关</h2>
+
+<p>在企业里推广 Claude Code，常见误区是先让大家用起来、出问题再说。这条路走 3 个月，大概率会因为一次安全事故被一票否决。正确节奏是先建防线、再放使用、最后做优化。</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>阶段</th>
+      <th>关卡</th>
+      <th>必须做到</th>
+      <th>未做后果</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td rowspan="3">阶段 1 · 凭据与访问</td>
+      <td>关 1 · 凭据托管</td>
+      <td>API key 走 Vault / SSO、不入 .env</td>
+      <td>开发离职带走 key、公司持续付费</td>
+    </tr>
+    <tr>
+      <td>关 2 · 团队档位</td>
+      <td>统一企业账户 + inherit 模型档位</td>
+      <td>个人账户混用、无法审计</td>
+    </tr>
+    <tr>
+      <td>关 3 · 角色权限</td>
+      <td>管理员 / 开发者 / 只读 三档</td>
+      <td>实习生能改全局 settings</td>
+    </tr>
+    <tr>
+      <td rowspan="3">阶段 2 · 工具与文件</td>
+      <td>关 4 · Bash 沙箱</td>
+      <td>默认 allow-list + 危险命令 deny</td>
+      <td>Agent 误删数据库</td>
+    </tr>
+    <tr>
+      <td>关 5 · 路径白名单</td>
+      <td>限制 Agent 读 / 写哪些目录</td>
+      <td>Agent 读到 SSH key / .aws/credentials</td>
+    </tr>
+    <tr>
+      <td>关 6 · 网络出口</td>
+      <td>用代理白名单 / 镜像</td>
+      <td>Agent 调任意公网 API 出域</td>
+    </tr>
+    <tr>
+      <td rowspan="3">阶段 3 · 数据与合规</td>
+      <td>关 7 · PII 脱敏</td>
+      <td>Hook 拦截身份证 / 手机号 / 卡号</td>
+      <td>用户数据被发到模型端</td>
+    </tr>
+    <tr>
+      <td>关 8 · 审计日志</td>
+      <td>结构化记录每次工具调用</td>
+      <td>事后无法回溯谁改了什么</td>
+    </tr>
+    <tr>
+      <td>关 9 · 数据驻留</td>
+      <td>明确数据落在哪、合规区在哪</td>
+      <td>跨境数据传输违规</td>
+    </tr>
+    <tr>
+      <td rowspan="3">阶段 4 · 应急与运营</td>
+      <td>关 10 · 应急 Playbook</td>
+      <td>事前写好出事时怎么止血</td>
+      <td>事故现场 30 分钟内无人决策</td>
+    </tr>
+    <tr>
+      <td>关 11 · 灰度发布</td>
+      <td>Skill / Hook 改动先 1 人试用再全量</td>
+      <td>一次 Hook 改动锁住所有 Agent</td>
+    </tr>
+    <tr>
+      <td>关 12 · 定期演练</td>
+      <td>季度做一次模拟 key 泄露演练</td>
+      <td>真正泄露时手忙脚乱</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>这 12 关不是都做完了才能用、而是做多少、决定你能放心让多少人在生产里用。一个 5 人小团队，把阶段 1 的 3 关做掉，基本就能放心跑起来了。</p>
+
+<div class="callout warn">
+<strong>&#9888;&#65039; 坑 1</strong> · 把安全当一次性的事、等出了事故才补——Claude Code 治理是持续运营、不是上线检查表。建议每季度过一次清单，任何新 Skill / Hook 改动前也都过一遍相关关卡。
+</div>
+
+<h2>2. 权限模型：allow / deny / ask 与 paths 匹配</h2>
+
+<p>Claude Code 的权限系统分三层：工具级（允许用哪个工具）、命令级（Bash 允许执行什么命令）、路径级（读 / 写哪些文件）。三层组合起来，基本能覆盖 90% 的安全需求。</p>
+
+<p><strong>实战代码块 1 — 企业级 settings.json 权限配置</strong>。这是团队级 <code>.claude/settings.json</code> 的范本，锁死危险操作，放行日常开发。</p>
+
+<pre class="code"><code>{
+  "$schema": "https://docs.claude.com/schema/settings.json",
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Bash(pnpm run:*)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Read(src/**)",
+      "Read(tests/**)",
+      "Read(package.json)",
+      "Read(README.md)",
+      "Edit(src/**)",
+      "Edit(tests/**)"
+    ],
+    "deny": [
+      "Bash(rm -rf:*)",
+      "Bash(curl:*)",
+      "Bash(wget:*)",
+      "Bash(sudo:*)",
+      "Bash(chmod 777:*)",
+      "Bash(dd:*)",
+      "Bash(mkfs:*)",
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(**/.ssh/**)",
+      "Read(**/.aws/**)",
+      "Read(**/.kube/**)",
+      "Read(**/id_rsa*)",
+      "Read(**/secrets/**)",
+      "Edit(.env)",
+      "Edit(.env.*)",
+      "Edit(**/secrets/**)",
+      "Edit(.claude/settings.json)"
+    ],
+    "ask": [
+      "Bash(git push:*)",
+      "Bash(git checkout main)",
+      "Bash(pnpm install:*)",
+      "Bash(npm publish:*)",
+      "Bash(docker:*)",
+      "Bash(kubectl:*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/pii-guard.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
+</code></pre>
+
+<p>三个模式的语义：</p>
+
+<ul>
+  <li><strong>allow</strong>：直接放行、不弹确认对话框（高频低危）</li>
+  <li><strong>deny</strong>：直接拒绝、Agent 看不到这个工具/命令/路径（危险操作）</li>
+  <li><strong>ask</strong>：每次执行前弹确认（低频高危）</li>
+</ul>
+
+<p>注意 <code>deny</code> 里的 <code>Read(.env)</code> 和 <code>Read(**/.ssh/**)</code>——这是把凭据泄露这个最常见的事故场景从根上掐死。即使 Agent 想读 SSH key 来帮我配置部署，也会直接拒绝；开发者看到拒绝提示后，再手动加 allow 一次即可。</p>
+
+<div class="callout warn">
+<strong>&#9888;&#65039; 坑 2</strong> · 用 <code>defaultMode: "bypassPermissions"</code> 跳过所有确认——开发一时爽、出事故火葬场。这个开关只适合完全沙箱化的 CI 环境，不适合本地开发。
+</div>
+
+<h2>3. 凭据管理：API key、OAuth、SSH key 的安全姿态</h2>
+
+<p>凭据泄露是 Claude Code 事故里的 No.1。要么是 Agent 误把 .env 写进 git commit，要么是 Agent 读 .ssh/id_rsa 然后用 Bash 把它发出去。三个层级的防护：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>凭据类型</th>
+      <th>危险做法</th>
+      <th>推荐做法</th>
+      <th>检测手段</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>API key</td>
+      <td>明文写在 ~/.bashrc / .zshrc</td>
+      <td>走 1Password / Vault、Claude Code 通过 <code>op run</code> 注入</td>
+      <td>Hook 扫描内存中的明文 key</td>
+    </tr>
+    <tr>
+      <td>OAuth token</td>
+      <td>放在项目根目录 .token</td>
+      <td>走 SSO、Claude Code 走 <code>claude auth login</code></td>
+      <td>定期 rotate + 监控异常调用</td>
+    </tr>
+    <tr>
+      <td>SSH key</td>
+      <td>~/.ssh/id_rsa 默认 600 权限</td>
+      <td>用 ssh-agent 转发、不要让 Agent 直接读私钥</td>
+      <td>deny Read <code>**/.ssh/id_*</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<p>核心原则：让 Agent 用 token / 临时凭证，而不是直接持有长期有效的私钥。Agent 完成工作后、临时凭证就过期，泄露面大大缩小。</p>
+
+<h2>4. 审计与可观测：Hook 日志、调用链、合规留痕</h2>
+
+<p><strong>实战代码块 2 — PII 脱敏 Hook</strong>。这是挂在 <code>PreToolUse: Bash</code> 上的一个真实可用脚本，作用是：Agent 执行 Bash 命令前，先扫描命令字符串，看是否包含手机号、身份证号、银行卡号等 PII，有则拒绝执行。</p>
+
+<pre class="code"><code># .claude/hooks/pii-guard.sh
+#!/usr/bin/env bash
+# 拦截包含 PII 的 Bash 命令
+# Claude Code 通过 stdin 传入 JSON,字段 tool_input.command
+
+set -euo pipefail
+
+INPUT=$(cat)
+CMD=$(echo "$INPUT" | jq -r '.tool_input.command // ""')
+
+# 中国大陆手机号
+if echo "$CMD" | grep -qE '\b1[3-9][0-9]{9}\b'; then
+  echo "&#10060; 拒绝:检测到中国大陆手机号" >&amp;2
+  echo "&#128161; 提示:请使用脱敏占位符,如 138****1234" >&amp;2
+  exit 2
+fi
+
+# 18 位身份证号
+if echo "$CMD" | grep -qE '\b[1-9][0-9]{16}[0-9Xx]\b'; then
+  echo "&#10060; 拒绝:检测到身份证号" >&amp;2
+  exit 2
+fi
+
+# 16-19 位银行卡号(简单匹配)
+if echo "$CMD" | grep -qE '\b[0-9]{16,19}\b'; then
+  echo "&#10060; 拒绝:检测到疑似银行卡号" >&amp;2
+  exit 2
+fi
+
+# AWS Access Key
+if echo "$CMD" | grep -qE 'AKIA[0-9A-Z]{16}'; then
+  echo "&#10060; 拒绝:检测到 AWS Access Key" >&amp;2
+  exit 2
+fi
+
+exit 0
+</code></pre>
+
+<p>Hook 的退出码语义：退出 0 = 放行、退出 2 = 拒绝（Claude Code 会把 stderr 作为错误信息反馈给 Agent）。这个 PII 脱敏逻辑非常朴素，生产环境建议接一个真实的 PII 检测服务（如 Microsoft Presidio），准确率会高得多。</p>
+
+<p><strong>实战代码块 3 — 审计日志结构化输出</strong>。把每次工具调用落到 JSON Lines 文件，后续可以直接灌进 ELK / Loki 做查询和告警。</p>
+
+<pre class="code"><code># .claude/hooks/audit-log.sh
+#!/usr/bin/env bash
+# 记录每次工具调用,挂到 PostToolUse
+# 输出 .claude/audit.jsonl,每行一条 JSON
+
+set -euo pipefail
+
+INPUT=$(cat)
+LOG_FILE=".claude/audit.jsonl"
+mkdir -p .claude
+
+# 提取关键字段
+TIMESTAMP=$(date -Iseconds)
+SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // "unknown"')
+TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // "unknown"')
+TOOL_INPUT=$(echo "$INPUT" | jq -c '.tool_input // {}')
+TOOL_RESULT=$(echo "$INPUT" | jq -c '.tool_result // {}' | head -c 500)
+
+# 结构化输出(单行 JSON)
+jq -nc \
+  --arg ts "$TIMESTAMP" \
+  --arg sid "$SESSION_ID" \
+  --arg tool "$TOOL_NAME" \
+  --argjson input "$TOOL_INPUT" \
+  --argjson result "$TOOL_RESULT" \
+  '{timestamp: $ts, session_id: $sid, tool: $tool, input: $input, result_preview: $result}' \
+  >> "$LOG_FILE"
+
+exit 0
+</code></pre>
+
+<p>审计日志的四个查询场景：</p>
+
+<ul>
+  <li><strong>谁改了 prod 配置?</strong> → <code>jq 'select(.tool=="Edit" and .input.file_path | contains("prod")' audit.jsonl</code></li>
+  <li><strong>昨天 18 点谁在跑 docker?</strong> → <code>jq 'select(.tool=="Bash" and .input.command | contains("docker")' audit.jsonl</code></li>
+  <li><strong>某用户跑了多少工具?</strong> → <code>jq 'select(.session_id=="...") | .tool' audit.jsonl | sort | uniq -c</code></li>
+  <li><strong>是否有 PII 触发了拦截?</strong> → <code>grep "PII 拒绝" pii-guard.log</code></li>
+</ul>
+
+<div class="callout warn">
+<strong>&#9888;&#65039; 坑 3</strong> · 把审计日志直接落进 git——审计日志里可能有"谁在跑 rm -rf"这类敏感操作，这种东西只该留在服务器本地，或者独立加密存储。
+</div>
+
+<h2>5. 数据出域防护：敏感信息脱敏、PII 过滤、文件 exclude</h2>
+
+<p>三条防线：</p>
+
+<ol>
+  <li><strong>进 Hook（第 4 节已讲）</strong>：Agent 要发出去的内容，先扫一遍 PII</li>
+  <li><strong>出 Hook</strong>：Agent 的输出如果含敏感路径（如 <code>/Users/xxx/Desktop/xxx</code>），自动打码</li>
+  <li><strong>文件 exclude</strong>：在 <code>.claudeignore</code> 里把敏感目录排除，Agent 根本看不到</li>
+</ol>
+
+<pre class="code"><code># .claudeignore
+# Claude Code 读不到这些路径,跟 .gitignore 语法一致
+
+# 凭据
+.env
+.env.*
+**/.ssh/**
+**/.aws/**
+**/.kube/**
+**/id_rsa*
+**/id_ed25519*
+**/*.pem
+**/*.key
+**/secrets/**
+
+# 内部文档
+**/internal-docs/**
+**/confidential/**
+
+# 大文件(防止 Token 爆炸)
+**/*.log
+**/*.zip
+**/*.tar.gz
+node_modules/
+dist/
+build/
+</code></pre>
+
+<h2>6. 应急响应：出错时如何快速止血</h2>
+
+<p><strong>实战代码块 4 — 应急响应 Playbook</strong>。把出事时怎么办提前写成 markdown，贴在团队 wiki 第一屏。</p>
+
+<pre class="code"><code># Claude Code 应急响应 Playbook(精简版)
+
+## 等级 1 · Agent 误操作(开发自己发现)
+1. /rewind 回到上一步
+2. git diff 确认改动范围
+3. git checkout / git restore 回退
+4. 写一段后见记录:为什么 Agent 误操作?是 prompt 不够明确,还是权限过宽?
+
+## 等级 2 · 凭据可能泄露(怀疑 key 进了 prompt)
+1. 立刻 rotate 该 key
+2. 查 audit.jsonl 确认 Agent 是否真的发出去了
+3. 通知安全团队 + 业务方
+4. 检查下游服务是否有异常调用
+
+## 等级 3 · Agent 执行了破坏性命令(如 rm -rf 误打到 /)
+1. 立刻 kill 所有 claude 进程:`pkill -f claude`
+2. 检查文件系统:`ls -la / | head` 看是否还在
+3. 查 audit.jsonl 找到破坏起点
+4. 从最近的 git commit / 备份恢复
+5. 复盘:为什么 deny 规则没拦住?补 deny 规则
+
+## 等级 4 · PII / 用户数据疑似出域
+1. 立刻停用所有 Claude Code 实例
+2. 通知 DPO(数据保护官)+ 法务
+3. 72 小时内评估是否触发监管报告义务
+4. 复盘:为什么 PII 没被脱敏?Hook 配置还是业务逻辑?
+
+## 等级 5 · 大规模 key 泄露(例如 .env 被 commit)
+1. 立刻 rotate 所有相关 key
+2. git filter-repo 清理历史
+3. 强制推送到远端(如果有)
+4. 通知所有受影响方
+5. 72 小时内提交事故复盘报告
+</code></pre>
+
+<p>Playbook 的核心是分级 + 动作清单 + 责任人：等级 1 自己搞定，等级 2 找安全团队，等级 3 找运维，等级 4 找 DPO，等级 5 全员。</p>
+
+<div class="callout warn">
+<strong>&#9888;&#65039; 坑 4</strong> · 出事故现场才写 Playbook——现场手忙脚乱、该 rotate 的 key 没 rotate、该通知的人没通知、该补的 deny 规则没人补。Playbook 必须事前写好，并定期演练。
+</div>
+
+<h2>7. 一句话备忘</h2>
+
+<blockquote>&#128737;&#65039; 安全的反面不是不方便，而是出一次事故就再也用不了。先建防线、再放使用。</blockquote>
+
+<hr>
+<p class="breadcrumb">← 回到 <a href="#top">本讲网页顶部</a></p>
+</main>
+<script>
+  (function () {
+    var STORAGE_KEY = "***";
+    var root = document.documentElement;
+    var btn  = document.getElementById("themeToggle");
+    var icon = document.getElementById("themeIcon");
+    var lbl  = document.getElementById("themeLabel");
+    function apply(theme) {
+      root.setAttribute("data-theme", theme);
+      if (theme === "dark") {
+        icon.innerHTML = "&#9728;&#65039;";
+        lbl.textContent  = "亮色";
+      } else {
+        icon.innerHTML = "&#127769;";
+        lbl.textContent  = "暗色";
+      }
+    }
+    var saved = null;
+    try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    if (saved === "light" || saved === "dark") {
+      apply(saved);
+    } else if (window.matchMedia &amp;&amp; window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      apply("dark");
+    } else {
+      apply("light");
+    }
+    btn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") || "light";
+      var next = cur === "dark" ? "light" : "dark";
+      apply(next);
+      try { localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>
