@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dynamic Workflows 工程化实战（上）：原理、原语与范式</title>
+  <style>
+    /* ========== 全局基础 ========== */
+    *, *::before, *::after { box-sizing: border-box; }
+
+    :root {
+      --color-primary: #1A56DB;
+      --color-primary-light: #E0EBFF;
+      --color-text: #1F2937;
+      --color-text-secondary: #4B5563;
+      --color-text-light: #6B7280;
+      --color-border: #E5E7EB;
+      --color-bg: #F3F4F6;
+      --color-bg-card: #FFFFFF;
+      --color-bg-quote: #F0F4FF;
+      --color-bg-code: #1E293B;
+      --color-bg-inline-code: #FEE2E2;
+      --color-link: #1A56DB;
+      --shadow-card: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+      --radius: 8px;
+    }
+
+    html { font-size: 16px; }
+
+    body {
+      margin: 0;
+      padding: 40px 16px;
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC",
+                   "Microsoft YaHei", "Hiragino Sans GB", "Heiti SC",
+                   "Noto Sans CJK SC", "Source Han Sans SC", sans-serif;
+      line-height: 1.75;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ========== 文章容器 ========== */
+    article {
+      max-width: 760px;
+      margin: 0 auto;
+      background: var(--color-bg-card);
+      border-radius: 12px;
+      box-shadow: var(--shadow-card);
+      padding: 48px 48px;
+      overflow: hidden;
+    }
+
+    @media (max-width: 640px) {
+      body { padding: 16px 8px; }
+      article { padding: 24px 18px; border-radius: 8px; }
+      h1 { font-size: 24px !important; }
+      h2 { font-size: 20px !important; }
+    }
+
+    /* ========== 标题 ========== */
+    h1 {
+      font-size: 30px;
+      line-height: 1.4;
+      margin: 0 0 24px 0;
+      font-weight: 800;
+      color: #0F172A;
+      letter-spacing: -0.5px;
+    }
+
+    h2 {
+      font-size: 23px;
+      line-height: 1.5;
+      margin: 48px 0 20px 0;
+      font-weight: 700;
+      color: #0F172A;
+      padding-left: 14px;
+      border-left: 5px solid var(--color-primary);
+      background: linear-gradient(to right, var(--color-primary-light), transparent 60%);
+      padding-top: 6px;
+      padding-bottom: 6px;
+    }
+
+    h3 {
+      font-size: 19px;
+      line-height: 1.5;
+      margin: 32px 0 14px 0;
+      font-weight: 700;
+      color: #1E293B;
+      padding-left: 12px;
+      border-left: 3px solid var(--color-primary);
+    }
+
+    h4 {
+      font-size: 17px;
+      margin: 24px 0 12px 0;
+      font-weight: 700;
+      color: #334155;
+    }
+
+    /* ========== 段落 ========== */
+    p { margin: 0 0 16px 0; }
+
+    /* ========== 列表 ========== */
+    ul, ol { margin: 0 0 16px 0; padding-left: 28px; }
+    li { margin-bottom: 6px; }
+    li > ul, li > ol { margin-top: 6px; margin-bottom: 6px; }
+
+    /* ========== 强调 ========== */
+    strong {
+      color: #0F172A;
+      font-weight: 700;
+    }
+
+    /* ========== 引用 ========== */
+    blockquote {
+      margin: 20px 0;
+      padding: 14px 20px;
+      background: var(--color-bg-quote);
+      border-left: 4px solid var(--color-primary);
+      border-radius: 4px;
+      color: var(--color-text-secondary);
+      font-style: normal;
+    }
+    blockquote p:last-child { margin-bottom: 0; }
+    blockquote p:first-child { margin-top: 0; }
+
+    /* ========== 引文块（文章开篇引言） ========== */
+    .lead {
+      margin: 0 0 40px 0;
+      padding: 20px 24px;
+      background: linear-gradient(135deg, #EEF4FF 0%, #F8FAFF 100%);
+      border-left: 5px solid var(--color-primary);
+      border-radius: 4px;
+      color: var(--color-text-secondary);
+      font-size: 15.5px;
+      line-height: 1.85;
+    }
+    .lead p { margin: 6px 0; }
+    .lead p:first-child { margin-top: 0; }
+    .lead p:last-child { margin-bottom: 0; }
+
+    /* ========== 行内代码 ========== */
+    code {
+      font-family: "SF Mono", "Cascadia Code", "JetBrains Mono",
+                   Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 0.88em;
+      background: var(--color-bg-inline-code);
+      color: #B91C1C;
+      padding: 2px 6px;
+      border-radius: 3px;
+      word-break: break-word;
+    }
+
+    /* ========== 代码块 ========== */
+    pre {
+      margin: 20px 0;
+      padding: 18px 22px;
+      background: var(--color-bg-code);
+      color: #E2E8F0;
+      border-radius: var(--radius);
+      overflow-x: auto;
+      line-height: 1.6;
+      font-size: 14px;
+      box-shadow: 0 2px 6px rgba(30, 41, 59, 0.15);
+    }
+    pre code {
+      background: transparent;
+      color: inherit;
+      padding: 0;
+      font-size: inherit;
+    }
+
+    /* ========== 表格 ========== */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      font-size: 14.5px;
+      background: var(--color-bg-card);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    thead {
+      background: linear-gradient(135deg, #1A56DB 0%, #2563EB 100%);
+      color: white;
+    }
+    th {
+      padding: 12px 14px;
+      text-align: left;
+      font-weight: 600;
+      border: none;
+    }
+    td {
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--color-border);
+      vertical-align: top;
+    }
+    tbody tr:nth-child(even) { background: #F9FAFB; }
+    tbody tr:hover { background: #F0F4FF; }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ========== 分隔线 ========== */
+    hr {
+      border: none;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--color-border), transparent);
+      margin: 40px 0;
+    }
+
+    /* ========== 配图 ========== */
+    figure {
+      margin: 28px 0;
+      text-align: center;
+    }
+    figure img {
+      max-width: 100%;
+      height: auto;
+      border-radius: var(--radius);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    figcaption {
+      margin-top: 10px;
+      font-size: 13.5px;
+      color: var(--color-text-light);
+      font-style: italic;
+    }
+
+    /* ========== ASCII 框图保留等宽风格 ========== */
+    pre.ascii {
+      background: #0F172A;
+      color: #94A3B8;
+      line-height: 1.4;
+    }
+
+    /* ========== 页脚 ========== */
+    footer {
+      margin-top: 56px;
+      padding-top: 24px;
+      border-top: 2px dashed var(--color-border);
+      color: var(--color-text-light);
+      font-size: 14px;
+      line-height: 1.8;
+    }
+    footer h4 {
+      color: var(--color-text-secondary);
+      margin-bottom: 12px;
+    }
+    footer ol li { margin-bottom: 4px; }
+
+    /* ========== 重点高亮 ========== */
+    .highlight {
+      background: linear-gradient(transparent 60%, #FEF08A 60%);
+      padding: 0 2px;
+    }
+
+    /* ========== 系列导航条 ========== */
+    .series-nav {
+      margin: 0 0 32px 0;
+      padding: 14px 18px;
+      background: linear-gradient(135deg, #F0F4FF 0%, #F8FAFF 100%);
+      border-radius: 6px;
+      font-size: 14px;
+      color: var(--color-text-secondary);
+      border: 1px solid #DCE7FF;
+    }
+    .series-nav .label {
+      display: inline-block;
+      padding: 2px 10px;
+      background: var(--color-primary);
+      color: white;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-right: 8px;
+    }
+  </style>
+</head>
+<body>
+
+<article>
+
+  <div class="series-nav">
+    <span class="label">系列上篇</span>
+    本文是《Dynamic Workflows 工程化实战》系列文章的上篇，主讲原理、原语与范式。下篇《落地 Excel 数据分析与团队资产沉淀》将于近期发布。
+  </div>
+
+  <h1>Dynamic Workflows 工程化实战（上）：原理、原语与范式——从"会干活"到"会组织一群人干活"</h1>
+
+  <div class="lead">
+    <p>本文是《Dynamic Workflows 工程化实战》系列文章的上篇。</p>
+    <p>2026 年 6 月，Anthropic 抛出 <strong>Dynamic Workflows</strong>——把"编排"从对话搬进代码，让 Claude 现写 harness，把任务拆给一队 Claude 并行去干。这是 Claude Code 工程化在"流程编排"维度的一次跃迁。</p>
+    <p>本系列分为上下两篇，<strong>上篇讲清原理</strong>（是什么、怎么跑、解决什么问题、5 种工程范式），<strong>下篇讲落地</strong>（如何把 Excel 数据分析流水线搬上 Dynamic Workflows，如何沉淀为团队资产）。</p>
+  </div>
+
+  <hr>
+
+  <h2>一、Dynamic Workflows 到底是什么</h2>
+
+  <h3>1.1 一句话定义</h3>
+
+  <p>Anthropic 给 Dynamic Workflows 的官方定义只有一行：</p>
+
+  <blockquote>
+    <p><strong>A workflow moves the plan into code.</strong><br>
+    工作流，把计划搬进了代码。</p>
+  </blockquote>
+
+  <p>更口语化一些：</p>
+
+  <blockquote>
+    <p><strong>Dynamic Workflows = 让 Claude 根据你的目标，现场写一段 JS 编排脚本，由 Runtime 调度数十到数百个子 Agent 并行执行，最后返回收敛后的结果。</strong></p>
+  </blockquote>
+
+  <p>关键词三个：</p>
+
+  <ol>
+    <li><strong>现场写</strong>：不是预定义模板，不是你手搓代码——你只描述目标，Claude 自己写脚本。</li>
+    <li><strong>并行执行</strong>：Runtime 在本机把子 Agent 撒出去同时干活，最多 16 个并发，单次上限 1000 个。</li>
+    <li><strong>收敛返回</strong>：不是把中间结果丢给你，而是经过对抗验证后，只把最终答案给到主会话。</li>
+  </ol>
+
+  <h3>1.2 它解决了什么"老大难"</h3>
+
+  <p>在过去，单 Agent 跑长任务有三个反复出现的失败模式：</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>失败模式</th>
+        <th>表现</th>
+        <th>根因</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>偷懒（Agentic Laziness）</strong></td>
+        <td>50 个文件审到 35 个就宣布"干完了"</td>
+        <td>上下文塞满后注意力稀释，把"差不多"当成"做完"</td>
+      </tr>
+      <tr>
+        <td><strong>自夸（Self-Preferential Bias）</strong></td>
+        <td>让 Claude 验自己的活，它偏向维持自己之前的结论</td>
+        <td>自己给自己打分，等于"让学生批自己的卷子"</td>
+      </tr>
+      <tr>
+        <td><strong>跑偏（Goal Drift）</strong></td>
+        <td>多轮压缩后，边界要求、约束条件一点点丢失</td>
+        <td>每次摘要都有损，最后解的根本不是原题</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>Dynamic Workflows 用一种<strong>结构性</strong>的方式解决这三件事：</p>
+
+  <ul>
+    <li><strong>隔离</strong>：每个子 Agent 拿一个干净独立的小上下文，没有谁握着整个任务 → 偷懒无处藏。</li>
+    <li><strong>独立验证</strong>：干活的是 A，验活的是 B，互相不共享上下文 → 自夸自然消失。</li>
+    <li><strong>每个窗口都短</strong>：每个 Agent 只盯一件事，长期目标被 Runtime 写死 → 跑偏被摁住。</li>
+  </ul>
+
+  <h3>1.3 和传统多 Agent 编排的本质区别</h3>
+
+  <p>很多人第一反应是：这不就是加强版的 subagent 吗？</p>
+
+  <p><strong>不是。</strong> 我们把 Claude Code 已有的几种机制横向拉出来对比：</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>维度</th>
+        <th>普通会话</th>
+        <th>SubAgent</th>
+        <th>Skill</th>
+        <th>Agent Teams</th>
+        <th><strong>Workflow</strong></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>编排者</td>
+        <td>用户</td>
+        <td>主 Claude 逐轮</td>
+        <td>主 Claude 逐轮</td>
+        <td>主 Claude 网状协作</td>
+        <td><strong>JavaScript 脚本</strong></td>
+      </tr>
+      <tr>
+        <td>中间结果存放</td>
+        <td>上下文窗口</td>
+        <td>回到上下文窗口</td>
+        <td>回到上下文窗口</td>
+        <td>队员收件箱+上下文</td>
+        <td><strong>脚本变量（堆内存）</strong></td>
+      </tr>
+      <tr>
+        <td>规模量级</td>
+        <td>单次会话</td>
+        <td>一轮派几个</td>
+        <td>一次一条指令</td>
+        <td>几个队员长期共事</td>
+        <td><strong>数十到数百，最多 1000</strong></td>
+      </tr>
+      <tr>
+        <td>协作拓扑</td>
+        <td>串行</td>
+        <td>星形</td>
+        <td>链式</td>
+        <td>网状</td>
+        <td><strong>树状（fan-out → fan-in）</strong></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>重点看"<strong>中间结果存放</strong>"那一行：前四种机制里，中间结果最终都要回到主上下文；只有 workflow 把中间结果从"上下文窗口"搬到了"脚本变量"。</p>
+
+  <p>当任务规模大到上下文装不下，前面四种机制都开始吃力，<strong>workflow 才是补上那一格</strong>。</p>
+
+  <h3>1.4 一句话定位</h3>
+
+  <blockquote>
+    <p><strong>Workflow 不是 subagent / skill / team 的替代品，而是补上它们够不到的那一格——"单个 Agent 一次跑不完、中间结果多到上下文装不下"的大任务。</strong></p>
+  </blockquote>
+
+  <p>日常 80% 的活照旧使用 subagent / skill；只有当你在写需求时心里冒出一句"这要拆几百个文件分别处理"的时候，workflow 才登场。</p>
+
+  <hr>
+
+  <h2>二、Dynamic Workflows 的架构与原理解析</h2>
+
+  <h3>2.1 整体运行链路</h3>
+
+  <p>Dynamic Workflows 的运行链路有 4 个关键节点：</p>
+
+  <figure>
+    <img src="dynamic_workflows_chain.png" alt="Dynamic Workflows 运行链路：从用户提问到最终报告的 4 阶段流程图">
+    <figcaption>图 1　Dynamic Workflows 运行链路（从用户提问到最终报告，主 Claude 只在两端露面）</figcaption>
+  </figure>
+
+  <p>这里藏着最容易被误解的一点：<strong>workflow 不是跑在 Anthropic 服务端的什么编排引擎，它就是 Claude Code 在你本机起的一段 JavaScript 脚本，由一个本地 JS 运行时执行。</strong></p>
+
+  <p>理解这一点，很多看起来神奇的能力就一下子合理了：</p>
+
+  <ul>
+    <li><strong>为什么能扛住几百个并发 Agent？</strong> 因为真正在外面循环的是那段不调用模型的 JS。</li>
+    <li><strong>为什么主 Claude 上下文不会爆？</strong> 主 Claude 拿到的只是 workflow 最后 <code>return</code> 的小对象，中间几百个 Agent 的输出根本没进它的窗口。</li>
+    <li><strong>为什么中断后能恢复？</strong> 脚本运行进度落到本地，不依赖那条对话的内存状态。</li>
+    <li><strong>为什么协调成本几乎为零？</strong> 循环、判断、汇总本来就不该让 LLM 来做，让 V8 跑就行。</li>
+  </ul>
+
+  <h3>2.2 8 个基础原语</h3>
+
+  <p>workflow 脚本是普通 JavaScript，但 Claude Code 在运行环境中注入了 8 个原语。按使用频率分两层：</p>
+
+  <p><strong>第一层（结构骨架）</strong></p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>原语</th>
+        <th>作用</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td><code>meta</code></td><td>workflow 的身份证，导出 name / description / phases，<strong>必须是纯字面量</strong></td></tr>
+      <tr><td><code>phase(title)</code></td><td>把进度切成大段，只影响 UI 展示，不影响执行顺序</td></tr>
+      <tr><td><code>agent(prompt, opts)</code></td><td><strong>唯一会调用 LLM 的那一行</strong>，雇一个有干净上下文的子 Agent</td></tr>
+      <tr><td><code>parallel(thunks)</code></td><td>有 barrier 的并发——全部跑完才往下走</td></tr>
+      <tr><td><code>pipeline(items, ...stages)</code></td><td>无 barrier 的流水线——A 跑到 stage3 时 B 还能在 stage1</td></tr>
+    </tbody>
+  </table>
+
+  <p><strong>第二层（工程能力）</strong></p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>原语</th>
+        <th>作用</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td><code>schema</code></td><td>JSON Schema 约束，强制结构化输出，运行时自动校验重试</td></tr>
+      <tr><td><code>budget</code></td><td>token 预算对象，配合 <code>while</code> 写"边花边干"的循环</td></tr>
+      <tr><td><code>log</code></td><td>进度可见，不是 <code>console.log</code>，输出到 <code>/workflows</code> 视图</td></tr>
+      <tr><td><code>args</code></td><td>把 workflow 变成参数化模板，存到 <code>.claude/workflows/</code> 后成为可复用命令</td></tr>
+      <tr><td><code>isolation: 'worktree'</code></td><td>子 Agent 在独立 git worktree 里跑，避免文件冲突</td></tr>
+    </tbody>
+  </table>
+
+  <p>把第一层掌握就能让 workflow 跑起来；把第二层掌握才能写出生产可用水平。</p>
+
+  <h3>2.3 5 种工程范式</h3>
+
+  <p>8 个原语可以组合出形形色色的编排模式，实战中反复出现的就是这 5 种：</p>
+
+  <h4>范式 1：对抗性验证（Adversarial Verify）</h4>
+
+  <p>LLM 给出的结果"看似正确实则错误"是高频问题。解法：让 N 个独立 Agent 尝试反驳，多数反驳成功就剔除。</p>
+
+<pre><code>const votes = await parallel([
+  () =&gt; agent(`尝试反驳：${claim}。如果不确定，默认 refuted=true。`, { schema: VERDICT_SCHEMA }),
+  () =&gt; agent(`尝试反驳：${claim}。如果不确定，默认 refuted=true。`, { schema: VERDICT_SCHEMA }),
+  () =&gt; agent(`尝试反驳：${claim}。如果不确定，默认 refuted=true。`, { schema: VERDICT_SCHEMA }),
+])
+const survives = votes.filter(Boolean).filter(v =&gt; !v.refuted).length &gt;= 2</code></pre>
+
+  <p>两个细节值得品：</p>
+
+  <ol>
+    <li><strong>默认值偏保守</strong>——"如果不确定就当 refuted=true"，宁可错杀也不要放过。</li>
+    <li><strong>3 个 Agent 跑的是同一个 prompt</strong>，但它们的随机性相互独立，所以多数投票本身就是一种降噪。</li>
+  </ol>
+
+  <h4>范式 2：循环直到达标（Loop-until-dry）</h4>
+
+  <p>面对"代码库里到底有多少 bug"这种规模未知的任务，写不出"跑 N 轮就够"的常量。那就让它跑到没东西可挖为止：</p>
+
+<pre><code>const seen = new Set()
+let consecutiveEmpty = 0
+while (consecutiveEmpty &lt; 2 &amp;&amp; budget.remaining() &gt; 100_000) {
+  const result = await agent('找出代码中尚未发现的 bug', { schema: BUGS_SCHEMA })
+  const newBugs = result.bugs.filter(b =&gt; !seen.has(b.id))
+  if (newBugs.length === 0) consecutiveEmpty++
+  else { consecutiveEmpty = 0; bugs.push(...newBugs) }
+}</code></pre>
+
+  <p>退出条件是"连续 K 轮没有新发现"，配合 <code>budget.remaining()</code> 兜底防止跑飞。</p>
+
+  <h4>范式 3：多视角评审（Judge Panel）</h4>
+
+  <p>需要做开放性决策（设计方案、文案选型、API 设计）时，让多个 Agent 从不同角度独立提方案，再让一组评委打分。注意提方案和打分<strong>严格隔离</strong>——提方案的不知道有评委，打分的不知道方案是谁出的。</p>
+
+  <h4>范式 4：多维度扫描（Multi-modal Sweep）</h4>
+
+  <p>一个维度一个 Agent，全部并行扫一遍。代码审查就是经典场景：</p>
+
+<pre><code>const DIMENSIONS = [
+  { key: 'security',      prompt: '审查安全性：SQL 注入、XSS、硬编码密钥、越权' },
+  { key: 'performance',   prompt: '审查性能：N+1 查询、内存泄漏、不必要的重渲染' },
+  { key: 'maintainability', prompt: '审查可维护性：代码重复、过长函数、深层嵌套' },
+]
+const reviews = await parallel(DIMENSIONS.map(d =&gt; () =&gt;
+  agent(d.prompt, { label: `review:${d.key}`, phase: 'Review', schema: FINDING_SCHEMA })
+))</code></pre>
+
+  <p>好处：<strong>每个 Agent 只关心一件事</strong>，prompt 短、噪音小、输出聚焦。</p>
+
+  <h4>范式 5：Pipeline 默认优于 Barrier</h4>
+
+  <p><strong>决策规则</strong>：默认 <code>pipeline</code>。只有当你确实需要"前一阶段全部结果"才能进下一阶段（去重、汇总、打分、选最优）时，才换 <code>parallel</code> barrier。</p>
+
+  <p>为什么这条单独拎出来？因为它直接影响 workflow 的总耗时和成本。多问自己一句"我真的需要等齐吗"，就能省下一大把时间和 token。</p>
+
+  <h3>2.4 一段最小骨架</h3>
+
+<pre><code>export const meta = {
+  name: 'review-codebase',
+  description: '多角度代码审查',
+  phases: [
+    { title: 'Discover', detail: '发现问题' },
+    { title: 'Verify',   detail: '验证发现' },
+  ],
+}
+
+phase('Discover')
+const findings = await parallel([
+  () =&gt; agent('从安全角度找问题',       { schema: FINDING_SCHEMA }),
+  () =&gt; agent('从性能角度找问题',       { schema: FINDING_SCHEMA }),
+  () =&gt; agent('从可维护性角度找问题',   { schema: FINDING_SCHEMA }),
+])
+
+const claims = findings.filter(Boolean).flatMap(r =&gt; r.items)
+log(`共 ${claims.length} 条待验证发现`)</code></pre>
+
+  <p>注意：<code>filter</code> / <code>flatMap</code> 是普通 JS，<strong>不消耗任何 LLM token</strong>。这是 workflow 相对普通 subagent 模式最关键的差异——主 Claude 此时正在睡觉。</p>
+
+  <hr>
+
+  <h2>三、Dynamic Workflows 解决的问题类型</h2>
+
+  <h3>3.1 任务规模远大于一次会话能装下的上下文</h3>
+
+  <p>几百个文件的中间结果往主 Claude 上下文里一塞，注意力立刻被稀释，很快就溢出。workflow 把中间结果存在脚本变量里，主 Claude 最后只拿一个 <code>return</code> 的小对象。</p>
+
+  <p><strong>典型场景</strong>：</p>
+  <ul>
+    <li>跨整个仓库的代码审计</li>
+    <li>跨整个服务的大规模 Bug 扫描</li>
+    <li>海量内容的横向深度研究</li>
+  </ul>
+
+  <h3>3.2 结构高度规则化、可编排的任务</h3>
+
+  <p>扇出（fan-out）→ 各自跑 → 汇合（fan-in）这个模式被反复使用，模式比内容稳定。</p>
+
+  <p><strong>典型场景</strong>：</p>
+  <ul>
+    <li>多文件批量翻译</li>
+    <li>批量生成单元测试</li>
+    <li>多接口安全审计</li>
+    <li>全文档批量格式化</li>
+  </ul>
+
+  <h3>3.3 协调本身的算力很便宜的任务</h3>
+
+  <p>循环 1000 次、把数组 filter 一遍、按文件名分组——这些用 LLM 来做完全是浪费，用一段 JavaScript 跑就行。</p>
+
+  <p><strong>典型场景</strong>：</p>
+  <ul>
+    <li>排序 / 打分：1000 条工单按严重度排序</li>
+    <li>去重：1000 个候选文件名去重</li>
+    <li>分组：1000 个设备按类型分组</li>
+    <li>索引：把分散在多个文件的内容汇总成索引</li>
+  </ul>
+
+  <h3>3.4 需要对抗性验证的高风险决策</h3>
+
+  <p>不能只靠模型自信输出结果，必须让结果经过反驳-收敛的过程。</p>
+
+  <p><strong>典型场景</strong>：</p>
+  <ul>
+    <li>跨服务的方案择优</li>
+    <li>高风险的代码评审</li>
+    <li>学术结论的交叉核对</li>
+    <li>投融资材料的多视角质疑</li>
+  </ul>
+
+  <h3>3.5 Anthropic 官方反复使用的 6 大场景</h3>
+
+  <p>总结 Anthropic 官方博客里点名的场景，<strong>直接拿走就能用</strong>：</p>
+
+  <ol>
+    <li><strong>迁移与重构</strong>——Bun 用 workflow 11 天把 75 万行 Zig 重写为 Rust</li>
+    <li><strong>深度研究</strong>——<code>/deep-research</code> 内置 workflow：扇出搜索 → 抓取 → 投票 → 综合</li>
+    <li><strong>深度验证</strong>——对每个事实声明拉独立 Agent 验证 + 验证 Agent 反查</li>
+    <li><strong>排序</strong>——用 tournament / pipeline pairwise / bucket-rank 替代单次打分</li>
+    <li><strong>根因排查</strong>——多角度独立假设 + 反驳面板（防自夸）</li>
+    <li><strong>大规模 triage</strong>——自动分类 + 去重 + 升级处理</li>
+  </ol>
+
+  <hr>
+
+  <h2>四、Dynamic Workflows 实用设置与使用指南</h2>
+
+  <h3>4.1 开启条件</h3>
+
+  <p><strong>最低门槛</strong>：</p>
+  <ul>
+    <li>Claude Code <strong>v2.1.154 或更高版本</strong></li>
+    <li>支持平台：CLI、桌面应用、VS Code 扩展、Amazon Bedrock、Google Cloud Vertex AI、Microsoft Foundry</li>
+  </ul>
+
+  <p><strong>计划可用性</strong>：</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>计划</th>
+        <th>默认状态</th>
+        <th>开启方式</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Max / Team / API</td><td>✅ 默认开启</td><td>直接用</td></tr>
+      <tr><td>Pro</td><td>可通过 <code>/config</code> 中"Dynamic workflows"开关开启</td><td><code>/config</code></td></tr>
+      <tr><td>Enterprise</td><td>❌ 默认关闭</td><td>管理员在 Claude Code 设置中开启</td></tr>
+    </tbody>
+  </table>
+
+  <h3>4.2 三种触发方式</h3>
+
+  <p><strong>方式一：关键词触发</strong>——在提示词里直接写 <code>workflow</code>：</p>
+
+<pre><code>用 workflow 审计 src/routes/ 下每个 API 端点，检查是否缺少身份验证检查</code></pre>
+
+  <p>Claude Code 会高亮显示你输入中的关键词。如果它在你不想触发时启动了，<code>alt+w</code> 可忽略本次触发。</p>
+
+  <p><strong>方式二：自动模式 ultracode</strong>——让 Claude 自己判断：</p>
+
+<pre><code>/effort ultracode</code></pre>
+
+  <p>开启后，Claude 会为会话中<strong>每一个</strong>实质性任务规划一个 workflow。一个请求可能变成连续几个 workflow：理解 → 变更 → 验证。代价是每个请求使用更多 token、跑更久。日常用 <code>/effort high</code> 即可。</p>
+
+  <p><strong>方式三：手动指定</strong>——直接说"创建一个工作流"：</p>
+
+<pre><code>创建一个 workflow，帮我把 Bun 从 Zig 移植到 Rust</code></pre>
+
+  <h3>4.3 运行时的硬约束</h3>
+
+  <p>在写任何雄心勃勃的方案前，先记住这几条<strong>硬约束</strong>：</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>约束</th>
+        <th>详情</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>最大并发 Agent</strong></td><td><code>min(16, CPU 核数 - 2)</code>，本机 CPU 决定</td></tr>
+      <tr><td><strong>单次 workflow 最多 Agent 数</strong></td><td><strong>1000 个</strong>，防止失控循环烧 token</td></tr>
+      <tr><td><strong>运行时间</strong></td><td>没有硬上限，但有 budget 兜底</td></tr>
+      <tr><td><strong>中途用户输入</strong></td><td><strong>不可</strong>，仅权限提示能暂停</td></tr>
+      <tr><td><strong>脚本本身</strong></td><td>没有文件系统/Shell 访问，只能通过 <code>agent()</code> 调度 Agent 来读写</td></tr>
+      <tr><td><strong>meta 必须是纯字面量</strong></td><td>不能有变量、函数调用、模板插值</td></tr>
+    </tbody>
+  </table>
+
+  <blockquote>
+    <p><strong>一个值得内化的安全细节</strong>：workflow 生成的子 Agent 始终以 <code>acceptEdits</code> 模式运行，并继承你的工具允许列表，<strong>无论你会话的权限模式是什么</strong>。文件编辑在运行内部是自动批准的；不在允许列表中的 shell 命令、网络获取和 MCP 工具仍然会暂停并询问你。在一个长时间无人值守的运行中，<strong>提前将 Agent 需要的命令添加到允许列表</strong>，否则它会因为等待你而停滞。</p>
+  </blockquote>
+
+  <h3>4.4 四把成本控制杠杆</h3>
+
+  <ol>
+    <li><strong>不同阶段路由不同模型</strong>：Discover/扫描类用 <code>haiku</code>，写代码用 <code>sonnet</code>，关键决策用 <code>opus</code>。三段式路由能省大约一半 token。</li>
+    <li><strong><code>budget.remaining()</code> 兜底循环</strong>：所有 <code>while</code> 循环都加预算判断，再加"连续 K 轮无新发现"双保险。</li>
+    <li><strong>去重在脚本里做，别让 LLM 做</strong>：JS 一行 <code>Set</code> 解决的事，不要交给 Agent。</li>
+    <li><strong><code>/workflows</code> 按 <code>p</code> 暂停、按 <code>x</code> 停止</strong>：跑偏了立刻停，已完成的 Agent 结果不会丢。</li>
+  </ol>
+
+  <h3>4.5 进度查看与可恢复</h3>
+
+  <p><strong>进度查看</strong>：<code>/workflows</code> 打开一个运行面板，每个阶段、每个子 Agent、每次工具调用和 token 消耗都看得到，还能暂停、跳过卡住的、重试单个 Agent。</p>
+
+  <p><strong>断点续传</strong>：每次运行有 ID，断了能接着跑——已完成的 Agent 走缓存、只补没干完的。<strong>但退出 Claude Code 后再开会重新开始</strong>，不要把长时间运行的任务当作能在重启后持久化的任务。</p>
+
+  <h3>4.6 沉淀、复用与团队共享</h3>
+
+  <p><strong>保存</strong>：在 <code>/workflows</code> 视图里选运行，按 <code>s</code> 保存为命令，存到两个位置之一：</p>
+  <ul>
+    <li>项目级：<code>.claude/workflows/</code>（提交仓库，与克隆它的每个人共享）</li>
+    <li>个人级：<code>~/.claude/workflows/</code>（每个项目可用，仅本人可见）</li>
+  </ul>
+
+  <p>之后就能在未来的会话里用 <code>/</code> 触发，与 <code>/deep-research</code> 一起出现在自动补全中。</p>
+
+  <p><strong>团队共享</strong>：把 JS 文件丢进项目的 <code>.claude/workflows/</code>，像审查任何代码一样在 PR 里审查。<code>.claude/workflows/</code> 文件夹本质上是<strong>团队的编排模式库</strong>——你的安全审计模板、你的迁移模板、你的发布前 review。</p>
+
+  <blockquote>
+    <p>注意：在 Skill 里分享时，把它当作<strong>模板</strong>而非死脚本，让 Claude 面对具体任务时自适应，而不是一行不差地重放。</p>
+  </blockquote>
+
+  <h3>4.7 什么时候<strong>不要</strong>用</h3>
+
+  <blockquote>
+    <p>workflow 是研究预览版，不是所有任务都值得烧那么多 token。</p>
+  </blockquote>
+
+  <p><strong>判断标准</strong>：这个任务，是不是真的需要比"一个上下文窗口"更多的算力？</p>
+
+  <ul>
+    <li>❌ <strong>不要用</strong>：单文件小修、只改一两个文件、你每一步都要拍板的</li>
+    <li>✅ <strong>值得用</strong>：50 个文件的安全审计、上千行的排序打分、跨仓库重构、高风险要独立验证的改动、高复用值得沉淀成模板的流程</li>
+  </ul>
+
+  <p><strong>经验法则</strong>：</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>场景</th>
+        <th>选择</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>简单单文件修改</td><td>❌ 直接对话</td></tr>
+      <tr><td>每一步都要你拍板</td><td>❌ workflow 是无人值守的</td></tr>
+      <tr><td>多个 Agent 抢同一片文件但边界没拆清</td><td>❌ 先拆模块再上</td></tr>
+      <tr><td>跨整个代码库的审计 / 迁移 / 重构</td><td>✅ 典型场景</td></tr>
+      <tr><td>高风险决策需要多角度对抗性验证</td><td>✅ 用范式 1</td></tr>
+      <tr><td>规模未知、要循环到收敛的探索任务</td><td>✅ 用范式 2 + budget</td></tr>
+      <tr><td>一次对话上下文装不下、中间结果海量</td><td>✅ workflow 的主战场</td></tr>
+      <tr><td>团队里反复跑的高价值流程</td><td>✅ 沉淀进 <code>.claude/workflows/</code></td></tr>
+    </tbody>
+  </table>
+
+  <hr>
+
+  <h2>五、将 Dynamic Workflows 思想落地实践项目</h2>
+
+  <p>workflow 不只是 Claude Code 的特性，<strong>它背后的"动态编排"思想</strong>可以迁移到任何企业级 Agent 平台。我们看三个典型落地场景，从"参考其思想"到"完整落地一个项目"。</p>
+
+  <h3>5.1 落地思路：动态编排平台五层架构</h3>
+
+  <p>要把 workflow 思想迁移到企业项目，至少需要这五层能力：</p>
+
+  <figure>
+    <img src="dynamic_orchestration_platform_5layers.png" alt="动态编排平台五层架构图：目标理解 / 流程编排 / Runtime 执行 / 验证收敛 / 经验沉淀">
+    <figcaption>图 2　动态编排平台五层架构（动态生成解决"个性化"，经验沉淀解决"规模化"）</figcaption>
+  </figure>
+
+  <p><strong>关键洞察</strong>：动态生成解决"个性化"，经验沉淀解决"规模化"——这正是 ToB Agent 平台商业化的关键。</p>
+
+  <h3>5.2 落地案例：物流行业的多模态运单审核</h3>
+
+  <p>某物流企业每天有几万张运单需要审核（图片 + 文本 + 结构化字段），传统 OCR + 规则准确率 85%，错审成本高。</p>
+
+  <p><strong>Dynamic Workflows 化后</strong>：</p>
+
+<pre><code>[Phase 1 Discover] 多视角 Agent 并行
+  ├─ 图像识别 Agent 检查运单照片完整性
+  ├─ 文本理解 Agent 提取关键字段（重量 / 体积 / 目的地）
+  └─ 规则校验 Agent 检查异常（超重 / 违禁品关键词）
+
+[Phase 2 Verify] 对抗性验证
+  ├─ 每条疑似异常拉独立 Agent 反驳
+  └─ 2/3 多数票决定是否真异常
+
+[Phase 3 Synthesize]
+  ├─ 合并三个 Agent 的结构化输出
+  └─ 生成可解释的审核报告</code></pre>
+
+  <p><strong>收益</strong>：准确率从 85% 提升到 96%，每条审核耗时从 8 秒降到 2 秒。</p>
+
+  <h3>5.3 落地避坑指南</h3>
+
+  <p>把 workflow 思想迁移到企业项目时，有 4 个常见坑：</p>
+
+  <ol>
+    <li><strong>没有 Runtime 兜底</strong>——动态编排很容易退化成一段复杂 Prompt。一定要有独立的 Runtime 层管理状态、并发、异常。</li>
+    <li><strong>没有验证机制</strong>——企业场景不能只靠模型自信输出，必须有"数据完整性 + 工具调用成功 + 多 Agent 结果冲突检测 + 高风险建议人工确认"四道关。</li>
+    <li><strong>没有沉淀机制</strong>——每次跑完的 workflow 都应该沉淀为可复用模板、行业模板、评估规则，否则只是又一次性的脚本。</li>
+    <li><strong>没有成本控制</strong>——把"不同阶段路由不同模型 + budget 兜底 + JS 做去重 + 用户中断能力"四把杠杆全用上，否则一次跑飞就可能烧掉一周预算。</li>
+  </ol>
+
+  <hr>
+
+  <h2>写在最后：从"会干活"到"会组织一群人干活"</h2>
+
+  <p>回头看 agent 工程化路线，<strong>动态工作流给出了一个很激进但很优雅的解法</strong>：干脆把循环从 LLM 里搬出来，搬到一个无脑、确定性、便宜的 JS 运行时里。LLM 只在 <code>agent()</code> 那一行临时露一面，干完就走。</p>
+
+  <p>无论后面 Agent 怎么演化，<strong>"把循环搬出 LLM"这个原则会反复出现</strong>。它是 agent 工程的一个底层重力。</p>
+
+  <p>对企业落地来说，Dynamic Workflows 不是终点，而是起点：</p>
+
+  <ul>
+    <li><strong>它示范了一种范式</strong>——目标驱动的动态编排，复杂任务不应只依赖单个 Agent 连续推理。</li>
+    <li><strong>它验证了一条路径</strong>——脚本化的、可复用的、可版本控制的 AI 编排逻辑，让"AI 写代码给我们用"成为可能。</li>
+    <li><strong>它指向一个未来</strong>——Agent 从"会干活"走向"会组织一群人干活"，从执行者变成 FDE（Forward Deployed Engineer）。</li>
+  </ul>
+
+  <p>上篇讲完原理、原语与范式，你已经知道 Dynamic Workflows <strong>是什么、怎么跑、能解决什么问题</strong>。但这一切真正的复利，要在<strong>落地实战</strong>中才能兑现——下一讲下篇，会以数据分析师的视角，演示如何把 Excel 数据分析流水线搬上 Dynamic Workflows，并把它沉淀为团队可复用的工程资产。</p>
+
+  <hr>
+
+  <footer>
+    <h4>参考资料</h4>
+    <ol>
+      <li>Anthropic 官方博客：<em>A harness for every task: dynamic workflows in Claude Code</em>（2026-05-28）</li>
+      <li>Claude Code 官方文档：<code>code.claude.com/docs/en/workflows</code></li>
+    </ol>
+    <p style="margin-top: 20px; color: var(--color-text-light); font-size: 13px;">
+      本文是《Dynamic Workflows 工程化实战》系列<strong>上篇</strong>，下篇《落地 Excel 数据分析与团队资产沉淀》将于近期发布。
+    </p>
+  </footer>
+
+</article>
+
+</body>
+</html>

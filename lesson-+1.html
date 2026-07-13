@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>一个 BTC 价格循环的 30 分钟：Loop Engineering 最小可行单元</title>
+<meta name="author" content="[[zhuligu]]">
+<meta name="description" content="用一个 9 行 curl 的 BTC 价格监控循环，演示 Loop Engineering 五动作 × 六组件的最小可行单元（MVP）。">
+<meta name="published" content="2026-07-10">
+<style>
+  :root {
+    --fg: #1f2933;
+    --fg-muted: #52606d;
+    --fg-soft: #7b8794;
+    --accent: #c0392b;
+    --bg: #ffffff;
+    --bg-soft: #f7f8fa;
+    --bg-quote: #fbf3ee;
+    --border: #e4e7eb;
+    --code-bg: #f3f4f6;
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                 "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    line-height: 1.75;
+    color: var(--fg);
+    background: var(--bg);
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 48px 28px 96px;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--fg);
+    line-height: 1.35;
+    margin-top: 2em;
+    margin-bottom: 0.7em;
+    font-weight: 700;
+  }
+  h1 { font-size: 2em; border-bottom: 1px solid var(--border); padding-bottom: 0.3em; }
+  h2 { font-size: 1.55em; border-bottom: 1px solid var(--border); padding-bottom: 0.25em; }
+  h3 { font-size: 1.25em; }
+  h4 { font-size: 1.05em; }
+  p { margin: 0.9em 0; }
+  a { color: var(--accent); text-decoration: none; border-bottom: 1px solid rgba(192,57,43,0.3); }
+  a:hover { border-bottom-color: var(--accent); }
+  strong { color: var(--fg); font-weight: 600; }
+  em { color: var(--fg-muted); font-style: italic; }
+  hr { border: 0; border-top: 1px solid var(--border); margin: 2.5em 0; }
+  ul, ol { padding-left: 1.6em; margin: 0.6em 0; }
+  li { margin: 0.25em 0; }
+  blockquote {
+    margin: 1.2em 0;
+    padding: 0.8em 1.2em;
+    background: var(--bg-quote);
+    border-left: 4px solid var(--accent);
+    color: var(--fg-muted);
+    border-radius: 0 4px 4px 0;
+  }
+  blockquote p { margin: 0.2em 0; }
+  code {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    background: var(--code-bg);
+    padding: 0.15em 0.4em;
+    border-radius: 3px;
+    font-size: 0.92em;
+  }
+  pre {
+    background: #1f2933;
+    color: #e4e7eb;
+    padding: 1em 1.2em;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-size: 0.9em;
+    line-height: 1.55;
+  }
+  pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+    font-size: 1em;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1.2em 0;
+    font-size: 0.95em;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 0.55em 0.8em;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background: var(--bg-soft);
+    font-weight: 600;
+  }
+  tbody tr:nth-child(even) { background: #fafbfc; }
+  img { max-width: 100%; height: auto; display: block; margin: 1em auto; border-radius: 4px; }
+  p.figure { margin: 1.4em 0 0.2em; }
+  p.caption {
+    text-align: center;
+    color: var(--fg-soft);
+    font-size: 0.9em;
+    font-style: italic;
+    margin: 0 0 1.6em;
+  }
+  /* 顶部元信息 */
+  .meta {
+    color: var(--fg-soft);
+    font-size: 0.9em;
+    margin-bottom: 2em;
+    padding-bottom: 1em;
+    border-bottom: 1px dashed var(--border);
+  }
+  .meta .tag { display: inline-block; margin-right: 0.6em; }
+  .meta .tag::before { content: "#"; color: var(--fg-soft); margin-right: 2px; }
+</style>
+</head>
+<body>
+<h1>一个 BTC 价格循环的 30 分钟：Loop Engineering 最小可行单元</h1>
+<div class="meta"><span>作者：[[zhuligu]]</span> · <span>发布：2026-07-10</span></div>
+<div class="meta"></div>
+<article>
+<blockquote>本文综合 4 篇 Loop Engineering 文章（《Claude Code 官方 Loops 上手指南》《Anthropic 内部方法论公开》《Loop 不是技巧是架构》《别调教 Prompt》）的共识，用一个 9 行 curl 的 BTC 价格监控循环演示最小可行单元（MVP）。前两节先把 Loop Engineering 的概念、演进、原理与工作机制讲清楚（不引入本文例子），第三节再把这个最小可行 Loop 落到 BTC 价格监控上，最后两节谈范式迁移与结语。</blockquote>
+<hr>
+<h2>1 什么是 Loop Engineering —— 概念的提出与演进</h2>
+<p>2026 年 6 月，&quot;Loop Engineering&quot;这个概念在一周内被三位顶级工程师同时引爆：</p>
+<ul>
+<li><strong>Peter Steinberger</strong>（OpenClaw 作者）：别再给 Coding Agent 逐行写提示了，要设计让 Agent 自己循环运转的系统。</li>
+<li><strong>Boris Cherny</strong>（Claude Code 负责人）：他不再手动提示 Claude，而是写 Loop 让 Claude 自己运行。</li>
+<li><strong>Addy Osmani</strong>（Google Chrome 团队）：正式命名了这个概念——Loop Engineering。</li>
+</ul>
+<p>三人指向同一个动作：<strong>设计的对象从&quot;Agent 的单次行为&quot;转变为&quot;驱动 Agent 的完整系统&quot;。</strong> 你不再是引擎，而是设计引擎的人。</p>
+<blockquote><strong>Loop Engineering：替换你自己作为给 Agent 下指令的人，转而去设计一个能自动完成这件事的系统。</strong></blockquote>
+<h3>演进的四层范式：Loop 不是替代，是叠加</h3>
+<p>AI 工程化走过了四层，像带新人：</p>
+<p class="figure"><img src="figures/loop-engineering-four-layers.png" alt="图 1-1：AI 工程化四层范式——上层包含下层，每层解锁新瓶颈"></p>
+<p><em>图 1-1：AI 工程化四层范式——上层包含下层，每层解锁新瓶颈</em></p>
+<ul>
+<li><strong>第 1 层 Prompt Engineering</strong>：先教说话（&quot;去查连接池超时的原因&quot;），照做一次，下次换个问题还得再说。</li>
+<li><strong>第 2 层 Context Engineering</strong>：再摆材料（喂代码库、文档、日志），更准但仍是你问一句答一句。</li>
+<li><strong>第 3 层 Harness Engineering</strong>：再配工具（Shell、MCP、Git 权限），能自己查日志、改代码、跑测试，但每次都要你启动。</li>
+<li><strong>第 4 层 Loop Engineering</strong>：最后写 SOP（每天自己扫、自己修、自己验），你只在关键节点审批。</li>
+</ul>
+<p><strong>每一层向上，关注的单元放大一号</strong>：从一句话，到一个窗口，到一次运行，最终到一个能自我运转的循环。</p>
+<hr>
+<h2>2 Loop Engineering 的原理与工作机制</h2>
+<p>这一节回答两个问题：<strong>Loop 由哪些零件组成？Loop 是怎么从一圈变成长期运转的？</strong> Loop 看似只是&quot;让 Agent 跑起来&quot;，但跑得稳、跑得久、跑得不烧 token，需要一套相对完整的结构。下面四小节按&quot;递进线 → 骨架 → 失败 → 何时该建&quot;的顺序展开。</p>
+<h3>2.1 四种 Primitive：交出什么拿回什么</h3>
+<p>Anthropic 官方在《Getting started with loops》一文中，把 Loop 按&quot;人需要持续介入哪些环节&quot;分成四阶。每一阶的本质是：<strong>人交出某件事，Agent 拿回原本由人占用的注意力。</strong> 阶越高，人在链路里露脸的次数越少。下面这张表把每阶的&quot;交出什么、拿回什么、用什么原语、怎么触发与停止&quot;列了出来：</p>
+<table><thead><tr><th>阶</th><th>交出</th><th>拿回</th><th>原语</th><th>触发 / 停止</th></tr></thead><tbody><tr><td>1</td><td>检查</td><td>省去复查</td><td>会话</td><td>手动 / Claude 自判</td></tr><tr><td>2</td><td>停止条件</td><td>省去判断&quot;够不够好&quot;</td><td><code>/goal</code></td><td>手动 / 评估模型</td></tr><tr><td>3</td><td>触发器</td><td>省去手动启动</td><td><code>/loop</code>、<code>/schedule</code></td><td>时间 / 用户取消</td></tr><tr><td>4</td><td>提示词</td><td>省去人在链路</td><td>三者组合</td><td>事件 / 任务级退出</td></tr></tbody></table>
+<p>四阶不是平行选项，是<strong>阶梯</strong>。第 3 阶的 <code>/loop</code> 必须建立在第 1 阶已经能稳定产出之上——如果你连一次执行都没跑通，套上 <code>/loop</code> 也只是让错误以更高的频率重演。同理，第 4 阶的事件驱动建立在第 2 阶的目标评估之上——没有&quot;什么算好&quot;的定义，事件触发后也无从判断是否需要回滚。</p>
+<p><strong>大多数人想跳级——不行。</strong> &quot;Proactive 不是第五种 Loop，是前三者的编排产物。SKILL.md 没写就别幻想 Proactive。先走前三阶。&quot;这是 Anthropic 工程师反复强调的次序：<strong>Turn-based → Time-based → Goal-based → Proactive</strong>，跳阶不是快，是失控。</p>
+<h3>2.2 五动作 × 六组件：Loop 怎么转起来</h3>
+<p>把 Loop 拆开看，一圈由五个动作依次串成：</p>
+<table><thead><tr><th>动作</th><th>作用</th></tr></thead><tbody><tr><td><strong>Discovery（发现）</strong></td><td>找出该做的事</td></tr><tr><td><strong>Handoff（交接）</strong></td><td>隔离交给执行 Agent</td></tr><tr><td><strong>Verification（验证）</strong></td><td>换个角度说不</td></tr><tr><td><strong>Persistence（持久化）</strong></td><td>写到对话外</td></tr><tr><td><strong>Scheduling（调度）</strong></td><td>让循环转起来</td></tr></tbody></table>
+<p>这五个动作不是并列的清单，而是一条<strong>因果链</strong>：调度触发发现 → 发现的结果被交接给执行者 → 执行后做独立验证 → 验证通过的事实被持久化 → 持久化结果进入下一轮调度的判断依据。任何一个环节缺位，下一环节就会失真——没有验证就持久化，等于把未确认的脏数据写进基线；没有持久化就调度，等于让 Agent 每天从零开始。</p>
+<p>支撑这五个动作运转的，是六个组件（按依赖顺序：Connectors → Automations → Skills → Worktrees → Sub Agents → State）：</p>
+<table><thead><tr><th>组件</th><th>本质</th></tr></thead><tbody><tr><td><strong>Connectors</strong></td><td>感知外部世界</td></tr><tr><td><strong>Automations</strong></td><td>调度器</td></tr><tr><td><strong>Skills</strong></td><td>磁盘化的 SOP（SKILL.md）</td></tr><tr><td><strong>Worktrees</strong></td><td>并行隔离</td></tr><tr><td><strong>Sub Agents</strong></td><td>独立验证</td></tr><tr><td><strong>State</strong></td><td>跨轮记忆</td></tr></tbody></table>
+<p>六个组件同样不是平行选项。<strong>Connectors 是地基</strong>——Agent 看不见外部世界，后面的所有动作都失去对象；<strong>Automations 在其之上</strong>，把&quot;什么时候跑&quot;变成可声明的调度；<strong>Skills 把每次执行的经验固化成 SOP</strong>，让下一轮不必重新解释规则；<strong>Worktrees 是并行的舞台</strong>，多任务时不互相覆盖；<strong>Sub Agents 是独立的判官</strong>，从另一个视角挑战主 Agent 的结论；<strong>State 是跨轮记忆</strong>，让今天的结果与昨天的结果可比。</p>
+<p><strong>五动作是&quot;怎么转&quot;，六组件是&quot;由谁转&quot;。缺一个，后面的都站不住。</strong> 这个判断也是后续 §2.3 失败模式的根据——失败不是神秘的运气差，而是某个动作或某个组件被悄悄跳掉。</p>
+<h3>2.3 五种失败模式：跳一个就歪</h3>
+<p>Loop 的失败不是随机的，而是<strong>五个动作中跳掉一个的必然结果</strong>：</p>
+<table><thead><tr><th>跳过的动作</th><th>失败模式</th><th>症状</th></tr></thead><tbody><tr><td><strong>Verification</strong></td><td>点头循环（Nodding）</td><td>几百轮从未说过&quot;不&quot;</td></tr><tr><td><strong>Persistence</strong></td><td>失忆循环（Amnesiac）</td><td>每天从零开始，无累积</td></tr><tr><td><strong>Scheduling</strong></td><td>手动循环（Manual）</td><td>演示完再没跑过</td></tr><tr><td><strong>Discovery</strong></td><td>盲眼循环（Blind）</td><td>人每天还在决定该做什么</td></tr><tr><td><strong>Handoff</strong></td><td>纠缠循环（Tangled）</td><td>并行 Agent 改同一目录</td></tr></tbody></table>
+<p>这五种模式不是五种 bug，而是<strong>五种被忽略的纪律</strong>：Nodding 是缺 Verification、Amnesiac 是缺 Persistence、Manual 是缺 Scheduling、Blind 是缺 Discovery、Tangled 是缺 Handoff。读完这张表可以反过来用：<strong>只要识别出循环当前的失败模式，就能直接定位应该补哪个动作/组件</strong>，不必每次重新排查找原因。</p>
+<h3>2.4 四格检验：什么时候该建 Loop</h3>
+<p>不是所有任务都值得建 Loop。在动手写 <code>/loop</code> 之前，先用下面这张四格检验问自己——每一格都是&quot;如果回答是 No，循环一定会以某种特定方式失败&quot;的硬约束：</p>
+<table><thead><tr><th>格子</th><th>检验项</th><th>含义</th></tr></thead><tbody><tr><td>1</td><td>任务会重复吗</td><td>单次任务不需要 Loop</td></tr><tr><td>2</td><td>验证能自动化吗</td><td>没人判&quot;对错&quot;的循环会跑歪</td></tr><tr><td>3</td><td>Token 预算可承受吗</td><td>持续推理会爆预算</td></tr><tr><td>4</td><td>Agent 有高级工程师的工具吗</td><td>没工具的循环只能空转</td></tr></tbody></table>
+<p><strong>四格都过</strong>才适合建 Loop——这意味着任务的重复性、结果的判断力、资源的可持续、Agent 的执行能力全部具备，建出来的 Loop 才不会在几天内自然衰减。<strong>缺一格</strong>是 MVP 阶段的合理状态：它告诉你这个循环的极限在哪，而不是 bug。例如&quot;任务会重复但验证不能自动化&quot;的循环，第一格过、第二格缺，结果必然滑向 §2.3 的&quot;点头循环&quot;。这时与其抱怨循环不工作，不如承认&quot;这是 MVP 阶段，把第二格补上是下一步&quot;。</p>
+<hr>
+<h2>3 实践：BTC 价格监控的最小可行 Loop</h2>
+<p>完整生产级 Loop 动辄上千行工具链，覆盖日志扫描、CI、灰度、回滚、监控等几十个节点。但<strong>最小可行单元（MVP）长什么样</strong>？</p>
+<p>本文用 9 行 curl + 1 段 prompt 的 BTC 价格监控循环，跑完 Loop Engineering 的最小可行演示——按 §2.1 的 Primitive 分阶看，是第 1 阶（手动 prompt）+ 第 3 阶（<code>/loop 5m</code>）的初级合体，<strong>还没到第 2 阶 Goal-based</strong>（没有评估模型），更没到第 4 阶 Proactive（没有事件驱动）。</p>
+<h3>3.1 五动作映射：Loop 的骨架长什么样</h3>
+<p>按 §2.2 的五动作模板，对照 BTC 例子：</p>
+<table><thead><tr><th>动作</th><th>定义</th><th>BTC 例子对应</th></tr></thead><tbody><tr><td><strong>发现（Discovery）</strong></td><td>找出该做的事</td><td><code>/loop 5m</code> 触发 prompt</td></tr><tr><td><strong>交付（Handoff）</strong></td><td>隔离交给执行者</td><td>Claude 调用 Bash 执行 curl</td></tr><tr><td><strong>验证（Verification）</strong></td><td>换个角度说不</td><td><strong>没有独立验证</strong> ——Claude 自查自报</td></tr><tr><td><strong>持久化（Persistence）</strong></td><td>写到对话外</td><td><strong>没有磁盘持久化</strong> ——会话上下文是唯一记忆</td></tr><tr><td><strong>调度（Scheduling）</strong></td><td>一圈圈自动转</td><td><code>/loop 5m</code> 间隔触发，&quot;无显著变化&quot;也是合法输出</td></tr></tbody></table>
+<p>缺两个动作（验证 + 持久化），但<strong>调度 + 发现 + 交付</strong>三件已足以让循环&quot;看起来在转&quot;。这恰好对应 §2.3 的失败模式——我的例子就处于&quot;Manual Loop&quot;和&quot;Amnesiac Loop&quot;的中间状态。</p>
+<h3>3.2 端到端架构</h3>
+<p>下面是整个循环的端到端视图——五动作闭环 + 单层 Connector + 是/否分支：</p>
+<p class="figure"><img src="figures/btc-loop-end-to-end.png" alt="图 3-1：BTC 监控 Loop 端到端架构——五动作闭环 + 单层 Connector"></p>
+<p><em>图 3-1：BTC 监控 Loop 端到端架构——五动作闭环 + 单层 Connector</em></p>
+<p>按 §2.4 的四格检验过一遍——没过完：</p>
+<table><thead><tr><th>格子</th><th>检验项</th><th>BTC 例子</th><th>过没过</th></tr></thead><tbody><tr><td>1</td><td>任务会重复</td><td>是（价格不断变化）</td><td>✅</td></tr><tr><td>2</td><td>验证能自动化</td><td>部分（阈值规则可自动化，但无独立 agent 校验）</td><td>⚠️ 半格</td></tr><tr><td>3</td><td>Token 预算可承受</td><td>是（基本零 LLM 推理）</td><td>✅</td></tr><tr><td>4</td><td>Agent 有高级工程师的工具</td><td>否（受限网络 + 沙箱）</td><td>❌</td></tr></tbody></table>
+<p><strong>没过完不是 bug，是 feature</strong>——它告诉我们这个循环的极限在哪：代理挂了会超时、CoinGecko 改 API 会炸、换设备开会话基线就没了。每一项都是 §2.3 失败模式的征兆。</p>
+<h3>3.3 六组件：覆盖了哪些、缺了哪些</h3>
+<p>按 §2.2 的六组件，BTC 例子覆盖了 3 个，缺 3 个：</p>
+<table><thead><tr><th>组件</th><th>作用</th><th>BTC 例子</th></tr></thead><tbody><tr><td><strong>Connectors</strong></td><td>感知外部世界</td><td><code>curl</code> + 本地代理（单层）</td></tr><tr><td><strong>Automations</strong></td><td>调度器</td><td><code>/loop 5m</code> 会话内循环</td></tr><tr><td><strong>Skills</strong></td><td>固化 SOP</td><td>❌ 规则写在 prompt 里，未沉淀</td></tr><tr><td><strong>Worktrees</strong></td><td>隔离并行</td><td>❌ 单任务，不需要</td></tr><tr><td><strong>Sub Agents</strong></td><td>独立验证</td><td>❌ Claude 自查自报</td></tr><tr><td><strong>State</strong></td><td>跨轮记忆</td><td>❌ 仅会话上下文</td></tr></tbody></table>
+<p>缺 Skills / Sub Agents / State 这三件<strong>正是从 MVP 走到生产 Loop 的差距</strong>。<strong>它们不是 MVP 的问题，而是 MVP 的下一步。</strong></p>
+<h3>3.4 Connectors：先让 Agent 看见外部世界</h3>
+<p><strong>坑 1：默认 WebFetch 不可用。</strong> 我让 Claude 直接 <code>WebFetch</code> CoinGecko，被沙箱挡了：</p>
+<pre><code>Unable to verify if domain api.coingecko.com is safe to fetch.
+This may be due to network restrictions or enterprise security
+policies blocking claude.ai.</code></pre>
+<p><strong>坑 2：默认 curl 也不可达。</strong> 切到 <code>Bash + curl</code> 后：</p>
+<pre><code>curl: (28) Connection timed out after 10013 milliseconds</code></pre>
+<p><strong>解法：本地代理。</strong> 这台机器在国内网络环境，外部 API 全被 GFW 屏蔽。我让用户提供代理地址 <code>127.0.0.1:7890</code>，curl 加上 <code>-x</code> 参数后立刻通：</p>
+<pre><code class="lang-bash">curl -x http://127.0.0.1:7890 \
+  -sS --max-time 15 \
+  &quot;https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&amp;vs_currencies=usd,usd_24h_change&amp;include_24hr_change=true&quot;
+# → {&quot;bitcoin&quot;:{&quot;usd&quot;:64413,&quot;usd_24h_change&quot;:2.708002776454609}}</code></pre>
+<p><strong>生产环境的 Connectors 层需要 6 层</strong>（数据访问→模型追踪→发布→通知→验证→基础设施），MVP 阶段只用 1 层（直接 curl 拿数据）。</p>
+<h3>3.5 Automations：用 <code>/loop</code> 而不是自己写 cron</h3>
+<p><strong>两种调度方式：</strong></p>
+<table><thead><tr><th>方式</th><th>命令</th><th>行为</th></tr></thead><tbody><tr><td>手动</td><td>每次粘贴 prompt</td><td>Turn-based</td></tr><tr><td><code>/loop</code></td><td><code>/loop 5m <prompt></code></td><td>Time-based，会话内自动循环</td></tr></tbody></table>
+<p><code>/loop</code> 的优势：<strong>会话级 + 短间隔 + 自带&quot;立即执行一次&quot;</strong>。它把&quot;调度&quot;这件事做成一个原语，不需要自己配 <code>crontab</code>，也不需要把 prompt 写成脚本。</p>
+<p>我直接用 <code>/loop 5m</code> ——首次执行建立基线（&quot;首次执行无基线，直接输出当前价格作为基线即可&quot;），后续每次循环对比&quot;变化 > 0.5%&quot;。</p>
+<h3>3.6 Skills：把规则写在 prompt 里</h3>
+<p>我没有写 <code>SKILL.md</code>，规则直接写在 prompt 中：</p>
+<pre><code>对比上一次循环记录的价格：
+- 如果本次价格相对上次变化幅度超过 0.5%，输出：新价格 USD、变化方向、
+  变化幅度（%）、当前北京时间、24h 变化
+- 否则只输出 &quot;无显著变化&quot;
+
+首次执行无基线，直接输出当前价格作为基线即可。</code></pre>
+<p><strong>这就是 Skill 的雏形</strong> ——把&quot;什么算有变化、什么算没变化&quot;显式写下来。<strong>真正的 Skill 是磁盘化、可跨会话复用、可被多个 Agent 复用</strong>。我这个 prompt 还是&quot;绑定在对话里的一次性规则&quot;。</p>
+<p><strong>升级路径</strong>：把这段规则写到 <code>~/.claude/skills/btc-monitor/SKILL.md</code>，下次开会话也能用。</p>
+<h3>3.7 缺的三个组件</h3>
+<table><thead><tr><th>缺什么</th><th>为什么缺</th><th>何时该补</th></tr></thead><tbody><tr><td><strong>Worktrees</strong></td><td>单任务无并行</td><td>多个币种 / 多个交易所同时监控时</td></tr><tr><td><strong>Sub Agents</strong></td><td>信任 Claude 自查</td><td>加一个独立 agent 校验（如对比 Binance + CoinGecko 两源）</td></tr><tr><td><strong>State</strong></td><td>会话上下文足够</td><td>关掉会话还想延续时（写文件 / 写 SQLite）</td></tr></tbody></table>
+<p><strong>Worktree / Sub Agent / State 在 MVP 阶段都可以缺</strong>，因为：</p>
+<ul>
+<li>单任务不需要隔离（Worktree 是给并行用的）；</li>
+<li>阈值规则简单可验证（Sub Agent 是给&quot;修复者自证&quot;用的，BTC 例子无修复环节）；</li>
+<li>会话期内不需要持久化（State 是给跨会话用的）。</li>
+</ul>
+<h3>3.8 实测：9 次 <code>/loop</code> 自动跑的数据</h3>
+<p>完整链路（一次循环）：</p>
+<pre><code>[/loop 5m 触发] 
+   ↓ 触发 prompt
+[Claude 收到 prompt] 
+   ↓ 调用 Bash 执行 curl
+[curl -x 127.0.0.1:7890 ...] 
+   ↓ 返回 JSON
+[Claude 解析 JSON]
+   ↓ 对比会话历史里的&quot;上次价格&quot;
+[分支：变化 &gt; 0.5% ?] 
+   ├── 是 → 主动报告：新价格、变化幅度、时间、24h
+   └── 否 → 输出 &quot;无显著变化&quot;
+   ↓ 基线更新（写到对话历史）
+[5 分钟后再次触发]</code></pre>
+<p><strong>实测 9 次 <code>/loop 5m</code> 自动跑的趋势</strong>：</p>
+<table><thead><tr><th>时间</th><th>价格</th><th>单次变化</th><th>累计变化</th></tr></thead><tbody><tr><td>12:32</td><td>$64,443</td><td>—</td><td>—</td></tr><tr><td>12:36</td><td>$64,423</td><td>-0.03%</td><td>-0.03%</td></tr><tr><td>12:41</td><td>$64,358</td><td>-0.10%</td><td>-0.13%</td></tr><tr><td>12:46</td><td>$64,321</td><td>-0.06%</td><td>-0.19%</td></tr><tr><td>12:51</td><td>$64,305</td><td>-0.02%</td><td>-0.21%</td></tr><tr><td>12:56</td><td>$64,274</td><td>-0.05%</td><td>-0.26%</td></tr><tr><td>13:00</td><td>$64,249</td><td>-0.04%</td><td>-0.30%</td></tr><tr><td>13:05</td><td>$64,232</td><td>-0.03%</td><td>-0.33%</td></tr><tr><td>13:10</td><td>$64,251</td><td>+0.03%</td><td>-0.30%</td></tr></tbody></table>
+<p>38 分钟累计 -0.30%。<strong>全部 9 次都落在&quot;无显著变化&quot;区间</strong> ——阈值 0.5% 没破。这正是 Loop Engineering 里一句常被引用的话：</p>
+<blockquote><strong>沉默就是它该有的输出。</strong></blockquote>
+<p>循环不是因为没人通知就坏了，<strong>沉默恰恰是它工作正常的证据</strong>。</p>
+<hr>
+<h2>4 范式迁移：从这个最小 Loop 到生产 Loop</h2>
+<h3>4.1 这个循环的 4 个真实缺陷</h3>
+<p><strong>缺陷 1：没有独立验证</strong>。如果 Claude 解析错了（比如 API 字段变了，它没注意到，仍然报&quot;无显著变化&quot;），循环会一直沉默下去。<strong>对策</strong>：加一个独立 agent 交叉验证（CoinGecko + Binance 两源比对）。</p>
+<p><strong>缺陷 2：没有持久化</strong>。会话关掉，基线消失。<strong>对策</strong>：把价格写入 <code>~/.btc-price-baseline</code> 文件，下个会话读取；或写 SQLite。</p>
+<p><strong>缺陷 3：阈值是硬编码的</strong>。&quot;0.5%&quot; 对 $64,000 的 BTC 来说是 $320；对 $100,000 时是 $500。<strong>对策</strong>：改成绝对阈值 + 百分比阈值双轨（如&quot;变化 > 0.5% 或 > $300&quot;）。</p>
+<p><strong>缺陷 4：失败模式没处理</strong>。代理挂了、CoinGecko 限流、网络抖动，循环会怎样？<strong>对策</strong>：在 prompt 里加错误分支——&quot;curl 失败时不要静默，记录失败次数，连续 3 次失败则主动告警&quot;。</p>
+<p>这四条都是《Anthropic 内部 Loop Engineering 方法论公开》一文说的&quot;四种隐性成本&quot;——<strong>验证债务、理解腐烂、认知投降、Token 爆炸</strong>——的微缩版。</p>
+<h3>4.2 给读者的行动清单：从 MVP 到生产</h3>
+<p>如果你想把这个 BTC 例子升级到生产级，按这个顺序走：</p>
+<table><thead><tr><th>周</th><th>做什么</th><th>产出</th><th>验收标准</th></tr></thead><tbody><tr><td>1</td><td><strong>Connectors 地基</strong></td><td>curl → 脚本 → MCP server（封装 CoinGecko + Binance 两源）</td><td>一条命令同时拿到两源价格</td></tr><tr><td>2</td><td><strong>Skills 沉淀</strong></td><td>把&quot;什么算变化&quot;写成 SKILL.md，包含 6 种行情异常分支</td><td>跨会话复用，新开会话直接 <code>cat ~/.claude/skills/btc-monitor/SKILL.md</code></td></tr><tr><td>3</td><td><strong>State 落盘</strong></td><td>价格写入 SQLite（或 JSONL），基线可追溯</td><td>关掉再开，仍能接续</td></tr><tr><td>4</td><td><strong>Sub Agent 验证</strong></td><td>加一个独立 agent 做交叉校验 + 异常告警</td><td>一次故意制造的数据错误能被捕获</td></tr><tr><td>5+</td><td><strong>Proactive 升级</strong></td><td>用 <code>/schedule</code> 搬到云端，事件触发而非时间触发</td><td>7×24 不停机</td></tr></tbody></table>
+<h3>4.3 我从这次 30 分钟里真正学到的 3 件事</h3>
+<p><strong>第一，Loop 的门槛比想象低</strong>。9 行 curl + 1 句规则 = 一个能转的循环。不需要 9000 行工具链。</p>
+<p><strong>第二，Loop 的失败比想象多</strong>。网络、代理、API、阈值、持久化、验证——每一项都能让循环静默死掉。<strong>沉默 ≠ 正常</strong>，要时刻问&quot;循环在真的转吗&quot;。</p>
+<p><strong>第三，MVP 阶段不必追求 Proactive</strong>。Anthropic 官方文章反复强调：&quot;别跳级。先把 Turn-based 跑通，再 Time-based，再 Goal-based，最后才 Proactive。&quot; 我的 BTC 循环就是 Turn-based + Time-based 的最低合规形态——这正是起点。</p>
+<hr>
+<h2>5 结语：别调教 Prompt，去设计 Loop</h2>
+<p>Anthropic 的工程师在公开方法论里说过一句话，我觉得对 MVP 阶段最重要：</p>
+<blockquote><strong>Stop criteria 是 design variable。</strong></blockquote>
+<p>写 Loop 之前先想清楚：<strong>什么算干完？谁来判？</strong></p>
+<p>我的 BTC 循环里：</p>
+<ul>
+<li><strong>什么算干完</strong> = 价格变化 > 0.5%</li>
+<li><strong>谁来判</strong> = Claude 自己（自查自报）</li>
+</ul>
+<p>哪怕是这么简单的循环，这两件事也得想清楚。<strong>想不清楚的循环只会是&quot;烧 token 的循环&quot;</strong>。</p>
+<p>最后抄一段我很喜欢的话收尾：</p>
+<blockquote><strong>别再当循环里最慢的那一环——去设计循环。</strong></blockquote>
+<p>30 分钟、9 行 curl、一个比特币价格监控循环——这就是 Loop Engineering 的最小可行单元。剩下的，是把单元连成网络，把网络长成系统。</p>
+<hr>
+<p><strong>附录：完整可复制命令</strong></p>
+<pre><code class="lang-bash"># 一次性手动查询（首次执行，建立基线）
+curl -x http://127.0.0.1:7890 -sS --max-time 15 \
+  &quot;https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&amp;vs_currencies=usd,usd_24h_change&amp;include_24hr_change=true&quot;
+
+# 在 Claude Code 中启动循环（会话内自动每 5 分钟跑一次）
+/loop 5m 用以下命令查询比特币当前美元价格及 24h 变化：
+
+curl -x http://127.0.0.1:7890 -sS --max-time 15 &quot;https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&amp;vs_currencies=usd,usd_24h_change&amp;include_24hr_change=true&quot;
+
+解析返回的 JSON，提取 bitcoin.usd（当前美元价）和 bitcoin.usd_24h_change（24小时涨跌幅 %）。
+
+对比上一次循环记录的价格：
+- 如果本次价格相对上次变化幅度超过 0.5%，输出：新价格 USD、变化方向（涨/跌）、变化幅度（%）、当前北京时间、24h 变化
+- 否则只输出 &quot;无显著变化&quot;
+
+首次执行无基线，直接输出当前价格作为基线即可。
+
+# 停止循环（在 Claude Code 里）
+# 任务 ID 由 CronCreate 返回，可直接说&quot;删除任务 &lt;id&gt;&quot;</code></pre>
+<hr>
+<p><strong>参考资料</strong>：</p>
+<ul>
+<li>Anthropic 官方《Getting started with loops》（Delba de Oliveira &amp; Michael Segner，2026-06-30）</li>
+<li>《Anthropic 内部 Loop Engineering 方法论公开》（PaperAgent，2026-06-27）</li>
+<li>《Anthropic 终于官方定调：Loop 不是技巧，是架构》（胖小天，2026-07-01）</li>
+<li>《Claude Code 官方下场：Loops 上手指南》（洛谦Lumo，2026-07-10）</li>
+<li>《别调教 Prompt, Claude 团队：你该设计 Loop》（FLY AI CLOUD 萤火AI百宝箱，2026-07-10）</li>
+</ul>
+<blockquote>本文为原创案例分析，所有代码与数据均为实测。</blockquote>
+</article>
+</body>
+</html>
